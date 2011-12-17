@@ -1,0 +1,84 @@
+
+#import "SwipeDetectorWindow.h"
+
+static NSMutableArray *swipeDetectorWindows = nil;
+
+@implementation SwipeDetectorWindow
+
++ (BOOL)shouldActivate {
+    return NO;
+}
+
+- (void)dealloc {
+    [swipeDetectorWindows removeObject:self];
+    [super dealloc];
+}
+
+- (id)initWithFrame:(CGRect)frame {
+    if ((self = [super initWithFrame:frame])) {
+        [self setWindowLevel:99999.0f];
+        [self setBackgroundColor:[UIColor colorWithRed:0 green:0 blue:0 alpha:(2.0f / 255.0f)]];
+        [swipeDetectorWindows addObject:self];
+    }
+
+    return self;
+}
+
+@end
+
+%ctor {
+    swipeDetectorWindows = [[NSMutableArray alloc] init];
+}
+
+@interface SBUIController (SwipeDetectorWindow)
+- (void)updateSwipeDetectorWindows;
+@end
+
+%group SwipeDetectorWindow
+
+%hook SBUIController
+
+%new(v@:)
+- (void)updateSwipeDetectorWindows {
+    for (SwipeDetectorWindow *window in swipeDetectorWindows) {
+        if ([[window class] shouldActivate]) {
+            [window setHidden:NO];
+        } else {
+            [window setHidden:YES];
+        }
+    }
+}
+
+- (void)finishLaunching {
+    %orig;
+    [self performSelector:@selector(updateSwipeDetectorWindows) withObject:nil afterDelay:1.0];
+}
+
+- (void)tearDownIconListAndBar {
+    %orig;
+    [self updateSwipeDetectorWindows];
+}
+
+- (void)restoreIconList:(BOOL)animate {
+    %orig;
+    [self updateSwipeDetectorWindows];
+}
+
+- (void)lock {
+    %orig;
+    [self updateSwipeDetectorWindows];
+}
+
+- (void)lockFromSource:(int)source {
+    %orig;
+    [self updateSwipeDetectorWindows];
+}
+
+%end
+
+%end
+
+%ctor {
+    %init(SwipeDetectorWindow);
+}
+

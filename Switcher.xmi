@@ -1,0 +1,76 @@
+
+#import "Switcher.h"
+
+static void ActivateSwitcherToHeight(CGFloat height) {
+    id uic = [objc_getClass("SBUIController") sharedInstance];
+    id appSwitcherController = [objc_getClass("SBAppSwitcherController") sharedInstance];
+    id zeroContext = [uic _showcaseContextForOffset:0];
+    id barContext = [uic _showcaseContextForOffset:height];
+
+    UIInterfaceOrientation currentOrientation = [SBApp activeInterfaceOrientation];
+    [zeroContext setShowcaseOrientation:currentOrientation];
+    [barContext setShowcaseOrientation:currentOrientation];
+
+    [uic _activateSwitcherFrom:zeroContext to:barContext duration:0.0f];
+}
+
+@implementation SwitcherWindow
+
++ (BOOL)shouldActivate {
+    return YES;
+    return ![objc_getClass("SBUIController") isLocked];
+}
+
+- (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event {
+    if (![[self class] shouldActivate]) return;
+
+    // start something?
+}
+
+- (void)touchesMoved:(NSSet *)touches withEvent:(UIEvent *)event {
+    if (![[self class] shouldActivate]) return;
+
+    CGPoint pt = [[touches anyObject] locationInView:self];
+    id uic = [objc_getClass("SBUIController") sharedInstance];
+    [[uic showcaseController] setRevealAmount:-pt.y];
+}
+
+- (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event {
+    if (![[self class] shouldActivate]) return;
+
+    id uic = [objc_getClass("SBUIController") sharedInstance];
+    CGPoint pt = [[touches anyObject] locationInView:self];
+    if (-pt.y > 20.0f) {
+        [uic _toggleSwitcher];
+    } else {
+        //[uic dismissSwitcherAnimated:NO];
+    }
+}
+
+@end
+
+%group Switcher
+
+%hook SBUIController
+
+- (void)finishLaunching {
+    CGFloat windowPercentage = 0.05f;
+    CGRect windowFrame;
+
+    windowFrame = [[UIScreen mainScreen] bounds];
+    windowFrame.origin.y += windowFrame.size.height * (1.0f - windowPercentage);
+    windowFrame.size.height *= windowPercentage;
+    SwitcherWindow *switcherWindow = [[SwitcherWindow alloc] initWithFrame:windowFrame];
+
+    %orig;
+}
+
+%end
+
+%end
+
+%ctor {
+    %init(Switcher);
+}
+
+
