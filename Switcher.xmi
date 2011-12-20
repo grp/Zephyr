@@ -1,5 +1,6 @@
 
 #import "Switcher.h"
+#import "Preferences.h"
 
 static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat duration) {
     id uic = [objc_getClass("SBUIController") sharedInstance];
@@ -22,7 +23,8 @@ static UIImageView *shadowView = nil;
 + (BOOL)shouldActivate {
     return ![[objc_getClass("SBAwayController") sharedAwayController] isLocked]
         && ![[objc_getClass("SBUIController") sharedInstance] isSwitcherShowing]
-        && ![[objc_getClass("SBBulletinListController") sharedInstanceIfExists] listViewIsActive];
+        && ![[objc_getClass("SBBulletinListController") sharedInstanceIfExists] listViewIsActive]
+        && [(NSNumber *) PreferencesGet(@"SwipeUpAction", [NSNumber numberWithInt:kSwipeUpActionSwitcher]) intValue] == kSwipeUpActionSwitcher;
 }
 
 - (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event {

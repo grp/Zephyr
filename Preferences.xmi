@@ -1,27 +1,45 @@
 
+#import "Preferences.h"
 #import "iPhonePrivate.h"
+#import "SwipeDetectorWindow.h"
 
-#define kBundleIdentifier @"com.chpwn.swipeaway"
-
+#define kPreferencesFileName [NSString stringWithFormat:@"/var/mobile/Library/Preferences/%@.plist", kPreferencesBundleIdentifier]
 static NSDictionary *preferences = nil;
 
-static void ApplyPreferences() {
-    
+static void PreferencesApply() {
+    [[objc_getClass("SBUIController") sharedInstance] updateSwipeDetectorWindows];
 }
 
-static void LoadPreferences() {
+static void PreferencesLoad() {
+    [preferences release];
+    preferences = [[NSDictionary dictionaryWithContentsOfFile:kPreferencesFileName] retain];
+}
 
+id PreferencesGet(NSString *key, id defaultValue) {
+    id value = [preferences objectForKey:key];
+    if (value == nil) value = defaultValue;
+    return value;
+}
+
+void PreferencesSet(NSString *key, id value) {
+    NSMutableDictionary *mutablePreferences = [preferences mutableCopy];
+    [mutablePreferences setObject:value forKey:key];
+    [mutablePreferences writeToFile:kPreferencesFileName atomically:NO];
+    [mutablePreferences release];
+
+    PreferencesLoad();
+    PreferencesApply();
 }
 
 static void PreferencesChangedCallback(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef userInfo) {
-    LoadPreferences();
-    ApplyPreferences();
+    PreferencesLoad();
+    PreferencesApply();
 }
 
 %ctor {
-    LoadPreferences();
+    PreferencesLoad();
 
-    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, PreferencesChangedCallback, (CFStringRef) [NSString stringWithFormat:@"%@.preferences-changed", kBundleIdentifier], NULL, CFNotificationSuspensionBehaviorCoalesce);
+    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, PreferencesChangedCallback, (CFStringRef) [NSString stringWithFormat:@"%@.preferences-changed", kPreferencesBundleIdentifier], NULL, CFNotificationSuspensionBehaviorCoalesce);
 }
 
 

@@ -1,15 +1,15 @@
 Package: com.chpwn.swipeaway
-Name: Name me!
+Name: NAMEME
 Section: Tweaks
-Version: 0.8
+Version: 0.8.1
 Pre-Depends: firmware (>= 5.0)
 Depends: mobilesubstrate, preferenceloader
 Conflicts: gsc.ipad
-Icon: file:///Library/PreferenceLoader/Preferences/nameme@2x.png
+Icon: file:///Library/PreferenceLoader/Preferences/NAMEME@2x.png
 Architecture: iphoneos-arm
-Description: Awesome, useful swipe gestures!
-Depiction: http://chpwn.com/cydia/nameme.html
-Homepage: http://chpwn.com/cydia/nameme.html
+Description: Awesome, useful swipe multitasking!
+Depiction: http://chpwn.com/cydia/NAMEME.html
+Homepage: http://chpwn.com/cydia/NAMEME.html
 Author: chpwn <support@chpwn.com>
 Maintainer: BigBoss <bigboss@thebigboss.org>
 Sponsor: thebigboss.org <http://thebigboss.org>

@@ -1,12 +1,14 @@
 
 #import "SwitchApp.h"
+#import "Preferences.h"
 
 @implementation SwitchAppWindow
 
 + (BOOL)shouldActivate {
     return [SBApp _accessibilityFrontMostApplication] != nil
         && [SBApp activeInterfaceOrientation] == UIInterfaceOrientationPortrait
-        && ![[objc_getClass("SBUIController") sharedInstance] isSwitcherShowing];
+        && ![[objc_getClass("SBUIController") sharedInstance] isSwitcherShowing]
+        && [(NSNumber *) PreferencesGet(@"SwipeSideEnabled", [NSNumber numberWithBool:YES]) boolValue];
 }
 
 - (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event {

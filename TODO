@@ -1,6 +1,6 @@
  - Switch to SBOffscreenSwipeGestureRecognizer.
- - Some kind of calculation for forward/backward completion in SwitchApp.
- - Preferences to selectively disable gestures.
+   - Swipe gestures don't work after switching to another app? (fixed by above?)
+ - Some kind of calculation for forward/backward completion in SwitchApp. (fixed by above?)
  - Come up with a name.
  - Make an awesome depiction (with video?)
  - (1.1) Quit an app by sliding it off.

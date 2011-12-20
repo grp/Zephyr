@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>title</key>
+	<string>NAMEME</string>
+	<key>entry</key>
+	<dict>
+		<key>cell</key>
+		<string>PSLinkCell</string>
+		<key>icon</key>
+		<string>NAMEME.png</string>
+		<key>label</key>
+		<string>NAMEME</string>
+	</dict>
+	<key>items</key>
+	<array>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Swipes</string>
+            <key>footerText</key>
+            <string>NAMEME © 2011 Xuzz Productions, LLC.
+Support is available in Cydia.</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSLinkListCell</string>
+			<key>default</key>
+			<integer>1</integer>
+			<key>detail</key>
+			<string>PSListItemsController</string>
+			<key>key</key>
+			<string>SwipeUpAction</string>
+			<key>label</key>
+			<string>Up from Bottom</string>
+			<key>validTitles</key>
+			<array>
+				<string>Disabled</string>
+				<string>Switcher</string>
+			</array>
+			<key>validValues</key>
+			<array>
+				<integer>0</integer>
+				<integer>1</integer>
+			</array>
+			<key>defaults</key>
+			<string>com.chpwn.NAMEME</string>
+			<key>PostNotification</key>
+			<string>com.chpwn.NAMEME.preferences-changed</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<true/>
+			<key>key</key>
+			<string>SwipeSideEnabled</string>
+			<key>label</key>
+			<string>Left or Right Edges</string>
+			<key>PostNotification</key>
+			<string>com.chpwn.NAMEME.preferences-changed</string>
+			<key>defaults</key>
+			<string>com.chpwn.NAMEME</string>
+		</dict>
+	</array>
+</dict>
+</plist>
