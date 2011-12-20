@@ -1,5 +1,7 @@
  - Switch to SBOffscreenSwipeGestureRecognizer.
  - Some kind of calculation for forward/backward completion in SwitchApp.
  - Preferences to selectively disable gestures.
+ - Come up with a name.
+ - Make an awesome depiction (with video?)
  - (1.1) Quit an app by sliding it off.
 
