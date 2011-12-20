@@ -3,15 +3,12 @@
 
 static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat duration) {
     id uic = [objc_getClass("SBUIController") sharedInstance];
-    id appSwitcherController = [objc_getClass("SBAppSwitcherController") sharedInstance];
-    id zeroContext = [uic _showcaseContextForOffset:from];
 
-    CGFloat bottomBarHeight = [appSwitcherController bottomBarHeight];
+    id zeroContext = [uic _showcaseContextForOffset:from];
     id barContext = [uic _showcaseContextForOffset:to];
 
-    UIInterfaceOrientation currentOrientation = [SBApp activeInterfaceOrientation];
-    [zeroContext setShowcaseOrientation:currentOrientation];
-    [barContext setShowcaseOrientation:currentOrientation];
+    [zeroContext setShowcaseOrientation:UIInterfaceOrientationPortrait];
+    [barContext setShowcaseOrientation:UIInterfaceOrientationPortrait];
 
     [uic _activateSwitcherFrom:zeroContext to:barContext duration:duration];
 }
@@ -55,7 +52,7 @@ static UIImageView *shadowView = nil;
     appView = wrapperView;
 
     switcherView = [[objc_getClass("SBAppSwitcherController") sharedInstance] view];
-    [[objc_getClass("SBAppSwitcherController") sharedInstance] _reloadIconViewsAndShowFirstPage:YES];
+    [[objc_getClass("SBAppSwitcherController") sharedInstance] setupForApp:app orientation:UIInterfaceOrientationPortrait];
     CGRect switcherFrame = [switcherView frame];
     CGFloat bottomBarHeight = [[objc_getClass("SBAppSwitcherController") sharedInstance] bottomBarHeight];
     switcherFrame.origin.y = [gestureView bounds].size.height - bottomBarHeight;

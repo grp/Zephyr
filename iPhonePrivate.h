@@ -58,6 +58,7 @@ static SpringBoard *SBApp = nil;
 
 @interface SBAppSwitcherController : NSObject
 + (id)sharedInstance;
+- (void)setupForApp:(id)app orientation:(UIInterfaceOrientation)orientation;
 @end
 
 @interface SBShowcaseContext : NSObject
