@@ -29,6 +29,9 @@ static SpringBoard *SBApp = nil;
 - (BOOL)containsDisplay:(SBDisplay *)display;
 @end
 
+@interface SBAlert : SBDisplay
+@end
+
 @interface SBProcess : NSObject
 - (void)killWithSignal:(int)signal;
 @end
@@ -83,6 +86,19 @@ static SpringBoard *SBApp = nil;
 - (void)updatePaging:(float)paging;
 @end
 
+typedef enum {
+    kSBGestureTypeNone,
+    kSBGestureTypeLaunchSuspend,
+    kSBGestureTypeUnknown1,
+    kSBGestureTypeUnknown2,
+    kSBGestureTypeSwitchApp
+} SBGestureType;
+
+@interface SBGestureViewVendor : NSObject
++ (id)sharedInstance;
+- (id)viewForApp:(SBApplication *)app gestureType:(SBGestureType)type includeStatusBar:(BOOL)include;
+@end
+
 @interface SBUIController : NSObject
 + (id)sharedInstance;
 - (void)_switchAppGestureBegan;
@@ -102,6 +118,7 @@ static SpringBoard *SBApp = nil;
 - (void)_installSwitchAppGesturePlaceholderViewForEndingApp:(SBApplication *)endingApp;
 - (id)_showcaseContextForOffset:(CGFloat)offset;
 - (CGFloat)bottomBarHeight;
+- (UIView *)rootView;
 - (void)clearPendingAppActivatedByGesture;
 - (BOOL)isSwitcherShowing;
 - (void)clearZoomLayer;
@@ -118,6 +135,11 @@ static SpringBoard *SBApp = nil;
 - (void)programmaticSwitchAppGestureMoveToRight;
 - (void)updateSwitchAppGestureStatusBar;
 - (void)scheduleApplicationForLaunchByGesture:(SBApplication *)application;
+@end
+
+@interface SBAwayController : SBAlert
++ (id)sharedAwayController;
+- (BOOL)isLocked;
 @end
 
 static NSMutableArray *displayStacks = nil;

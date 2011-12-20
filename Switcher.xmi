@@ -1,49 +1,156 @@
 
 #import "Switcher.h"
 
-static void ActivateSwitcherToHeight(CGFloat height) {
+static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat duration) {
     id uic = [objc_getClass("SBUIController") sharedInstance];
     id appSwitcherController = [objc_getClass("SBAppSwitcherController") sharedInstance];
-    id zeroContext = [uic _showcaseContextForOffset:0];
-    id barContext = [uic _showcaseContextForOffset:height];
+    id zeroContext = [uic _showcaseContextForOffset:from];
+
+    CGFloat bottomBarHeight = [appSwitcherController bottomBarHeight];
+    id barContext = [uic _showcaseContextForOffset:to];
 
     UIInterfaceOrientation currentOrientation = [SBApp activeInterfaceOrientation];
     [zeroContext setShowcaseOrientation:currentOrientation];
     [barContext setShowcaseOrientation:currentOrientation];
 
-    [uic _activateSwitcherFrom:zeroContext to:barContext duration:0.0f];
+    [uic _activateSwitcherFrom:zeroContext to:barContext duration:duration];
 }
 
 @implementation SwitcherWindow
 
+static UIView *appView = nil;
+static UIView *switcherView = nil;
+static UIImageView *shadowView = nil;
+
 + (BOOL)shouldActivate {
-    return YES;
-    return ![objc_getClass("SBUIController") isLocked];
+    return ![[objc_getClass("SBAwayController") sharedAwayController] isLocked]
+        && ![[objc_getClass("SBUIController") sharedInstance] isSwitcherShowing]
+        && ![[objc_getClass("SBBulletinListController") sharedInstanceIfExists] listViewIsActive];
 }
 
 - (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event {
     if (![[self class] shouldActivate]) return;
 
-    // start something?
+    SBApplication *app = [SBApp _accessibilityFrontMostApplication];
+    UIView *gestureView = nil;
+
+    if (app != nil) {
+        [[[objc_getClass("SBUIController") sharedInstance] rootView] setAlpha:1.0f];
+        gestureView = [[objc_getClass("SBGestureViewVendor") sharedInstance] viewForApp:app gestureType:kSBGestureTypeSwitchApp includeStatusBar:YES];
+    } else {
+        gestureView = [[objc_getClass("SBUIController") sharedInstance] contentView];
+    }
+
+    shadowView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"SwitcherShadowTop.png"]];
+    CGRect shadowFrame = [shadowView frame];
+    shadowFrame.size = [[shadowView image] size];
+    shadowFrame.size.width = [gestureView bounds].size.width;
+    shadowFrame.origin.y = [gestureView bounds].size.height;
+    [shadowView setFrame:shadowFrame];
+
+    UIView *wrapperView = [[UIView alloc] initWithFrame:[gestureView bounds]];
+    [wrapperView setClipsToBounds:NO];
+    [wrapperView addSubview:gestureView];
+    [wrapperView addSubview:shadowView];
+    appView = wrapperView;
+
+    switcherView = [[objc_getClass("SBAppSwitcherController") sharedInstance] view];
+    [[objc_getClass("SBAppSwitcherController") sharedInstance] _reloadIconViewsAndShowFirstPage:YES];
+    CGRect switcherFrame = [switcherView frame];
+    CGFloat bottomBarHeight = [[objc_getClass("SBAppSwitcherController") sharedInstance] bottomBarHeight];
+    switcherFrame.origin.y = [gestureView bounds].size.height - bottomBarHeight;
+    [switcherView setFrame:switcherFrame];
+
+    UIView *rootView = [[objc_getClass("SBUIController") sharedInstance] rootView];
+    [rootView addSubview:switcherView];
+    [rootView addSubview:appView];
+    [rootView addSubview:shadowView];
 }
 
 - (void)touchesMoved:(NSSet *)touches withEvent:(UIEvent *)event {
     if (![[self class] shouldActivate]) return;
 
     CGPoint pt = [[touches anyObject] locationInView:self];
-    id uic = [objc_getClass("SBUIController") sharedInstance];
-    [[uic showcaseController] setRevealAmount:-pt.y];
+
+    CGFloat bottomBarHeight = [[objc_getClass("SBAppSwitcherController") sharedInstance] bottomBarHeight];
+    if (-pt.y > bottomBarHeight) pt.y = -bottomBarHeight;
+
+    CGRect appFrame = [appView frame];
+    appFrame.origin.y = pt.y;
+    [appView setFrame:appFrame];
+
+    CGRect shadowFrame = [shadowView frame];
+    shadowFrame.origin.y = appFrame.size.height + pt.y;
+    [shadowView setFrame:shadowFrame];
 }
 
 - (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event {
     if (![[self class] shouldActivate]) return;
 
-    id uic = [objc_getClass("SBUIController") sharedInstance];
     CGPoint pt = [[touches anyObject] locationInView:self];
-    if (-pt.y > 20.0f) {
-        [uic _toggleSwitcher];
+
+    void (^cleanupAppView)() = nil;
+    SBApplication *app = [SBApp _accessibilityFrontMostApplication];
+
+    if (app != nil) {
+        cleanupAppView = ^{
+            [appView release];
+            [appView removeFromSuperview];
+            appView = nil;
+
+            [app disableContextHostingForRequester:(CFStringRef) @"SwitchApp"];
+
+            [switcherView removeFromSuperview];
+            switcherView = nil;
+
+            [shadowView removeFromSuperview];
+            [shadowView release];
+            shadowView = nil;
+        };
     } else {
-        //[uic dismissSwitcherAnimated:NO];
+        cleanupAppView = ^{
+            CGRect appFrame = [appView frame];
+            appFrame.origin = CGPointZero;
+            [appView setFrame:appFrame];
+            appView = nil;
+
+            [switcherView removeFromSuperview];
+            switcherView = nil;
+
+            [shadowView removeFromSuperview];
+            [shadowView release];
+            shadowView = nil;
+        };
+    }
+
+
+    CGFloat bottomBarHeight = [[objc_getClass("SBAppSwitcherController") sharedInstance] bottomBarHeight];
+    if (-pt.y >= bottomBarHeight * (2.0f / 3.0f)) {
+        cleanupAppView();
+
+        CGFloat from, to, duration;
+        if (-pt.y >= bottomBarHeight) {
+            from = bottomBarHeight;
+            to = bottomBarHeight;
+            duration = app == nil ? 0.3 : 0;
+        } else {
+            from = -pt.y;
+            to = bottomBarHeight;
+            duration = 0.3f;
+        }
+        ActivateSwitcherFromToDuration(from, to, duration);
+    } else {
+        [UIView animateWithDuration:0.3f animations:^{
+            CGRect appFrame = [appView frame];
+            appFrame.origin = CGPointZero;
+            [appView setFrame:appFrame];
+            
+            CGRect shadowFrame = [shadowView frame];
+            shadowFrame.origin.y = appFrame.size.height;
+            [shadowView setFrame:shadowFrame];
+        } completion:^(BOOL completed) {
+            cleanupAppView();
+        }];
     }
 }
 

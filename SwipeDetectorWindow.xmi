@@ -59,7 +59,7 @@ static NSMutableArray *swipeDetectorWindows = nil;
     [self updateSwipeDetectorWindows];
 }
 
-- (void)restoreIconList:(BOOL)animate {
+- (void)restoreIconListAnimated:(BOOL)animated animateWallpaper:(BOOL)animateWallpaper keepSwitcher:(BOOL)keepSwitcher {
     %orig;
     [self updateSwipeDetectorWindows];
 }

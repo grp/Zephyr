@@ -50,10 +50,10 @@
 - (void)_switchAppGestureBegan {
     SBApplication *topApplication = [SBApp _accessibilityFrontMostApplication];
 
-    /*if (topApplication != nil) {
-        if (![topApplication displayFlag:0x3]) return; // XXX: what does this do, why does it not work here?
+    if (topApplication != nil) {
+        if ([topApplication displayFlag:0x3]) return;
         if (![topApplication displayFlag:0x1]) return;
-    }*/
+    }
 
     // (there is some condition here in a C function, dunno what it does)
     if (![self _dismissSheetsAndDetermineAlertStateForMenuClickOrSystemGesture]) return;
