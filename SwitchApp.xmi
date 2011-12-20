@@ -4,7 +4,6 @@
 @implementation SwitchAppWindow
 
 + (BOOL)shouldActivate {
-    return YES;
     return [SBApp _accessibilityFrontMostApplication] != nil
         && [SBApp activeInterfaceOrientation] == UIInterfaceOrientationPortrait
         && ![[objc_getClass("SBUIController") sharedInstance] isSwitcherShowing];
