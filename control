@@ -1,9 +1,17 @@
 Package: com.chpwn.swipeaway
-Name: swipeaway
-Depends: mobilesubstrate
-Version: 0.0.1
-Architecture: iphoneos-arm
-Description: An awesome MobileSubstrate tweak!
-Maintainer: Grant Paul
-Author: Grant Paul
+Name: Name me!
 Section: Tweaks
+Version: 0.8
+Pre-Depends: firmware (>= 5.0)
+Depends: mobilesubstrate, preferenceloader
+Conflicts: gsc.ipad
+Icon: file:///Library/PreferenceLoader/Preferences/nameme@2x.png
+Architecture: iphoneos-arm
+Description: Awesome, useful swipe gestures!
+Depiction: http://chpwn.com/cydia/nameme.html
+Homepage: http://chpwn.com/cydia/nameme.html
+Author: chpwn <support@chpwn.com>
+Maintainer: BigBoss <bigboss@thebigboss.org>
+Sponsor: thebigboss.org <http://thebigboss.org>
+Tag: cydia::commercial, purpose::extension
+dev: chpwn
