@@ -1,0 +1,156 @@
+
+#import "OffscreenGesture.h"
+
+static NSMutableArray *allGestureRecognizers = nil;
+
+%ctor {
+    // XXX: memory leak?
+    allGestureRecognizers = [[NSMutableArray alloc] init];
+}
+
+@implementation OffscreenGesture
+
+- (void)addOffscreenEdge:(SBOffscreenEdge)edge {
+    NSLog(@"Adding gesture recognizer for edge: %d", edge);
+    NSLog(@"ADDING GU");
+    NSLog(@"ADDING GU");
+    NSLog(@"ADDING GU");
+    NSLog(@"ADDING GU");
+
+    SBOffscreenSwipeGestureRecognizer *gestureRecognizer = [[objc_getClass("SBOffscreenSwipeGestureRecognizer") alloc] initForOffscreenEdge:edge];
+    [gestureRecognizer setSendsTouchesCancelledToApplication:YES];
+    [gestureRecognizer setAllowableDistanceFromEdgeCenter:160.0f];
+    [gestureRecognizer setMinTouches:1];
+    [gestureRecognizer setEdgeCenter:160.0f];
+    [gestureRecognizer setTypes:0x10];
+    [gestureRecognizer setRequiresSecondTouchInRange:NO];
+
+    [gestureRecognizer setHandler:^{
+        CGFloat distance = [gestureRecognizer cumulativePercentage];
+        CGPoint velocity = [gestureRecognizer movementVelocityInPointsPerSecond];
+
+        switch ([gestureRecognizer state]) {
+            case 1:
+                [self handleGestureBeganWithLocation:distance];
+                break;
+            case 2:
+                [self handleGestureChangedWithLocation:distance velocity:velocity];
+                break;
+            case 3:
+                [self handleGestureEndedWithLocation:distance velocity:velocity completionType:[gestureRecognizer completionTypeProjectingMomentumForInterval:5.0f]];
+                break;
+            case 4:
+                [self handleGestureCanceled];
+                break;
+        }
+    }];
+
+    [gestureRecognizer setCanBeginCondition:^BOOL {
+        BOOL should = [self shouldActivate];
+        return should;
+    }];
+
+    [gestureRecognizers addObject:gestureRecognizer];
+    [allGestureRecognizers addObject:gestureRecognizer];
+}
+
+- (void)dealloc {
+    for (SBGestureRecognizer *gestureRecognizer in gestureRecognizers) {
+        [gestureRecognizers removeObject:gestureRecognizer];
+        [allGestureRecognizers removeObject:gestureRecognizer];
+        [gestureRecognizer release];
+    }
+
+    [super dealloc];
+}
+
+- (BOOL)shouldActivate {
+    return NO;
+}
+
+- (void)handleGestureBeganWithLocation:(CGFloat)location {
+
+}
+
+- (void)handleGestureChangedWithLocation:(CGFloat)location velocity:(CGPoint)velocity {
+
+}
+
+- (void)handleGestureEndedWithLocation:(CGFloat)location velocity:(CGPoint)velocity completionType:(int)type {
+
+}
+
+- (void)handleGestureCanceled {
+
+}
+
+@end
+
+
+%group OffscreenSwipes
+
+%hook SBHandMotionExtractor
+
+- (void)extractHandMotionForActiveTouches:(SBTouchInfo *)activeTouches count:(unsigned)count centroid:(CGPoint)centroid {
+    %orig;
+
+    SBTouchInfo *touchBuffer = (SBTouchInfo *) malloc(sizeof(SBTouchInfo) * count);
+    memcpy(touchBuffer, activeTouches, sizeof(SBTouchInfo) * count);
+
+    dispatch_async(dispatch_get_main_queue(), ^{
+        for (SBGestureRecognizer *gu in allGestureRecognizers) {
+            SBGestureContextRef gestureContext = (SBGestureContextRef) malloc(sizeof(__SBGestureContext));
+            gestureContext->pixelDeltas = [self pixelDeltas];
+            gestureContext->averageVelocities = [self averageVelocities];
+            gestureContext->averageTranslation = [self averageTranslation];
+            gestureContext->movementVelocityInPointsPerSecond = [self movementVelocityInPointsPerSecond];
+            gestureContext->farthestFingerSeparation = [self farthestFingerSeparation];
+            gestureContext->activeTouchCount = count;
+            memcpy(gestureContext->activeTouches, touchBuffer, sizeof(SBTouchInfo) * count);
+
+            gestureContext->unk1 = 0;
+            gestureContext->unk2 = 0;
+            gestureContext->unk3 = 0;
+            gestureContext->unk4 = 0;
+
+            int state = [gu state];
+
+            if ([gu shouldReceiveTouches] && [gu state] <= 2) {
+                if (count > 0) {
+                    if ([gu state] == 0) {
+                        NSLog(@"touches BEGAN %d", state);
+                        [gu touchesBegan:gestureContext];
+                    } else {
+                        NSLog(@"touches moved %d", state);
+                        [gu touchesMoved:gestureContext];
+                    }
+                } else {
+                    if ([gu state] == 2 || [gu state] == 1) {
+                        NSLog(@"touches ENDED %d", state);
+                        [gu touchesEnded:gestureContext];
+                        [gu reset];
+                    } else {
+                        NSLog(@"no touches but donthhing to do %d", state);
+                        [gu reset];
+                    }
+                }
+            } else {
+                NSLog(@"doesn't want touches or bad state %d", state);
+                [gu reset];
+            }
+
+            free(gestureContext);
+        }
+
+        free(touchBuffer);
+    });
+}
+
+%end
+
+%end
+
+%ctor {
+    %init(OffscreenSwipes);
+}
+

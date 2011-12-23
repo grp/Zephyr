@@ -143,6 +143,100 @@ typedef enum {
 - (BOOL)isLocked;
 @end
 
+typedef enum { /* no fucking clue */ } SBTouchType;
+
+typedef struct {
+    SBTouchType type;
+    unsigned pathIndex;
+    CGPoint location;
+    CGPoint previousLocation;
+    float totalDistanceTraveled;
+    UIInterfaceOrientation interfaceOrientation;
+    UIInterfaceOrientation previousInterfaceOrientation;
+} SBTouchInfo;
+
+typedef struct {
+    UIEdgeInsets pixelDeltas; // 0x00, 0x04, 0x08, 0x0C
+    UIEdgeInsets averageVelocities; // 0x10, 0x14, 0x18, 0x1C
+    float averageTranslation; // 0x20
+    CGPoint movementVelocityInPointsPerSecond; // 0x24, 0x28
+    float farthestFingerSeparation; // 0x2C
+    int activeTouchCount; // 0x30
+
+    int unk1;
+    int unk2;
+    int unk3;
+    int unk4;
+
+    SBTouchInfo activeTouches[30]; // 0x44; count is activeTouchCount
+} __SBGestureContext;
+
+typedef __SBGestureContext *SBGestureContextRef;
+
+typedef enum {
+    kSBOffscreenEdgeLeft = 1,
+    kSBOffscreenEdgeTop = 2,
+    kSBOffscreenEdgeRight = 4,
+    kSBOffscreenEdgeBottom = 8
+} SBOffscreenEdge;
+
+@interface SBGestureRecognizer : NSObject
+@property (nonatomic, copy) void (^handler)();
+@property (nonatomic, copy) BOOL (^canBeginCondition)();
+@property (nonatomic, assign) int types;
+@property (nonatomic, assign) int state;
+@property (nonatomic, assign) int minTouches;
+@property (assign, nonatomic) BOOL sendsTouchesCancelledToApplication;
+- (void)reset;
+- (BOOL)shouldReceiveTouches;
+- (int)templateMatch;
+- (void)touchesBegan:(SBGestureContextRef)began;
+- (void)touchesCancelled:(SBGestureContextRef)cancelled;
+- (void)touchesEnded:(SBGestureContextRef)ended;
+- (void)touchesMoved:(SBGestureContextRef)moved;
+@end
+
+@interface SBFluidSwipeGestureRecognizer : SBGestureRecognizer
+@property(assign, nonatomic) int requiredDirectionality;
+@property(assign, nonatomic) float accelerationPower;
+@property(assign, nonatomic) float accelerationThreshold;
+@property(assign, nonatomic) float animationDistance;
+@property(readonly, assign, nonatomic) int degreeOfFreedom;
+@property(readonly, assign, nonatomic) float cumulativeMotion;
+@property(readonly, assign, nonatomic) float cumulativePercentage;
+@property(readonly, assign, nonatomic) float incrementalMotion;
+@property(readonly, assign, nonatomic) float skippedCumulativePercentage;
+@property(readonly, assign, nonatomic) CGPoint centroidPoint;
+@property(readonly, assign, nonatomic) CGPoint movementVelocityInPointsPerSecond;
+- (int)completionTypeProjectingMomentumForInterval:(double)interval;
+- (CGPoint)centroidPoint;
+@end
+
+@interface SBPanGestureRecognizer : SBFluidSwipeGestureRecognizer
+@end
+
+@interface SBOffscreenSwipeGestureRecognizer : SBPanGestureRecognizer
+@property(assign, nonatomic) float allowableDistanceFromEdgeCenter;
+@property(assign, nonatomic) float edgeCenter;
+@property(assign, nonatomic) float edgeMargin;
+@property(assign, nonatomic) float falseEdge;
+@property(assign, nonatomic) BOOL requiresSecondTouchInRange;
+- (id)initForOffscreenEdge:(SBOffscreenEdge)edge;
+- (BOOL)firstTouchInRange:(CGPoint)range;
+- (BOOL)secondTouchInRange:(CGPoint)range;
+@end
+
+@interface SBHandMotionExtractor : NSObject
+@property(readonly, assign, nonatomic) UIEdgeInsets allPixelDeltas;
+@property(readonly, assign, nonatomic) float averageTranslation;
+@property(readonly, assign, nonatomic) UIEdgeInsets averageVelocities;
+@property(readonly, assign, nonatomic) float farthestFingerSeparation;
+@property(readonly, assign, nonatomic) CGPoint movementVelocityInPointsPerSecond;
+@property(readonly, assign, nonatomic) UIEdgeInsets pixelDeltas;
+- (void)clear;
+- (void)extractHandMotionForActiveTouches:(SBTouchInfo *)activeTouches count:(unsigned)count centroid:(CGPoint)centroid;
+@end
+
 static NSMutableArray *displayStacks = nil;
 
 #define SBWPreActivateDisplayStack        [displayStacks objectAtIndex:0]

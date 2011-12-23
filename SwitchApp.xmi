@@ -2,38 +2,32 @@
 #import "SwitchApp.h"
 #import "Preferences.h"
 
-@implementation SwitchAppWindow
+@implementation SwitchAppGesture
 
-+ (BOOL)shouldActivate {
+- (BOOL)shouldActivate {
     return [SBApp _accessibilityFrontMostApplication] != nil
         && [SBApp activeInterfaceOrientation] == UIInterfaceOrientationPortrait
         && ![[objc_getClass("SBUIController") sharedInstance] isSwitcherShowing]
         && [(NSNumber *) PreferencesGet(@"SwipeSideEnabled", [NSNumber numberWithBool:YES]) boolValue];
 }
 
-- (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event {
-    if (![[self class] shouldActivate]) return;
+- (void)handleGestureCanceled {
+    // XXX: implement this correctly
+}
 
-    id uic = [objc_getClass("SBUIController") sharedInstance];
+- (void)handleGestureBeganWithLocation:(CGFloat)location {
+    SBUIController *uic = [objc_getClass("SBUIController") sharedInstance];
     [uic _switchAppGestureBegan];
 }
 
-- (void)touchesMoved:(NSSet *)touches withEvent:(UIEvent *)event {
-    if (![[self class] shouldActivate]) return;
-
-    id uic = [objc_getClass("SBUIController") sharedInstance];
-    CGPoint pt = [[touches anyObject] locationInView:self];
-    [uic _switchAppGestureChanged:(pt.x / [[UIScreen mainScreen] bounds].size.width)];
+- (void)handleGestureChangedWithLocation:(CGFloat)location velocity:(CGPoint)velocity {
+    SBUIController *uic = [objc_getClass("SBUIController") sharedInstance];
+    [uic _switchAppGestureChanged:location];
 }
 
-- (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event {
-    if (![[self class] shouldActivate]) return;
-
-    // XXX: choose the correct completion type here
-
-    id uic = [objc_getClass("SBUIController") sharedInstance];
-    CGPoint pt = [[touches anyObject] locationInView:self];
-    [uic _switchAppGestureEndedWithCompletionType:1 cumulativePercentage:(pt.x / [[UIScreen mainScreen] bounds].size.width)];
+- (void)handleGestureEndedWithLocation:(CGFloat)location velocity:(CGPoint)velocity completionType:(int)type {
+    SBUIController *uic = [objc_getClass("SBUIController") sharedInstance];
+    [uic _switchAppGestureEndedWithCompletionType:type cumulativePercentage:location];
 }
 
 @end
@@ -170,7 +164,7 @@
     [self clearZoomLayer];
 
     if (startingApplication != endingApplication) {
-        UIInterfaceOrientation statusOrientation = [startingApplication statusBarOrientation];
+        //UIInterfaceOrientation statusOrientation = [startingApplication statusBarOrientation];
         [startingApplication setDeactivationSetting:0x18 flag:YES];
 
         /* sub_2C330 */ {
@@ -228,7 +222,7 @@
     if (shouldShowSwitcherAgain && MSHookIvar<BOOL>(self, "_switcherVisibleWhenSwitchAppGestureStarted")) {
         // show switcher again if it was hidden for the gesture to start
 
-        id appSwitcherController = [objc_getClass("SBAppSwitcherController") sharedInstance];
+        //id appSwitcherController = [objc_getClass("SBAppSwitcherController") sharedInstance];
         id zeroContext = [self _showcaseContextForOffset:0];
         id barContext = [self _showcaseContextForOffset:[self bottomBarHeight]];
 
@@ -252,19 +246,11 @@
 }
 
 - (void)finishLaunching {
-    CGFloat windowPercentage = 0.03f;
-    CGRect windowFrame;
-
-    windowFrame = [[UIScreen mainScreen] bounds];
-    windowFrame.size.width *= windowPercentage;
-    [[SwitchAppWindow alloc] initWithFrame:windowFrame];
-
-    windowFrame = [[UIScreen mainScreen] bounds];
-    windowFrame.origin.x += windowFrame.size.width * (1.0f - windowPercentage);
-    windowFrame.size.width *= windowPercentage;
-    [[SwitchAppWindow alloc] initWithFrame:windowFrame];
-
     %orig;
+
+    SwitchAppGesture *gesture = [[SwitchAppGesture alloc] init];
+    [gesture addOffscreenEdge:kSBOffscreenEdgeLeft];
+    //[gesture addOffscreenEdge:kSBOffscreenEdgeRight];
 }
 
 %end

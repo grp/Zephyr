@@ -1,11 +1,17 @@
 
-#import "SwipeDetectorWindow.h"
+#import "OffscreenGesture.h"
 
 typedef enum {
     kSwipeUpActionDisabled,
     kSwipeUpActionSwitcher
 } SwipeUpAction;
 
-@interface SwitcherWindow : SwipeDetectorWindow
+@interface SwitcherGesture : OffscreenGesture {
+    UIView *appView;
+    UIView *wrapperView;
+    UIView *switcherView;
+    UIImageView *shadowView;
+}
+
 @end
 

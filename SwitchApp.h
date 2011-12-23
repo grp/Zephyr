@@ -1,8 +1,6 @@
 
-#import "SwipeDetectorWindow.h"
+#import "OffscreenGesture.h"
 
-@interface SwitchAppWindow : SwipeDetectorWindow
-
-
+@interface SwitchAppGesture : OffscreenGesture
 @end
 
