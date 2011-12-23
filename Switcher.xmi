@@ -163,8 +163,7 @@ static CGFloat HeightFromScreenPercentage(CGFloat percentage) {
     %orig;
 
     SwitcherGesture *gesture = [[SwitcherGesture alloc] init];
-    gesture = nil;
-    //[gesture addOffscreenEdge:kSBOffscreenEdgeBottom];
+    [gesture addOffscreenEdge:kSBOffscreenEdgeBottom];
 }
 
 %end

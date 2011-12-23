@@ -250,7 +250,7 @@
 
     SwitchAppGesture *gesture = [[SwitchAppGesture alloc] init];
     [gesture addOffscreenEdge:kSBOffscreenEdgeLeft];
-    //[gesture addOffscreenEdge:kSBOffscreenEdgeRight];
+    [gesture addOffscreenEdge:kSBOffscreenEdgeRight];
 }
 
 %end
