@@ -11,12 +11,6 @@ static NSMutableArray *allGestureRecognizers = nil;
 @implementation OffscreenGesture
 
 - (void)addOffscreenEdge:(SBOffscreenEdge)edge {
-    NSLog(@"Adding gesture recognizer for edge: %d", edge);
-    NSLog(@"ADDING GU");
-    NSLog(@"ADDING GU");
-    NSLog(@"ADDING GU");
-    NSLog(@"ADDING GU");
-
     SBOffscreenSwipeGestureRecognizer *gestureRecognizer = [[objc_getClass("SBOffscreenSwipeGestureRecognizer") alloc] initForOffscreenEdge:edge];
     [gestureRecognizer setSendsTouchesCancelledToApplication:YES];
     [gestureRecognizer setAllowableDistanceFromEdgeCenter:160.0f];
@@ -115,27 +109,29 @@ static NSMutableArray *allGestureRecognizers = nil;
 
             int state = [gu state];
 
-            if ([gu shouldReceiveTouches] && [gu state] <= 2) {
+            if ([gu shouldReceiveTouches] && state <= 2) {
                 if (count > 0) {
-                    if ([gu state] == 0) {
-                        NSLog(@"touches BEGAN %d", state);
+                    if (state == 0) {
+                        // If state is "ready" and there are touches, start.
                         [gu touchesBegan:gestureContext];
                     } else {
-                        NSLog(@"touches moved %d", state);
+                        // If we've already started, then continue.
                         [gu touchesMoved:gestureContext];
                     }
                 } else {
-                    if ([gu state] == 2 || [gu state] == 1) {
-                        NSLog(@"touches ENDED %d", state);
+                    if (state == 2 || state == 1) {
+                        // If we are active but no more touches, end.
                         [gu touchesEnded:gestureContext];
                         [gu reset];
                     } else {
-                        NSLog(@"no touches but donthhing to do %d", state);
+                        // Not sure how this would happen, bail out.
                         [gu reset];
                     }
                 }
             } else {
-                NSLog(@"doesn't want touches or bad state %d", state);
+                // If it decides it doesn't want touches anymore, or is
+                // in the cancelled/ended state, reset it.
+                // XXX: this may be slow, it runs potentially multiple times per touch
                 [gu reset];
             }
 
@@ -144,6 +140,27 @@ static NSMutableArray *allGestureRecognizers = nil;
 
         free(touchBuffer);
     });
+}
+
+%end
+
+%hook SBOffscreenSwipeGestureRecognizer
+
+// XXX: Hack to workaround Apple bug.
+// Basically, this method is fail iff m_offscreenEdge is kSBOffscreenEdgeLeft,
+// so work around that by flipping the touch and testing it as on the right.
+- (BOOL)firstTouchInRange:(CGPoint)touch {
+    if (MSHookIvar<SBOffscreenEdge>(self, "m_offscreenEdge") == kSBOffscreenEdgeLeft) {
+        touch.x = [[UIScreen mainScreen] bounds].size.width - touch.x;
+
+        MSHookIvar<SBOffscreenEdge>(self, "m_offscreenEdge") = kSBOffscreenEdgeRight;
+        int orig = %orig;
+        MSHookIvar<SBOffscreenEdge>(self, "m_offscreenEdge") = kSBOffscreenEdgeLeft;
+
+        return orig;
+    } else {
+        return %orig;
+    }
 }
 
 %end

@@ -222,6 +222,7 @@ typedef enum {
 @property(assign, nonatomic) float falseEdge;
 @property(assign, nonatomic) BOOL requiresSecondTouchInRange;
 - (id)initForOffscreenEdge:(SBOffscreenEdge)edge;
+- (void)_updateAnimationDistanceAndEdgeCenter;
 - (BOOL)firstTouchInRange:(CGPoint)range;
 - (BOOL)secondTouchInRange:(CGPoint)range;
 @end
