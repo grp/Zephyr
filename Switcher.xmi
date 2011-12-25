@@ -42,6 +42,11 @@ static CGFloat HeightFromScreenPercentage(CGFloat percentage) {
         appView = [[objc_getClass("SBGestureViewVendor") sharedInstance] viewForApp:app gestureType:kSBGestureTypeSwitchApp includeStatusBar:YES];
     } else {
         appView = [[objc_getClass("SBUIController") sharedInstance] contentView];
+
+        // Call private UIKit API to cancel touches on the icon lists while swiping.
+        // This fixes the bug where swiping up on an icon would start editing mode.
+        if ([SBApp respondsToSelector:@selector(_cancelAllTouches)])
+            [SBApp performSelector:@selector(_cancelAllTouches)];
     }
 
     shadowView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"SwitcherShadowTop.png"]];
