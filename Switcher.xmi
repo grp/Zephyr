@@ -37,6 +37,12 @@ static CGFloat HeightFromScreenPercentage(CGFloat percentage) {
 
     SBApplication *app = [SBApp _accessibilityFrontMostApplication];
 
+    // Ensure app is properly launched and ready.
+    if (app != nil) {
+        if ([app displayFlag:0x3]) return;
+        if (![app displayFlag:0x1]) return;
+    }
+
     if (app != nil) {
         [[[objc_getClass("SBUIController") sharedInstance] rootView] setAlpha:1.0f];
         appView = [[objc_getClass("SBGestureViewVendor") sharedInstance] viewForApp:app gestureType:kSBGestureTypeSwitchApp includeStatusBar:YES];
@@ -143,13 +149,16 @@ static CGFloat HeightFromScreenPercentage(CGFloat percentage) {
             to = bottomBarHeight;
             duration = 0.3f;
         }
-        ActivateSwitcherFromToDuration(from, to, duration);
+
+        dispatch_async(dispatch_get_main_queue(), ^{
+            ActivateSwitcherFromToDuration(from, to, duration);
+        });
     } else {
         [UIView animateWithDuration:0.3f animations:^{
             CGRect wrapperFrame = [wrapperView frame];
             wrapperFrame.origin = CGPointZero;
             [wrapperView setFrame:wrapperFrame];
-            
+
             CGRect shadowFrame = [shadowView frame];
             shadowFrame.origin.y = wrapperFrame.size.height;
             [shadowView setFrame:shadowFrame];

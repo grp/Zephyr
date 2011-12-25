@@ -2,13 +2,37 @@
 #import "OffscreenGesture.h"
 
 static NSMutableArray *allGestureRecognizers = nil;
+static NSMutableArray *allGestures = nil;
 
 %ctor {
     // XXX: memory leak?
     allGestureRecognizers = [[NSMutableArray alloc] init];
+    allGestures = [[NSMutableArray alloc] init];
 }
 
 @implementation OffscreenGesture
+@synthesize isActive;
+
++ (BOOL)isAnyGestureActive {
+    BOOL isActive = NO;
+
+    for (OffscreenGesture *gesture in allGestures) {
+        if ([gesture isActive]) {
+            isActive = YES;
+        }
+    }
+
+    return isActive;
+}
+
+- (id)init {
+    if ((self = [super init])) {
+        gestureRecognizers = [[NSMutableArray alloc] init];
+        [allGestures addObject:self];
+    }
+
+    return self;
+}
 
 - (void)addOffscreenEdge:(SBOffscreenEdge)edge {
     SBOffscreenSwipeGestureRecognizer *gestureRecognizer = [[objc_getClass("SBOffscreenSwipeGestureRecognizer") alloc] initForOffscreenEdge:edge];
@@ -24,20 +48,39 @@ static NSMutableArray *allGestureRecognizers = nil;
         CGPoint velocity = [gestureRecognizer movementVelocityInPointsPerSecond];
 
         switch ([gestureRecognizer state]) {
+            case 0:
+                break;
             case 1:
-                [self handleGestureBeganWithLocation:distance];
+                if (![self isActive] && ![OffscreenGesture isAnyGestureActive]) {
+                    [self handleGestureBeganWithLocation:distance];
+                    isActive = YES;
+                }
                 break;
             case 2:
-                [self handleGestureChangedWithLocation:distance velocity:velocity];
+                if ([self isActive]) {
+                    [self handleGestureChangedWithLocation:distance velocity:velocity];
+                }
                 break;
             case 3:
-                [self handleGestureEndedWithLocation:distance velocity:velocity completionType:[gestureRecognizer completionTypeProjectingMomentumForInterval:5.0f]];
+                if ([self isActive]) {
+                    [self handleGestureEndedWithLocation:distance velocity:velocity completionType:[gestureRecognizer completionTypeProjectingMomentumForInterval:5.0f]];
+                    isActive = NO;
+                }
                 break;
             case 4:
                 // XXX: this is disabled because it is called even if the gesture was never actually "started":
                 // there is no way (currently) to tell if a gesture was started before it got cancelled, so this
                 // gives us spurious cancelations that break any gesture with two possible recognizers. :(
-                //[self handleGestureCanceled];
+                // XXX: the above text is not true. if both gestures are enabled then the active gesture is somehow
+                // automatically canceled. I do not know why this is, but it requires us to sadly ignore cancels now.
+                // [self handleGestureCanceled];
+                // isActive = NO;
+                break;
+            default:
+                if ([self isActive]) {
+                    NSLog(@"BUG: Weird recognizer state in %@.", self);
+                    isActive = NO;
+                }
                 break;
         }
     }];
