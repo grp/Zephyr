@@ -1,15 +1,15 @@
-Package: com.chpwn.swipeaway
-Name: NAMEME
+Package: com.chpwn.zephyr
+Name: Zephyr
 Section: Tweaks
 Version: 0.9.5
 Pre-Depends: firmware (>= 5.0)
 Depends: mobilesubstrate, preferenceloader
 Conflicts: gsc.ipad
-Icon: file:///Library/PreferenceLoader/Preferences/NAMEME@2x.png
+Icon: file:///Library/PreferenceLoader/Preferences/Zephyr@2x.png
 Architecture: iphoneos-arm
 Description: Awesome, useful swipe multitasking!
-Depiction: http://chpwn.com/cydia/NAMEME.html
-Homepage: http://chpwn.com/cydia/NAMEME.html
+Depiction: http://chpwn.com/cydia/zephyr.html
+Homepage: http://chpwn.com/cydia/zephyr.html
 Author: chpwn <support@chpwn.com>
 Maintainer: BigBoss <bigboss@thebigboss.org>
 Sponsor: thebigboss.org <http://thebigboss.org>
