@@ -1,7 +1,7 @@
 Package: com.chpwn.zephyr
 Name: Zephyr
 Section: Tweaks
-Version: 0.9.5
+Version: 0.9.6
 Pre-Depends: firmware (>= 5.0)
 Depends: mobilesubstrate, preferenceloader
 Conflicts: gsc.ipad
