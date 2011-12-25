@@ -21,10 +21,20 @@ static CGFloat HeightFromScreenPercentage(CGFloat percentage) {
 @implementation SwitcherGesture
 
 - (BOOL)shouldActivate {
+    SBApplication *topApplication = [SBApp _accessibilityFrontMostApplication];
+    BOOL displayFlagsAllowed = YES;
+
+    // Ensure topApplication is properly launched and ready.
+    if (topApplication != nil) {
+        if ([topApplication displayFlag:0x3]) displayFlagsAllowed = NO;
+        if (![topApplication displayFlag:0x1]) displayFlagsAllowed = NO;
+    }
+
     return ![[objc_getClass("SBAwayController") sharedAwayController] isLocked]
         && ![[objc_getClass("SBUIController") sharedInstance] isSwitcherShowing]
         && ![[objc_getClass("SBBulletinListController") sharedInstanceIfExists] listViewIsActive]
         && [SBApp activeInterfaceOrientation] == UIInterfaceOrientationPortrait
+        && (topApplication == nil || displayFlagsAllowed)
         && [(NSNumber *) PreferencesGet(@"SwipeUpAction", [NSNumber numberWithInt:kSwipeUpActionSwitcher]) intValue] == kSwipeUpActionSwitcher;
 }
 
