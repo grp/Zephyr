@@ -12,7 +12,8 @@
 }
 
 - (void)handleGestureCanceled {
-    // XXX: implement this correctly
+    SBUIController *uic = [objc_getClass("SBUIController") sharedInstance];
+    [uic _switchAppGestureCancelled];
 }
 
 - (void)handleGestureBeganWithLocation:(CGFloat)location {
@@ -27,6 +28,7 @@
 
 - (void)handleGestureEndedWithLocation:(CGFloat)location velocity:(CGPoint)velocity completionType:(int)type {
     SBUIController *uic = [objc_getClass("SBUIController") sharedInstance];
+    NSLog(@"ENDED with completion type: %d for location %f", type, location);
     [uic _switchAppGestureEndedWithCompletionType:type cumulativePercentage:location];
 }
 
@@ -139,11 +141,22 @@
 
     if (type == 1) {
         [gestureView finishForwardToEndWithPercentage:percentage completion:completion];
-    } else if (type == 0) {
+    } else if (type == -1) {
         [gestureView finishBackwardToStartWithCompletion:completion];
     }
 
     [self updateSwitchAppGestureStatusBar];
+}
+
+- (void)_switchAppGestureCancelled {
+    SBSwitchAppGestureView *gestureView = MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView");
+
+    [self _switchAppGestureEndedWithCompletionType:-1 cumulativePercentage:0.0f];
+
+    if (gestureView != nil) {
+        [self _switchAppGestureViewAnimationComplete];
+        [self cleanupSwitchAppGestureViews];
+    }
 }
 
 - (void)_switchAppGestureViewAnimationComplete {

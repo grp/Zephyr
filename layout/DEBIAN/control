@@ -1,7 +1,7 @@
 Package: com.chpwn.swipeaway
 Name: NAMEME
 Section: Tweaks
-Version: 0.8.1
+Version: 0.9.5
 Pre-Depends: firmware (>= 5.0)
 Depends: mobilesubstrate, preferenceloader
 Conflicts: gsc.ipad
