@@ -1,3 +1,9 @@
+ - (1.0.1) disable gestures while keyboard is active (at least switcher gesture)
+ - (1.0.1) add multiple finger requirement settings (?)
+ - (1.0.1) fix issues with notification center
+   - switcher sliding up while notificaiotn center is active (while cancelling notificaiton ecneter)
+   - swithcing apps while in notification center = fail
+ - (1.1) sensitivity slider for all gesture
  - (1.1) fix bug with auto-canceled swipe gestures
  - (1.1) Quit an app by sliding it off.
 
