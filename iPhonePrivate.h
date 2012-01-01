@@ -196,7 +196,7 @@ typedef enum {
 - (void)touchesMoved:(SBGestureContextRef)moved;
 @end
 
-@interface SBFluidSwipeGestureRecognizer : SBGestureRecognizer
+@interface SBFluidSlideGestureRecognizer : SBGestureRecognizer
 @property(assign, nonatomic) int requiredDirectionality;
 @property(assign, nonatomic) float accelerationPower;
 @property(assign, nonatomic) float accelerationThreshold;
@@ -212,10 +212,10 @@ typedef enum {
 - (CGPoint)centroidPoint;
 @end
 
-@interface SBPanGestureRecognizer : SBFluidSwipeGestureRecognizer
+@interface SBPanGestureRecognizer : SBFluidSlideGestureRecognizer
 @end
 
-@interface SBOffscreenSwipeGestureRecognizer : SBPanGestureRecognizer
+@interface SBOffscreenSlideGestureRecognizer : SBPanGestureRecognizer
 @property(assign, nonatomic) float allowableDistanceFromEdgeCenter;
 @property(assign, nonatomic) float edgeCenter;
 @property(assign, nonatomic) float edgeMargin;

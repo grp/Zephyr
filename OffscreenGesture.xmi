@@ -1,5 +1,6 @@
 
 #import "OffscreenGesture.h"
+#import "Preferences.h"
 
 static NSMutableArray *allGestureRecognizers = nil;
 static NSMutableArray *allGestures = nil;
@@ -8,10 +9,20 @@ static NSMutableArray *allGestures = nil;
     // XXX: memory leak?
     allGestureRecognizers = [[NSMutableArray alloc] init];
     allGestures = [[NSMutableArray alloc] init];
+
+    PreferencesApplyActionRegister(^{
+        int touches = [(NSNumber *) PreferencesGet(@"MinimumTouchCount", [NSNumber numberWithInt:1]) intValue];
+
+        for (OffscreenGesture *gesture in allGestures) {
+            for (SBOffscreenSwipeGestureRecognizer *recognizer in [gesture gestureRecognizers]) {
+                [recognizer setMinTouches:touches];
+            }
+        }
+    });
 }
 
 @implementation OffscreenGesture
-@synthesize isActive;
+@synthesize isActive, gestureRecognizers;
 
 + (BOOL)isAnyGestureActive {
     BOOL isActive = NO;
@@ -38,10 +49,12 @@ static NSMutableArray *allGestures = nil;
     SBOffscreenSwipeGestureRecognizer *gestureRecognizer = [[objc_getClass("SBOffscreenSwipeGestureRecognizer") alloc] initForOffscreenEdge:edge];
     [gestureRecognizer setSendsTouchesCancelledToApplication:YES];
     [gestureRecognizer setAllowableDistanceFromEdgeCenter:160.0f];
-    [gestureRecognizer setMinTouches:1];
     [gestureRecognizer setEdgeCenter:160.0f];
     [gestureRecognizer setTypes:0x10];
     [gestureRecognizer setRequiresSecondTouchInRange:NO];
+
+    int touches = [(NSNumber *) PreferencesGet(@"MinimumTouchCount", [NSNumber numberWithInt:1]) intValue];
+    [gestureRecognizer setMinTouches:touches];
 
     [gestureRecognizer setHandler:^{
         CGFloat distance = [gestureRecognizer cumulativePercentage];
@@ -158,9 +171,20 @@ static NSMutableArray *allGestures = nil;
             if ([gu shouldReceiveTouches] && state <= 2) {
                 if (count > 0) {
                     if (state == 0) {
-                        // If state is "ready" and there are touches, start.
-                        [gu touchesBegan:gestureContext];
+                        BOOL numberOfTouchesIsValid = YES;
+                        if ([gu isKindOfClass:objc_getClass("SBFluidSlideGestureRecognizer")]) {
+                            SBFluidSlideGestureRecognizer *swipeRecognizer = (SBFluidSlideGestureRecognizer *) gu;
+                            numberOfTouchesIsValid = (count >= [swipeRecognizer minTouches]);
+                        }
+
+                        if (numberOfTouchesIsValid) {
+                            // If state is "ready" and there are enough touches, start.
+                            [gu touchesBegan:gestureContext];
+                        } else {
+                            [gu reset];
+                        }
                     } else {
+                        NSLog(@"moving touches: %d", count);
                         // If we've already started, then continue.
                         [gu touchesMoved:gestureContext];
                     }

@@ -21,7 +21,7 @@
 			<key>label</key>
 			<string>Swipes</string>
             <key>footerText</key>
-            <string>Zephyr © 2011 Xuzz Productions, LLC.
+            <string>Zephyr © 2012 Xuzz Productions, LLC.
 Support is available in Cydia.</string>
 		</dict>
 		<dict>
@@ -63,6 +63,36 @@ Support is available in Cydia.</string>
 			<string>com.chpwn.zephyr.preferences-changed</string>
 			<key>defaults</key>
 			<string>com.chpwn.zephyr</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSLinkListCell</string>
+			<key>default</key>
+			<integer>1</integer>
+			<key>detail</key>
+			<string>PSListItemsController</string>
+			<key>key</key>
+			<string>MinimumTouchCount</string>
+			<key>label</key>
+			<string>Number of Fingers</string>
+			<key>validTitles</key>
+			<array>
+				<string>One</string>
+				<string>Two</string>
+				<string>Three</string>
+				<string>Four</string>
+			</array>
+			<key>validValues</key>
+			<array>
+				<integer>1</integer>
+				<integer>2</integer>
+				<integer>3</integer>
+				<integer>4</integer>
+			</array>
+			<key>defaults</key>
+			<string>com.chpwn.zephyr</string>
+			<key>PostNotification</key>
+			<string>com.chpwn.zephyr.preferences-changed</string>
 		</dict>
 	</array>
 </dict>

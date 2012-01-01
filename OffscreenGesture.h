@@ -7,6 +7,7 @@
 }
 
 @property (nonatomic, readonly) BOOL isActive;
+@property (nonatomic, readonly) NSMutableArray *gestureRecognizers;
 
 - (void)addOffscreenEdge:(SBOffscreenEdge)edge;
 - (BOOL)shouldActivate;
