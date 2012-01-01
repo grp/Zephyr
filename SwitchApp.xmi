@@ -113,6 +113,7 @@
     [MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView") release];
 
     MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView") = [[objc_getClass("SBSwitchAppGestureView") alloc] initWithInterfaceOrientation:currentOrientation startingApp:topApplication leftwardApp:leftApplication rightwardApp:rightApplication];
+    MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView").contentScaleFactor = [UIScreen mainScreen].scale;
 
     [MSHookIvar<UIView *>(self, "_contentView") addSubview:MSHookIvar<id>(self, "_switchAppGestureView")];
     [MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView") beginPaging];
