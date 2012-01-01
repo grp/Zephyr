@@ -20,9 +20,6 @@
 			<string>PSGroupCell</string>
 			<key>label</key>
 			<string>Swipes</string>
-            <key>footerText</key>
-            <string>Zephyr © 2012 Xuzz Productions, LLC.
-Support is available in Cydia.</string>
 		</dict>
 		<dict>
 			<key>cell</key>
@@ -93,6 +90,43 @@ Support is available in Cydia.</string>
 			<string>com.chpwn.zephyr</string>
 			<key>PostNotification</key>
 			<string>com.chpwn.zephyr.preferences-changed</string>
+		</dict>
+        <dict>
+            <key>cell</key>
+            <string>PSGroupCell</string>
+            <key>label</key>
+            <string>Disable in Applications</string>
+            <key>footerText</key>
+            <string>Zephyr © 2012 Xuzz Productions, LLC.
+Support is available in Cydia.</string>
+        </dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<true/>
+			<key>key</key>
+			<string>DisableWordsWithFriends</string>
+			<key>label</key>
+			<string>Words with Friends</string>
+			<key>PostNotification</key>
+			<string>com.chpwn.zephyr.preferences-changed</string>
+			<key>defaults</key>
+			<string>com.chpwn.zephyr</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<true/>
+			<key>key</key>
+			<string>DisableCutTheRope</string>
+			<key>label</key>
+			<string>Cut the Rope</string>
+			<key>PostNotification</key>
+			<string>com.chpwn.zephyr.preferences-changed</string>
+			<key>defaults</key>
+			<string>com.chpwn.zephyr</string>
 		</dict>
 	</array>
 </dict>

@@ -100,6 +100,23 @@ static NSMutableArray *allGestures = nil;
 
     [gestureRecognizer setCanBeginCondition:^BOOL {
         BOOL should = [self shouldActivate];
+
+        NSString *topIdentifier = [[SBApp _accessibilityFrontMostApplication] displayIdentifier];
+
+        BOOL disableWordsWithFriends = [(NSNumber *) PreferencesGet(@"DisableWordsWithFriends", [NSNumber numberWithBool:YES]) boolValue];
+        if (disableWordsWithFriends) {
+            if ([topIdentifier isEqual:@"com.newtoyinc.WordsWithFriendsFree"]) return NO;
+            if ([topIdentifier isEqual:@"com.newtoyinc.WordsWithFriendsPaid"]) return NO;
+        }
+
+        BOOL disableCutTheRope = [(NSNumber *) PreferencesGet(@"DisableCutTheRope", [NSNumber numberWithBool:YES]) boolValue];
+        if (disableCutTheRope) {
+            if ([topIdentifier isEqual:@"com.chillingo.cuttheropelite"]) return NO;
+            if ([topIdentifier isEqual:@"com.zeptolab.ctrexperiments"]) return NO;
+            if ([topIdentifier isEqual:@"com.chillingo.cuttheropexmas"]) return NO;
+            if ([topIdentifier isEqual:@"com.chillingo.cuttherope"]) return NO;
+        }
+
         return should;
     }];
 
