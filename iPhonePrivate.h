@@ -71,6 +71,17 @@ static SpringBoard *SBApp = nil;
 - (void)hideListViewAnimated:(BOOL)animated;
 @end
 
+@interface SBBulletinWindowController : NSObject
+@property(readonly, assign, nonatomic) UIWindow *window;
+@property(readonly, assign, nonatomic) UIInterfaceOrientation windowOrientation;
++ (id)sharedInstance;
+- (BOOL)allowsDismissBannerGesture;
+- (BOOL)allowsHideNotificationsGesture;
+- (BOOL)allowsShowNotificationsGesture;
+- (BOOL)isBusy;
+@end
+
+
 @interface SBSwitchAppGestureView : UIView
 @property(assign, nonatomic) float percentage;
 @property(retain, nonatomic) SBApplication *endingApp;

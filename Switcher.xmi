@@ -33,6 +33,7 @@ static CGFloat HeightFromScreenPercentage(CGFloat percentage) {
     return ![[objc_getClass("SBAwayController") sharedAwayController] isLocked]
         && ![[objc_getClass("SBUIController") sharedInstance] isSwitcherShowing]
         && ![[objc_getClass("SBBulletinListController") sharedInstanceIfExists] listViewIsActive]
+        && ![[objc_getClass("SBBulletinWindowController") sharedInstance] isBusy]
         && [SBApp activeInterfaceOrientation] == UIInterfaceOrientationPortrait
         && (topApplication == nil || displayFlagsAllowed)
         && [(NSNumber *) PreferencesGet(@"SwipeUpAction", [NSNumber numberWithInt:kSwipeUpActionSwitcher]) intValue] == kSwipeUpActionSwitcher;
