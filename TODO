@@ -2,7 +2,6 @@
  - (1.0.1) fix issues with notification center
    - switcher sliding up while notificaiotn center is active (while cancelling notificaiton ecneter)
  - (1.0.1) disable switcher gesture in words with friends (option, enabled by default) (?)
- - (1.0.1) animate switcher gesture on start, don't jump
  - (1.0.1) swipe to switch apps even if app hasn't fully loaded
  - (1.0.5) some gesture to quit app
    - pinch to quit app

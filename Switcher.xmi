@@ -88,6 +88,18 @@ static CGFloat HeightFromScreenPercentage(CGFloat percentage) {
     [rootView addSubview:switcherView];
     [rootView addSubview:wrapperView];
     [rootView addSubview:shadowView];
+
+    [UIView animateWithDuration:0.08f animations:^{
+        CGFloat loc = HeightFromScreenPercentage(location);
+
+        CGRect wrapperFrame = [wrapperView frame];
+        wrapperFrame.origin.y = loc;
+        [wrapperView setFrame:wrapperFrame];
+
+        CGRect shadowFrame = [shadowView frame];
+        shadowFrame.origin.y = wrapperFrame.size.height + loc;
+        [shadowView setFrame:shadowFrame];
+    }];
 }
 
 - (void)handleGestureChangedWithLocation:(CGFloat)location velocity:(CGPoint)velocity {
