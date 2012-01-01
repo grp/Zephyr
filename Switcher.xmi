@@ -94,7 +94,12 @@ static CGFloat HeightFromScreenPercentage(CGFloat percentage) {
     location = HeightFromScreenPercentage(location);
 
     CGFloat bottomBarHeight = [[objc_getClass("SBAppSwitcherController") sharedInstance] bottomBarHeight];
+
+    // constrain to top of switcher
     if (-location > bottomBarHeight) location = -bottomBarHeight;
+
+    // constrain to not going way off the screen
+    if (location > 16.0f) location = 16.0f;
 
     CGRect wrapperFrame = [wrapperView frame];
     wrapperFrame.origin.y = location;

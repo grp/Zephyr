@@ -5,7 +5,6 @@
  - (1.0.1) disable switcher gesture in words with friends (option, enabled by default) (?)
  - (1.0.1) animate switcher gesture on start, don't jump
  - (1.0.1) swipe to switch apps even if app hasn't fully loaded
- - (1.0.1) switcher gesture breaks when you use another finger to swipe down after swiping up
  - (1.0.5) some gesture to quit app
    - pinch to quit app
    - Quit an app by sliding it off.
