@@ -1,0 +1,17 @@
+
+## 1.0.5
+ - Select which apps to disable Zephyr in. (thanks @rpetrich!)
+ - Move all preferences to be per-gesture, rather than global.
+
+## 1.0.1
+ - Option to require more than one finger to use a gesture.
+ - Option to disable when keyboard is showing.
+ - Option to disable in Cut the Rope, Words with Friends.
+ - (Remember, it's disabled in landscape so most games (Fruit Ninja, Flight Control, etc) already work great!)
+ - Fix visual issues with app switcher swipe gesture.
+ - Fix various bugs with Notification Center.
+ - Fix low-res bounce rendering. (thanks @rpetrich!)
+
+
+## 1.0
+ - Initial release.

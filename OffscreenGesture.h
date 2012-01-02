@@ -9,7 +9,7 @@
 @property (nonatomic, readonly) BOOL isActive;
 @property (nonatomic, readonly) NSMutableArray *gestureRecognizers;
 
-- (void)addOffscreenEdge:(SBOffscreenEdge)edge;
+- (void)addOffscreenEdge:(SBOffscreenEdge)edge minimumTouchCount:(int)count;
 - (BOOL)shouldActivate;
 
 - (void)handleGestureBeganWithLocation:(CGFloat)location;

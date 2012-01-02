@@ -226,7 +226,7 @@ typedef enum {
 @interface SBPanGestureRecognizer : SBFluidSlideGestureRecognizer
 @end
 
-@interface SBOffscreenSlideGestureRecognizer : SBPanGestureRecognizer
+@interface SBOffscreenSwipeGestureRecognizer : SBPanGestureRecognizer
 @property(assign, nonatomic) float allowableDistanceFromEdgeCenter;
 @property(assign, nonatomic) float edgeCenter;
 @property(assign, nonatomic) float edgeMargin;

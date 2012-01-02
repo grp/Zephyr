@@ -19,33 +19,7 @@
 			<key>cell</key>
 			<string>PSGroupCell</string>
 			<key>label</key>
-			<string>Swipes</string>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSLinkListCell</string>
-			<key>default</key>
-			<integer>1</integer>
-			<key>detail</key>
-			<string>PSListItemsController</string>
-			<key>key</key>
-			<string>SwipeUpAction</string>
-			<key>label</key>
-			<string>Up from Bottom</string>
-			<key>validTitles</key>
-			<array>
-				<string>Disabled</string>
-				<string>Switcher</string>
-			</array>
-			<key>validValues</key>
-			<array>
-				<integer>0</integer>
-				<integer>1</integer>
-			</array>
-			<key>defaults</key>
-			<string>com.chpwn.zephyr</string>
-			<key>PostNotification</key>
-			<string>com.chpwn.zephyr.preferences-changed</string>
+			<string>Swipe from Left and Right</string>
 		</dict>
 		<dict>
 			<key>cell</key>
@@ -55,7 +29,7 @@
 			<key>key</key>
 			<string>SwipeSideEnabled</string>
 			<key>label</key>
-			<string>Left or Right Edges</string>
+			<string>Enabled</string>
 			<key>PostNotification</key>
 			<string>com.chpwn.zephyr.preferences-changed</string>
 			<key>defaults</key>
@@ -69,7 +43,7 @@
 			<key>detail</key>
 			<string>PSListItemsController</string>
 			<key>key</key>
-			<string>MinimumTouchCount</string>
+			<string>SideMinimumTouchCount</string>
 			<key>label</key>
 			<string>Number of Fingers</string>
 			<key>validTitles</key>
@@ -97,7 +71,7 @@
 			<key>default</key>
 			<true/>
 			<key>key</key>
-			<string>DisableKeyboard</string>
+			<string>SideDisableKeyboard</string>
 			<key>label</key>
 			<string>Keyboard Disables</string>
 			<key>PostNotification</key>
@@ -105,13 +79,6 @@
 			<key>defaults</key>
 			<string>com.chpwn.zephyr</string>
 		</dict>
-        <dict>
-            <key>cell</key>
-            <string>PSGroupCell</string>
-            <key>footerText</key>
-            <string>Zephyr © 2012 Xuzz Productions, LLC.
-Support is available in Cydia.</string>
-        </dict>
 		<dict>
 			<key>cell</key>
 			<string>PSLinkCell</string>
@@ -124,10 +91,110 @@ Support is available in Cydia.</string>
 			<key>ALSettingsPath</key>
 			<string>/var/mobile/Library/Preferences/com.chpwn.zephyr.plist</string>
 			<key>ALSettingsKeyPrefix</key>
-			<string>Disable-</string>
+			<string>SideDisable-</string>
 			<key>ALChangeNotification</key>
 			<string>com.chpwn.zephyr.preferences-changed</string>
 		</dict>
+
+        <dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Swipe up from Bottom</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSLinkListCell</string>
+			<key>default</key>
+			<integer>1</integer>
+			<key>detail</key>
+			<string>PSListItemsController</string>
+			<key>key</key>
+			<string>SwipeUpAction</string>
+			<key>label</key>
+			<string>Action</string>
+			<key>validTitles</key>
+			<array>
+				<string>Disabled</string>
+				<string>Switcher</string>
+			</array>
+			<key>validValues</key>
+			<array>
+				<integer>0</integer>
+				<integer>1</integer>
+			</array>
+			<key>defaults</key>
+			<string>com.chpwn.zephyr</string>
+			<key>PostNotification</key>
+			<string>com.chpwn.zephyr.preferences-changed</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSLinkListCell</string>
+			<key>default</key>
+			<integer>1</integer>
+			<key>detail</key>
+			<string>PSListItemsController</string>
+			<key>key</key>
+			<string>BottomMinimumTouchCount</string>
+			<key>label</key>
+			<string>Number of Fingers</string>
+			<key>validTitles</key>
+			<array>
+				<string>One</string>
+				<string>Two</string>
+				<string>Three</string>
+				<string>Four</string>
+			</array>
+			<key>validValues</key>
+			<array>
+				<integer>1</integer>
+				<integer>2</integer>
+				<integer>3</integer>
+				<integer>4</integer>
+			</array>
+			<key>defaults</key>
+			<string>com.chpwn.zephyr</string>
+			<key>PostNotification</key>
+			<string>com.chpwn.zephyr.preferences-changed</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<true/>
+			<key>key</key>
+			<string>BottomDisableKeyboard</string>
+			<key>label</key>
+			<string>Keyboard Disables</string>
+			<key>PostNotification</key>
+			<string>com.chpwn.zephyr.preferences-changed</string>
+			<key>defaults</key>
+			<string>com.chpwn.zephyr</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSLinkCell</string>
+			<key>bundle</key>
+			<string>AppList</string>
+			<key>isController</key>
+			<true/>
+			<key>label</key>
+			<string>Disable in Applications</string>
+			<key>ALSettingsPath</key>
+			<string>/var/mobile/Library/Preferences/com.chpwn.zephyr.plist</string>
+			<key>ALSettingsKeyPrefix</key>
+			<string>BottomDisable-</string>
+			<key>ALChangeNotification</key>
+			<string>com.chpwn.zephyr.preferences-changed</string>
+		</dict>
+        <dict>
+            <key>cell</key>
+            <string>PSGroupCell</string>
+            <key>footerText</key>
+            <string>Zephyr © 2012 Xuzz Productions, LLC.
+Support is available in Cydia.</string>
+        </dict>
 	</array>
 </dict>
 </plist>

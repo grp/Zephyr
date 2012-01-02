@@ -1,6 +1,7 @@
 
 #import "Switcher.h"
 #import "Preferences.h"
+#import "Keyboard.h"
 
 static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat duration) {
     id uic = [objc_getClass("SBUIController") sharedInstance];
@@ -29,6 +30,15 @@ static CGFloat HeightFromScreenPercentage(CGFloat percentage) {
         if ([topApplication displayFlag:0x3]) displayFlagsAllowed = NO;
         if (![topApplication displayFlag:0x1]) displayFlagsAllowed = NO;
     }
+
+    BOOL disableKeyboard = [(NSNumber *) PreferencesGet(@"BottomDisableKeyboard", PreferencesGet(@"DisableKeyboard", [NSNumber numberWithBool:YES])) boolValue];
+    if (disableKeyboard) {
+        if (KeyboardIsActive()) return NO;
+    }
+
+    NSString *topIdentifier = [[SBApp _accessibilityFrontMostApplication] displayIdentifier];
+    BOOL disableIdentifier = [(NSNumber *) PreferencesGet([NSString stringWithFormat:@"BottomDisable-%@", topIdentifier], (id)kCFBooleanFalse) boolValue];
+    if (disableIdentifier) return NO;
 
     return ![[objc_getClass("SBAwayController") sharedAwayController] isLocked]
         && ![[objc_getClass("SBUIController") sharedInstance] isSwitcherShowing]
@@ -205,8 +215,19 @@ static CGFloat HeightFromScreenPercentage(CGFloat percentage) {
 - (void)finishLaunching {
     %orig;
 
+    int touches = [(NSNumber *) PreferencesGet(@"BottomMinimumTouchCount", PreferencesGet(@"MinimumTouchCount", [NSNumber numberWithInt:1])) intValue];
+
     SwitcherGesture *gesture = [[SwitcherGesture alloc] init];
-    [gesture addOffscreenEdge:kSBOffscreenEdgeBottom];
+    [gesture addOffscreenEdge:kSBOffscreenEdgeBottom minimumTouchCount:touches];
+
+    PreferencesApplyActionRegister(^{
+        int touches = [(NSNumber *) PreferencesGet(@"BottomMinimumTouchCount", PreferencesGet(@"MinimumTouchCount", [NSNumber numberWithInt:1])) intValue];
+        NSLog(@"bottom applying: %d for %@", touches, gesture);
+
+        for (SBOffscreenSwipeGestureRecognizer *recognizer in [gesture gestureRecognizers]) {
+            [recognizer setMinTouches:touches];
+        }
+    });
 }
 
 %end

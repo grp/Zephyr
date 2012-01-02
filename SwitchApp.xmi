@@ -1,10 +1,20 @@
 
 #import "SwitchApp.h"
 #import "Preferences.h"
+#import "Keyboard.h"
 
 @implementation SwitchAppGesture
 
 - (BOOL)shouldActivate {
+    BOOL disableKeyboard = [(NSNumber *) PreferencesGet(@"SideDisableKeyboard", PreferencesGet(@"DisableKeyboard", [NSNumber numberWithBool:YES])) boolValue];
+    if (disableKeyboard) {
+        if (KeyboardIsActive()) return NO;
+    }
+
+    NSString *topIdentifier = [[SBApp _accessibilityFrontMostApplication] displayIdentifier];
+    BOOL disableIdentifier = [(NSNumber *) PreferencesGet([NSString stringWithFormat:@"SideDisable-%@", topIdentifier], (id)kCFBooleanFalse) boolValue];
+    if (disableIdentifier) return NO;
+
     return [SBApp _accessibilityFrontMostApplication] != nil
         && [SBApp activeInterfaceOrientation] == UIInterfaceOrientationPortrait
         && ![[objc_getClass("SBUIController") sharedInstance] isSwitcherShowing]
@@ -262,9 +272,20 @@
 - (void)finishLaunching {
     %orig;
 
+    int touches = [(NSNumber *) PreferencesGet(@"SideMinimumTouchCount", PreferencesGet(@"MinimumTouchCount", [NSNumber numberWithInt:1])) intValue];
+
     SwitchAppGesture *gesture = [[SwitchAppGesture alloc] init];
-    [gesture addOffscreenEdge:kSBOffscreenEdgeRight];
-    [gesture addOffscreenEdge:kSBOffscreenEdgeLeft];
+    [gesture addOffscreenEdge:kSBOffscreenEdgeRight minimumTouchCount:touches];
+    [gesture addOffscreenEdge:kSBOffscreenEdgeLeft minimumTouchCount:touches];
+
+    PreferencesApplyActionRegister(^{
+        int touches = [(NSNumber *) PreferencesGet(@"SideMinimumTouchCount", PreferencesGet(@"MinimumTouchCount", [NSNumber numberWithInt:1])) intValue];
+
+        NSLog(@"side applying: %d for %@", touches, gesture);
+        for (SBOffscreenSwipeGestureRecognizer *recognizer in [gesture gestureRecognizers]) {
+            [recognizer setMinTouches:touches];
+        }
+    });
 }
 
 %end
@@ -273,5 +294,6 @@
 
 %ctor {
     %init(SwitchApp);
+
 }
 
