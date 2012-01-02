@@ -7,8 +7,6 @@ static NSDictionary *preferences = nil;
 static NSMutableSet *applyActions = nil;
 
 static void PreferencesApply() {
-    NSLog(@"applying preferences: %@", applyActions);
-
     for (PreferencesApplyAction action in applyActions) {
         action();
     }
@@ -16,7 +14,6 @@ static void PreferencesApply() {
 
 void PreferencesApplyActionRegister(PreferencesApplyAction block) {
     [applyActions addObject:[block copy]];
-    NSLog(@"apply actions: %@", applyActions);
 }
 
 static void PreferencesLoad() {
@@ -41,15 +38,12 @@ void PreferencesSet(NSString *key, id value) {
 }
 
 static void PreferencesChangedCallback(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef userInfo) {
-    NSLog(@"preferences changed callback: %@", name);
     PreferencesLoad();
-    NSLog(@"preferences changed! %@", applyActions);
     PreferencesApply();
 }
 
 %ctor {
     applyActions = [[NSMutableSet alloc] init];
-    NSLog(@"apply actions: %@", applyActions);
 
     PreferencesLoad();
 

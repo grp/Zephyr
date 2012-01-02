@@ -281,7 +281,6 @@
     PreferencesApplyActionRegister(^{
         int touches = [(NSNumber *) PreferencesGet(@"SideMinimumTouchCount", PreferencesGet(@"MinimumTouchCount", [NSNumber numberWithInt:1])) intValue];
 
-        NSLog(@"side applying: %d for %@", touches, gesture);
         for (SBOffscreenSwipeGestureRecognizer *recognizer in [gesture gestureRecognizers]) {
             [recognizer setMinTouches:touches];
         }
