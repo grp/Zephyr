@@ -4,6 +4,7 @@
 #import "Keyboard.h"
 
 static NSMutableSet *applicationsWithActiveKeyboard = nil;
+static BOOL springboardKeyboardActive = NO;
 
 %ctor {
     // XXX: is this a memory leak?
@@ -13,7 +14,11 @@ static NSMutableSet *applicationsWithActiveKeyboard = nil;
 BOOL KeyboardIsActive() {
     NSString *displayIdentifier = [[SBApp _accessibilityFrontMostApplication] displayIdentifier];
 
-    return [applicationsWithActiveKeyboard containsObject:displayIdentifier];
+    if (displayIdentifier != nil) {
+        return [applicationsWithActiveKeyboard containsObject:displayIdentifier];
+    } else {
+        return springboardKeyboardActive;
+    }
 }
 
 @interface KeyboardServer : NSObject {
@@ -53,6 +58,14 @@ BOOL KeyboardIsActive() {
     return nil;
 }
 
+- (void)springboardKeyboardActivated {
+    springboardKeyboardActive = YES;
+}
+
+- (void)springboardKeyboardDeactivated {
+    springboardKeyboardActive = NO;
+}
+
 @end
 
 %group Keyboard
@@ -75,6 +88,8 @@ BOOL KeyboardIsActive() {
 
     // XXX: is this a memory leak?
     static KeyboardServer *server = [[KeyboardServer alloc] init];
+    [[NSNotificationCenter defaultCenter] addObserver:server selector:@selector(springboardKeyboardActivated) name:UIKeyboardWillShowNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:server selector:@selector(springboardKeyboardDeactivated) name:UIKeyboardWillHideNotification object:nil];
     [server startServer];
 }
 

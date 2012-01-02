@@ -13,12 +13,16 @@
 - (void)sendKeyboardMessage:(NSString *)message {
     CPDistributedMessagingCenter *messagingCenter = [CPDistributedMessagingCenter centerNamed:@"com.chpwn.zephyr.keyboard"];
 
-    NSDictionary *userInfo = [NSDictionary
-        dictionaryWithObject:[[UIApplication sharedApplication] performSelector:@selector(displayIdentifier)]
-        forKey:@"displayIdentifier"
-    ];
+    NSString *displayIdentifier = [[UIApplication sharedApplication] performSelector:@selector(displayIdentifier)];
 
-    [messagingCenter sendMessageName:message userInfo:userInfo];
+    if (displayIdentifier != nil) {
+        NSDictionary *userInfo = [NSDictionary
+            dictionaryWithObject:displayIdentifier
+            forKey:@"displayIdentifier"
+        ];
+
+        [messagingCenter sendMessageName:message userInfo:userInfo];
+    }
 }
 
 - (void)keyboardActivated {
