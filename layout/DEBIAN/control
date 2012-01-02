@@ -3,7 +3,7 @@ Name: Zephyr
 Section: Tweaks
 Version: 1.0
 Pre-Depends: firmware (>= 5.0)
-Depends: mobilesubstrate, preferenceloader
+Depends: mobilesubstrate, preferenceloader, applist
 Conflicts: gsc.ipad, com.dapetcu21.MultiCleaner, com.xsellize.multicleaner
 Icon: file:///Library/PreferenceLoader/Preferences/Zephyr@2x.png
 Architecture: iphoneos-arm
