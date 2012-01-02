@@ -91,6 +91,20 @@
 			<key>PostNotification</key>
 			<string>com.chpwn.zephyr.preferences-changed</string>
 		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<true/>
+			<key>key</key>
+			<string>DisableKeyboard</string>
+			<key>label</key>
+			<string>Keyboard Disables</string>
+			<key>PostNotification</key>
+			<string>com.chpwn.zephyr.preferences-changed</string>
+			<key>defaults</key>
+			<string>com.chpwn.zephyr</string>
+		</dict>
         <dict>
             <key>cell</key>
             <string>PSGroupCell</string>

@@ -1,6 +1,7 @@
 
 #import "OffscreenGesture.h"
 #import "Preferences.h"
+#import "Keyboard.h"
 
 static NSMutableArray *allGestureRecognizers = nil;
 static NSMutableArray *allGestures = nil;
@@ -100,6 +101,12 @@ static NSMutableArray *allGestures = nil;
 
     [gestureRecognizer setCanBeginCondition:^BOOL {
         BOOL should = [self shouldActivate];
+        if (!should) return NO;
+
+        BOOL disableKeyboard = [(NSNumber *) PreferencesGet(@"DisableKeyboard", [NSNumber numberWithBool:YES]) boolValue];
+        if (disableKeyboard) {
+            if (KeyboardIsActive()) return NO;
+        }
 
         NSString *topIdentifier = [[SBApp _accessibilityFrontMostApplication] displayIdentifier];
 
@@ -117,7 +124,7 @@ static NSMutableArray *allGestures = nil;
             if ([topIdentifier isEqual:@"com.chillingo.cuttherope"]) return NO;
         }
 
-        return should;
+        return YES;
     }];
 
     [gestureRecognizers addObject:gestureRecognizer];
@@ -201,7 +208,6 @@ static NSMutableArray *allGestures = nil;
                             [gu reset];
                         }
                     } else {
-                        NSLog(@"moving touches: %d", count);
                         // If we've already started, then continue.
                         [gu touchesMoved:gestureContext];
                     }

@@ -1,0 +1,41 @@
+
+#import <UIKit/UIKit.h>
+#import "CPDistributedMessagingCenter.h"
+
+@interface _KeyboardProxy : NSObject {
+
+}
+
+@end
+
+@implementation _KeyboardProxy
+
+- (void)sendKeyboardMessage:(NSString *)message {
+    CPDistributedMessagingCenter *messagingCenter = [CPDistributedMessagingCenter centerNamed:@"com.chpwn.zephyr.keyboard"];
+
+    NSDictionary *userInfo = [NSDictionary
+        dictionaryWithObject:[[UIApplication sharedApplication] performSelector:@selector(displayIdentifier)]
+        forKey:@"displayIdentifier"
+    ];
+
+    [messagingCenter sendMessageName:message userInfo:userInfo];
+}
+
+- (void)keyboardActivated {
+    [self sendKeyboardMessage:@"keyboardActivated"];
+}
+
+- (void)keyboardDeactivated {
+    [self sendKeyboardMessage:@"keyboardDeactivated"];
+}
+
+@end
+
+%ctor {
+    // XXX: is this a memory leak?
+    static _KeyboardProxy *proxy = [[_KeyboardProxy alloc] init];
+    [[NSNotificationCenter defaultCenter] addObserver:proxy selector:@selector(keyboardActivated) name:UIKeyboardWillShowNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:proxy selector:@selector(keyboardDeactivated) name:UIKeyboardWillHideNotification object:nil];
+}
+
+

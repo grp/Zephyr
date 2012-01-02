@@ -1,4 +1,3 @@
- - (1.0.1) disable gestures while keyboard is active
  - (1.0.5) some gesture to quit app
    - pinch to quit app
    - Quit an app by sliding it off.
