@@ -1,5 +1,5 @@
 
-## 1.0.5
+## 1.0.2
  - Select which apps to disable Zephyr in. (thanks @rpetrich!)
  - Move all preferences to be per-gesture, rather than global.
 
