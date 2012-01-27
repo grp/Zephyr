@@ -3,6 +3,7 @@
 
 typedef enum {
     kSwipeUpActionDisabled,
+    kSwipeUpActionCloseApp,
     kSwipeUpActionSwitcher
 } SwipeUpAction;
 
@@ -11,6 +12,7 @@ typedef enum {
     UIView *wrapperView;
     UIView *switcherView;
     UIImageView *shadowView;
+    NSMutableSet *pendingSwitcherActivations;
 }
 
 @end

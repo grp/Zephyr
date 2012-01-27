@@ -36,6 +36,10 @@ static NSMutableArray *allGestures = nil;
     return self;
 }
 
+- (void)cancelGesture {
+    isActive = NO;
+}
+
 - (void)addOffscreenEdge:(SBOffscreenEdge)edge minimumTouchCount:(int)touchCount {
     SBOffscreenSwipeGestureRecognizer *gestureRecognizer = [[objc_getClass("SBOffscreenSwipeGestureRecognizer") alloc] initForOffscreenEdge:edge];
     [gestureRecognizer setSendsTouchesCancelledToApplication:YES];

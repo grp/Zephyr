@@ -1,10 +1,9 @@
- - (1.0.5) some gesture to quit app
-   - pinch to quit app
-   - Quit an app by sliding it off.
  - (1.1) swipe to switch apps even if app hasn't fully loaded
- - (1.1) swipe down switcher w/ smooth finger tracking
- - (1.1) fix bug with auto-canceled swipe gestures
- - (1.2) sensitivity slider for all gesture
- - (1.2) bounce when pulling up switcher
- - (2.0) rotate gesture to switch to landscape (?)
+ - (1.1) disable gestures when already tracking another touch
+ - (1.1) fix issues with Siri
+ - (1.2) swipe down switcher w/ smooth finger tracking
+ - (1.2) rotate gesture to switch to landscape (?)
+ - (1.2.5) bounce when pulling up switcher
+ - (X) sensitivity slider for all gesture
+ - (X) fix bug with auto-canceled swipe gestures
 

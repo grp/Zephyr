@@ -16,6 +16,7 @@
 - (void)handleGestureChangedWithLocation:(CGFloat)location velocity:(CGPoint)velocity;
 - (void)handleGestureEndedWithLocation:(CGFloat)location velocity:(CGPoint)velocity completionType:(int)type;
 - (void)handleGestureCanceled;
+- (void)cancelGesture;
 
 @end
 

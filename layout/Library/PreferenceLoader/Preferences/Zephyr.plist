@@ -116,12 +116,14 @@
 			<key>validTitles</key>
 			<array>
 				<string>Disabled</string>
-				<string>Switcher</string>
+				<string>Close App (and Switcher)</string>
+				<string>Switcher (only)</string>
 			</array>
 			<key>validValues</key>
 			<array>
 				<integer>0</integer>
 				<integer>1</integer>
+				<integer>2</integer>
 			</array>
 			<key>defaults</key>
 			<string>com.chpwn.zephyr</string>
