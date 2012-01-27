@@ -1,6 +1,5 @@
  - (1.1) swipe to switch apps even if app hasn't fully loaded
  - (1.1) disable gestures when already tracking another touch
- - (1.1) fix issues with Siri
  - (1.2) swipe down switcher w/ smooth finger tracking
  - (1.2) rotate gesture to switch to landscape (?)
  - (1.2.5) bounce when pulling up switcher

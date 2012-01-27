@@ -18,6 +18,7 @@
     return [SBApp _accessibilityFrontMostApplication] != nil
         && [SBApp activeInterfaceOrientation] == UIInterfaceOrientationPortrait
         && ![[objc_getClass("SBUIController") sharedInstance] isSwitcherShowing]
+        && ![[objc_getClass("SBAssistantController") sharedInstance] isAssistantVisible]
         && ![[objc_getClass("SBBulletinListController") sharedInstanceIfExists] listViewIsActive]
         && [(NSNumber *) PreferencesGet(@"SwipeSideEnabled", [NSNumber numberWithBool:YES]) boolValue];
 }
