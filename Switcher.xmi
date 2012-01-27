@@ -7,7 +7,7 @@
 static BOOL disableUnscatterFlag = NO;
 
 static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat duration) {
-    id uic = [objc_getClass("SBUIController") sharedInstance];
+    SBUIController *uic = [objc_getClass("SBUIController") sharedInstance];
 
     id zeroContext = [uic _showcaseContextForOffset:from];
     id barContext = [uic _showcaseContextForOffset:to];
@@ -15,10 +15,7 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
     [zeroContext setShowcaseOrientation:UIInterfaceOrientationPortrait];
     [barContext setShowcaseOrientation:UIInterfaceOrientationPortrait];
 
-    //[uic _activateSwitcherFrom:zeroContext to:barContext duration:duration];
-
-    // This implements most of _activateSwitcherFrom:..., but isn't needed.
-    id switcher = [objc_getClass("SBAppSwitcherController") sharedInstance];
+    SBAppSwitcherController *switcher = [objc_getClass("SBAppSwitcherController") sharedInstance];
 
     SBApplication *app = [SBApp _accessibilityFrontMostApplication];
     [switcher setupForApp:app orientation:UIInterfaceOrientationPortrait];

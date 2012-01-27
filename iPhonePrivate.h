@@ -10,6 +10,8 @@
 @interface SpringBoard : UIApplication
 - (UIInterfaceOrientation)activeInterfaceOrientation;
 - (SBApplication *)_accessibilityFrontMostApplication;
+- (void)showSpringBoardStatusBar;
+- (void)hideSpringBoardStatusBar;
 - (void)noteInterfaceOrientationChanged:(UIInterfaceOrientation)orientation;
 @end
 
@@ -37,6 +39,7 @@ static SpringBoard *SBApp = nil;
 @end
 
 @interface SBApplication : SBDisplay
++ (BOOL)multitaskingIsSupported;
 - (NSString *)displayIdentifier;
 - (SBProcess *)process;
 - (void)disableContextHostingForRequester:(CFStringRef)requester;
@@ -56,9 +59,18 @@ static SpringBoard *SBApp = nil;
 - (SBApplication *)applicationWithDisplayIdentifier:(NSString *)displayIdentifier;
 @end
 
-@interface SBAppSwitcherController : NSObject
+@interface SBShowcaseViewController : NSObject
+@end
+
+@interface SBAppSwitcherController : SBShowcaseViewController
 + (id)sharedInstance;
+- (BOOL)printViewIsShowing;
 - (void)setupForApp:(id)app orientation:(UIInterfaceOrientation)orientation;
+@end
+
+@interface SBAssistantController : SBShowcaseViewController
++ (id)sharedInstance;
+- (BOOL)isAssistantVisible;
 @end
 
 @interface SBShowcaseContext : NSObject
@@ -113,6 +125,10 @@ typedef enum {
 
 @interface SBUIController : NSObject
 + (id)sharedInstance;
+- (void)_revealShowcase:(SBShowcaseViewController *)showcase duration:(NSTimeInterval)duration from:(SBShowcaseContext *)from to:(SBShowcaseContext *)to;
+- (void)restoreIconListAnimated:(BOOL)animated animateWallpaper:(BOOL)animateWallpaper keepSwitcher:(BOOL)keepSwitcher;
+- (void)stopRestoringIconList;
+- (void)tearDownIconListAndBar;
 - (void)_switchAppGestureBegan;
 - (void)_switchAppGestureCancelled;
 - (void)_switchAppGestureChanged:(float)changed;
