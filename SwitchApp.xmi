@@ -12,7 +12,7 @@
     }
 
     NSString *topIdentifier = [[SBApp _accessibilityFrontMostApplication] displayIdentifier];
-    BOOL disableIdentifier = [(NSNumber *) PreferencesGet([NSString stringWithFormat:@"SideDisable-%@", topIdentifier], (id)kCFBooleanFalse) boolValue];
+    BOOL disableIdentifier = [(NSNumber *) PreferencesGet([NSString stringWithFormat:@"SideDisable-%@", topIdentifier], (NSNumber *) kCFBooleanFalse) boolValue];
     if (disableIdentifier) return NO;
 
     return [SBApp _accessibilityFrontMostApplication] != nil
@@ -82,7 +82,7 @@
 
     if ([filteredList count] == 0 || topApplicationIndex == NSNotFound) return;
 
-    id bulletinListController = [objc_getClass("SBBulletinListController") sharedInstanceIfExists];
+    SBBulletinListController *bulletinListController = [objc_getClass("SBBulletinListController") sharedInstanceIfExists];
     if ([bulletinListController listViewIsActive]) {
         [bulletinListController hideListViewAnimated:YES];
     }
@@ -114,7 +114,7 @@
 
     [self showSystemGestureBackdrop];
 
-    id applicationController = [objc_getClass("SBApplicationController") sharedInstance];
+    SBApplicationController *applicationController = [objc_getClass("SBApplicationController") sharedInstance];
     SBApplication *leftApplication = [applicationController applicationWithDisplayIdentifier:[filteredList objectAtIndex:0]];
     SBApplication *rightApplication = [applicationController applicationWithDisplayIdentifier:[filteredList lastObject]];
 
@@ -127,7 +127,7 @@
     MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView") = [[objc_getClass("SBSwitchAppGestureView") alloc] initWithInterfaceOrientation:currentOrientation startingApp:topApplication leftwardApp:leftApplication rightwardApp:rightApplication];
     MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView").contentScaleFactor = [UIScreen mainScreen].scale;
 
-    [MSHookIvar<UIView *>(self, "_contentView") addSubview:MSHookIvar<id>(self, "_switchAppGestureView")];
+    [MSHookIvar<UIView *>(self, "_contentView") addSubview:MSHookIvar<UIView *>(self, "_switchAppGestureView")];
     [MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView") beginPaging];
 
     [self prepareSwitchAppGestureStatusBar];
@@ -147,7 +147,7 @@
 - (void)_switchAppGestureEndedWithCompletionType:(int)type cumulativePercentage:(float)percentage {
     SBSwitchAppGestureView *gestureView = MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView");
 
-    id completion = ^{
+    void (^completion)() = ^{
         [self _switchAppGestureViewAnimationComplete];
     };
 
@@ -207,7 +207,7 @@
         }
     }
 
-    id applicationController = [objc_getClass("SBApplicationController") sharedInstance];
+    SBApplicationController *applicationController = [objc_getClass("SBApplicationController") sharedInstance];
     for (NSString *displayIdentifier in MSHookIvar<NSArray *>(self, "_switchAppFilteredList")) {
         SBApplication *application = [applicationController applicationWithDisplayIdentifier:displayIdentifier];
 
@@ -247,9 +247,9 @@
     if (shouldShowSwitcherAgain && MSHookIvar<BOOL>(self, "_switcherVisibleWhenSwitchAppGestureStarted")) {
         // show switcher again if it was hidden for the gesture to start
 
-        //id appSwitcherController = [objc_getClass("SBAppSwitcherController") sharedInstance];
-        id zeroContext = [self _showcaseContextForOffset:0];
-        id barContext = [self _showcaseContextForOffset:[self bottomBarHeight]];
+        //SBAppSwitcherController *appSwitcherController = [objc_getClass("SBAppSwitcherController") sharedInstance];
+        SBShowcaseContext *zeroContext = [self _showcaseContextForOffset:0];
+        SBShowcaseContext *barContext = [self _showcaseContextForOffset:[self bottomBarHeight]];
 
         UIInterfaceOrientation currentOrientation = [SBApp activeInterfaceOrientation]; // also someting about "CAMediaTime", huh
         [zeroContext setShowcaseOrientation:currentOrientation];
