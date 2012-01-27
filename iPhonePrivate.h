@@ -65,7 +65,7 @@ static SpringBoard *SBApp = nil;
 @interface SBAppSwitcherController : SBShowcaseViewController
 + (id)sharedInstance;
 - (BOOL)printViewIsShowing;
-- (void)setupForApp:(id)app orientation:(UIInterfaceOrientation)orientation;
+- (void)setupForApp:(SBApplication *)app orientation:(UIInterfaceOrientation)orientation;
 @end
 
 @interface SBAssistantController : SBShowcaseViewController
@@ -95,7 +95,7 @@ static SpringBoard *SBApp = nil;
 
 
 @interface SBSwitchAppGestureView : UIView
-@property(assign, nonatomic) float percentage;
+@property(assign, nonatomic) CGFloat percentage;
 @property(retain, nonatomic) SBApplication *endingApp;
 @property(retain, nonatomic) SBApplication *leftwardApp;
 @property(retain, nonatomic) SBApplication *rightwardApp;
@@ -103,11 +103,11 @@ static SpringBoard *SBApp = nil;
 - (id)initWithInterfaceOrientation:(int)interfaceOrientation startingApp:(SBApplication *)app leftwardApp:(SBApplication *)app3 rightwardApp:(SBApplication *)app4;
 - (void)beginPaging;
 - (void)finishBackwardToStartWithCompletion:(id)completion;
-- (void)finishForwardToEndWithPercentage:(float)percentage completion:(id)completion;
-- (void)moveToApp:(id)app;
-- (void)moveToApp:(id)app animated:(BOOL)animated;
-- (float)percentageForApp:(id)app;
-- (void)updatePaging:(float)paging;
+- (void)finishForwardToEndWithPercentage:(CGFloat)percentage completion:(id)completion;
+- (void)moveToApp:(SBApplication *)app;
+- (void)moveToApp:(SBApplication *)app animated:(BOOL)animated;
+- (CGFloat)percentageForApp:(SBApplication *)app;
+- (void)updatePaging:(CGFloat)paging;
 @end
 
 typedef enum {
@@ -120,7 +120,7 @@ typedef enum {
 
 @interface SBGestureViewVendor : NSObject
 + (id)sharedInstance;
-- (id)viewForApp:(SBApplication *)app gestureType:(SBGestureType)type includeStatusBar:(BOOL)include;
+- (UIView *)viewForApp:(SBApplication *)app gestureType:(SBGestureType)type includeStatusBar:(BOOL)include;
 @end
 
 @interface SBUIController : NSObject
