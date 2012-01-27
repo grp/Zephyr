@@ -11,11 +11,17 @@
         if (KeyboardIsActive()) return NO;
     }
 
-    NSString *topIdentifier = [[SBApp _accessibilityFrontMostApplication] displayIdentifier];
-    BOOL disableIdentifier = [(NSNumber *) PreferencesGet([NSString stringWithFormat:@"SideDisable-%@", topIdentifier], (NSNumber *) kCFBooleanFalse) boolValue];
-    if (disableIdentifier) return NO;
+    SBApplication *topApplication = [SBApp _accessibilityFrontMostApplication];
 
-    return [SBApp _accessibilityFrontMostApplication] != nil
+    if (topApplication != nil) {
+        BOOL disableIdentifier = [(NSNumber *) PreferencesGet([NSString stringWithFormat:@"SideDisable-%@", [topApplication displayIdentifier]], (NSNumber *) kCFBooleanFalse) boolValue];
+        if (disableIdentifier) return NO;
+    }
+
+    // Put this after the above check so you can quickly page through disabled apps.
+    if (topApplication == nil) topApplication = MSHookIvar<SBApplication *>([objc_getClass("SBUIController") sharedInstance], "_pendingAppActivatedByGesture");
+
+    return topApplication != nil
         && [SBApp activeInterfaceOrientation] == UIInterfaceOrientationPortrait
         && ![[objc_getClass("SBUIController") sharedInstance] isSwitcherShowing]
         && ![[objc_getClass("SBAssistantController") sharedInstance] isAssistantVisible]
@@ -66,6 +72,8 @@
     // (there is some condition here in a C function, dunno what it does)
     if (![self _dismissSheetsAndDetermineAlertStateForMenuClickOrSystemGesture]) return;
 
+    // If there is no top app, try the currently launching app from this gesture.
+    // This allows you to quickly swipe through apps, even as they load or resume.
     if (topApplication == nil) {
         topApplication = MSHookIvar<SBApplication *>(self, "_pendingAppActivatedByGesture");
         if (topApplication == nil) return;
