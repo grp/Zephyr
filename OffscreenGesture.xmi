@@ -139,7 +139,7 @@ static NSMutableArray *allGestures = nil;
 
 %hook SBHandMotionExtractor
 
-- (void)extractHandMotionForActiveTouches:(SBTouchInfo *)activeTouches count:(unsigned)count centroid:(CGPoint)centroid {
+- (void)extractHandMotionForActiveTouches:(SBTouchInfo *)activeTouches count:(unsigned int)count centroid:(CGPoint)centroid {
     %orig;
 
     SBTouchInfo *touchBuffer = (SBTouchInfo *) malloc(sizeof(SBTouchInfo) * count);
@@ -169,7 +169,7 @@ static NSMutableArray *allGestures = nil;
                         BOOL numberOfTouchesIsValid = YES;
                         if ([gu isKindOfClass:objc_getClass("SBFluidSlideGestureRecognizer")]) {
                             SBFluidSlideGestureRecognizer *swipeRecognizer = (SBFluidSlideGestureRecognizer *) gu;
-                            numberOfTouchesIsValid = (count >= [swipeRecognizer minTouches]);
+                            numberOfTouchesIsValid = (count >= (unsigned int) [swipeRecognizer minTouches]);
                         }
 
                         if (numberOfTouchesIsValid) {
