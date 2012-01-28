@@ -1,6 +1,8 @@
+ - (1.1.1) Fix MC Pro compatibliity.
+ - (1.1.1) Adjust timing of switcher activation.
  - (1.2) swipe down switcher w/ smooth finger tracking
  - (1.2) rotate gesture to switch to landscape (?)
- - (1.2.5) bounce when pulling up switcher
+ - (X) bounce when pulling up switcher
  - (X) sensitivity slider for all gesture
  - (X) fix bug with auto-canceled swipe gestures
 
