@@ -6,11 +6,33 @@
 
 static BOOL disableUnscatterFlag = NO;
 
+@interface SBMusicController : NSObject
+- (void) switcherDidShow:(float)duration orientation:(UIInterfaceOrientation)orientation;
+@end
+
+static void OpenMusicControlsTaskSwitcherIfNecessaryWithDuration(float duration) {
+    Class $SBMusicController = objc_getClass("SBMusicController");
+    if ($SBMusicController) {
+        bool defaultValue = YES;
+        CFPreferencesSynchronize((CFStringRef)@"com.phoenix.musiccontrols.task", kCFPreferencesCurrentUser, kCFPreferencesCurrentHost);
+        CFBooleanRef val = (CFBooleanRef) CFPreferencesCopyAppValue((CFStringRef) @"Controls", (CFStringRef) @"com.phoenix.musiccontrols.task");
+
+        if (val) {
+            defaultValue = [(NSNumber*) val boolValue];
+            CFRelease(val);
+        }
+
+        if (defaultValue) {
+            [[$SBMusicController sharedInstance] switcherDidShow:duration orientation:UIInterfaceOrientationPortrait];
+        }
+    }
+}
+
 static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat duration) {
     SBUIController *uic = [objc_getClass("SBUIController") sharedInstance];
 
-    id zeroContext = [uic _showcaseContextForOffset:from];
-    id barContext = [uic _showcaseContextForOffset:to];
+    SBShowcaseContext *zeroContext = [uic _showcaseContextForOffset:from];
+    SBShowcaseContext *barContext = [uic _showcaseContextForOffset:to];
 
     [zeroContext setShowcaseOrientation:UIInterfaceOrientationPortrait];
     [barContext setShowcaseOrientation:UIInterfaceOrientationPortrait];
@@ -25,6 +47,9 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
     if ([uic isSwitcherShowing]) return;
 
     [uic _revealShowcase:switcher duration:duration from:zeroContext to:barContext];
+
+    // Support Music Controls Pro, code by phoenixdev.
+    OpenMusicControlsTaskSwitcherIfNecessaryWithDuration(duration);
 }
 
 static CGFloat HeightFromScreenPercentage(CGFloat percentage) {
