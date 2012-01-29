@@ -81,11 +81,15 @@ static CGFloat HeightFromScreenPercentage(CGFloat percentage) {
 
     SwipeUpAction action = (SwipeUpAction) [(NSNumber *) PreferencesGet(@"SwipeUpAction", [NSNumber numberWithInt:kSwipeUpActionCloseApp]) intValue];
 
+    // This is needed to prevent re-activation before the animatino completes, crashing.
+    BOOL currentlyPendingSwitcherActivationsExist = (pendingSwitcherActivations != nil);
+
     return ![[objc_getClass("SBAwayController") sharedAwayController] isLocked]
         && ![[objc_getClass("SBUIController") sharedInstance] isSwitcherShowing]
         && ![[objc_getClass("SBAssistantController") sharedInstance] isAssistantVisible]
         && ![[objc_getClass("SBBulletinListController") sharedInstanceIfExists] listViewIsActive]
         && ![[objc_getClass("SBBulletinWindowController") sharedInstance] isBusy]
+        && !currentlyPendingSwitcherActivationsExist
         && [SBApp activeInterfaceOrientation] == UIInterfaceOrientationPortrait
         && (topApplication == nil || displayFlagsAllowed)
         && (action == kSwipeUpActionSwitcher || action == kSwipeUpActionCloseApp);

@@ -1,5 +1,5 @@
  - (1.1.1) Adjust timing of switcher activation.
- - (1.1.1) Crash rapidly starting/ending close app gesture.
+ - (1.2) Smoothly fade out icons when showing switcher.
  - (1.2) swipe down switcher w/ smooth finger tracking
  - (1.2) rotate gesture to switch to landscape (?)
  - (1.3) remove slide to unlock, swipe up to close lockscreen
