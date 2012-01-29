@@ -60,6 +60,8 @@ static CGFloat HeightFromScreenPercentage(CGFloat percentage) {
 
 - (BOOL)shouldActivate {
     SBApplication *topApplication = [SBApp _accessibilityFrontMostApplication];
+    if (topApplication == nil) topApplication = MSHookIvar<SBApplication *>([objc_getClass("SBUIController") sharedInstance], "_pendingAppActivatedByGesture");
+
     BOOL displayFlagsAllowed = YES;
 
     // Ensure topApplication is properly launched and ready.
@@ -73,7 +75,7 @@ static CGFloat HeightFromScreenPercentage(CGFloat percentage) {
         if (KeyboardIsActive()) return NO;
     }
 
-    NSString *topIdentifier = [[SBApp _accessibilityFrontMostApplication] displayIdentifier];
+    NSString *topIdentifier = [topApplication displayIdentifier];
     BOOL disableIdentifier = [(NSNumber *) PreferencesGet([NSString stringWithFormat:@"BottomDisable-%@", topIdentifier], (id)kCFBooleanFalse) boolValue];
     if (disableIdentifier) return NO;
 
