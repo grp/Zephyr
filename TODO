@@ -1,4 +1,5 @@
  - (1.1.1) Adjust timing of switcher activation.
+ - (1.1.1) Disable Zephyr in editing mode.
  - (1.2) Smoothly fade out icons when showing switcher.
  - (1.2) swipe down switcher w/ smooth finger tracking
  - (1.2) rotate gesture to switch to landscape (?)
