@@ -165,6 +165,11 @@ typedef enum {
 - (void)scheduleApplicationForLaunchByGesture:(SBApplication *)application;
 @end
 
+@interface SBIconController : NSObject
++ (id)sharedInstance;
+@property (assign) BOOL isEditing;
+@end
+
 @interface SBAwayController : SBAlert
 + (id)sharedAwayController;
 - (BOOL)isLocked;
