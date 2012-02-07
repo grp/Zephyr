@@ -89,6 +89,7 @@ static CGFloat HeightFromScreenPercentage(CGFloat percentage) {
         && ![[objc_getClass("SBAssistantController") sharedInstance] isAssistantVisible]
         && ![[objc_getClass("SBBulletinListController") sharedInstanceIfExists] listViewIsActive]
         && ![[objc_getClass("SBBulletinWindowController") sharedInstance] isBusy]
+        && ![[objc_getClass("SBIconController") sharedInstance] isEditing]
         && !currentlyPendingSwitcherActivationsExist
         && [SBApp activeInterfaceOrientation] == UIInterfaceOrientationPortrait
         && (topApplication == nil || displayFlagsAllowed)
@@ -168,13 +169,6 @@ static CGFloat HeightFromScreenPercentage(CGFloat percentage) {
         [[[objc_getClass("SBUIController") sharedInstance] rootView] setAlpha:1.0f];
         appView = [[objc_getClass("SBGestureViewVendor") sharedInstance] viewForApp:app gestureType:kSBGestureTypeSwitchApp includeStatusBar:YES];
     } else {
-        // Normally, you can't show the switcher while editing, since they both use the home button.
-        // But, with Zepyhr you can, so we need to manually stop editing before dragging upwards.
-        SBIconController *iconController = [objc_getClass("SBIconController") sharedInstance];
-        if ([iconController isEditing]) {
-            [iconController setIsEditing:NO];
-        }
-
         // XXX: using contentView here isn't necessarily the best option, but it works.
         appView = [[objc_getClass("SBUIController") sharedInstance] contentView];
 
