@@ -101,6 +101,8 @@
 			<string>PSGroupCell</string>
 			<key>label</key>
 			<string>Swipe up from Bottom</string>
+            <key>footerText</key>
+            <string>Switcher delay is only used when the action is close app.</string>
 		</dict>
 		<dict>
 			<key>cell</key>
@@ -188,6 +190,58 @@
 			<key>ALSettingsKeyPrefix</key>
 			<string>BottomDisable-</string>
 			<key>ALChangeNotification</key>
+			<string>com.chpwn.zephyr.preferences-changed</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSLinkListCell</string>
+			<key>default</key>
+			<real>0.8</real>
+			<key>detail</key>
+			<string>PSListItemsController</string>
+			<key>key</key>
+			<string>BottomSwitcherActivationDelay</string>
+			<key>label</key>
+			<string>Switcher Delay</string>
+			<key>validTitles</key>
+			<array>
+				<string>0.2 seconds</string>
+				<string>0.3 seconds</string>
+				<string>0.4 seconds</string>
+				<string>0.5 seconds</string>
+				<string>0.6 seconds</string>
+				<string>0.7 seconds</string>
+				<string>0.8 seconds</string>
+				<string>0.9 seconds</string>
+				<string>1.0 seconds</string>
+				<string>1.1 seconds</string>
+				<string>1.2 seconds</string>
+				<string>1.3 seconds</string>
+				<string>1.4 seconds</string>
+				<string>1.5 seconds</string>
+				<string>Never</string>
+			</array>
+			<key>validValues</key>
+			<array>
+                <real>0.2</real>
+                <real>0.3</real>
+                <real>0.4</real>
+                <real>0.5</real>
+                <real>0.6</real>
+                <real>0.7</real>
+                <real>0.8</real>
+                <real>0.9</real>
+                <real>1.0</real>
+                <real>1.1</real>
+                <real>1.2</real>
+                <real>1.3</real>
+                <real>1.4</real>
+                <real>1.5</real>
+                <real>0</real>
+			</array>
+			<key>defaults</key>
+			<string>com.chpwn.zephyr</string>
+			<key>PostNotification</key>
 			<string>com.chpwn.zephyr.preferences-changed</string>
 		</dict>
         <dict>

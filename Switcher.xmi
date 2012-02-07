@@ -269,64 +269,68 @@ static CGFloat HeightFromScreenPercentage(CGFloat percentage) {
     }
 
     if ([self effectiveSwipeUpAction] == kSwipeUpActionCloseApp) {
-        // No need to clear this from the timer list when done because the pendingSwitcherActiavtions is cleared when it fires.
-        [pendingSwitcherActivations addObject:[NSArray arrayWithObjects:[NSNumber numberWithFloat:location], [NSTimer scheduledTimerWithTimeInterval:0.8f block:^(NSTimer *timer) {
-            // prevent double activations
-            if (![self isActive]) return;
+        CGFloat delay = [PreferencesGet(@"BottomSwitcherActivationDelay", [NSNumber numberWithFloat:0.8f]) floatValue];
 
-            CGFloat bottomBarHeight = [[objc_getClass("SBAppSwitcherController") sharedInstance] bottomBarHeight];
+        if (delay > 0.0) {
+            // No need to clear this from the timer list when done because the pendingSwitcherActiavtions is cleared when it fires.
+            [pendingSwitcherActivations addObject:[NSArray arrayWithObjects:[NSNumber numberWithFloat:location], [NSTimer scheduledTimerWithTimeInterval:delay block:^(NSTimer *timer) {
+                // prevent double activations
+                if (![self isActive]) return;
 
-            UIView *contentView = [[objc_getClass("SBUIController") sharedInstance] contentView];
+                CGFloat bottomBarHeight = [[objc_getClass("SBAppSwitcherController") sharedInstance] bottomBarHeight];
 
-            // XXX: this is a horrible hack
-            UIImageView *switcherShadowView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"SwitcherShadowTop.png"]];
-            CGRect shadowFrame = [switcherShadowView frame];
-            shadowFrame.size = [[switcherShadowView image] size];
-            shadowFrame.size.width = [contentView bounds].size.width;
-            shadowFrame.origin.y = [contentView bounds].size.height;
-            [switcherShadowView setFrame:shadowFrame];
+                UIView *contentView = [[objc_getClass("SBUIController") sharedInstance] contentView];
 
-            CGRect switcherFrame = [switcherView frame];
-            switcherFrame.origin.y = [appView bounds].size.height + -bottomBarHeight;
-            [switcherView setFrame:switcherFrame];
+                // XXX: this is a horrible hack
+                UIImageView *switcherShadowView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"SwitcherShadowTop.png"]];
+                CGRect shadowFrame = [switcherShadowView frame];
+                shadowFrame.size = [[switcherShadowView image] size];
+                shadowFrame.size.width = [contentView bounds].size.width;
+                shadowFrame.origin.y = [contentView bounds].size.height;
+                [switcherShadowView setFrame:shadowFrame];
 
-            [[contentView superview] addSubview:switcherView];
-            [[contentView superview] addSubview:switcherShadowView];
-            [[contentView superview] addSubview:contentView];
-            [[contentView superview] addSubview:wrapperView];
+                CGRect switcherFrame = [switcherView frame];
+                switcherFrame.origin.y = [appView bounds].size.height + -bottomBarHeight;
+                [switcherView setFrame:switcherFrame];
 
-            [UIView animateWithDuration:0.4f animations:^{
-                CGRect wrapperFrame = [wrapperView frame];
-                wrapperFrame.origin.y = -bottomBarHeight;
-                [wrapperView setFrame:wrapperFrame];
+                [[contentView superview] addSubview:switcherView];
+                [[contentView superview] addSubview:switcherShadowView];
+                [[contentView superview] addSubview:contentView];
+                [[contentView superview] addSubview:wrapperView];
 
-                CGRect shadowFrame = [shadowView frame];
-                shadowFrame.origin.y = [wrapperView bounds].size.height + -bottomBarHeight;
-                [shadowView setFrame:shadowFrame];
-                [shadowView setAlpha:0.0f];
+                [UIView animateWithDuration:0.4f animations:^{
+                    CGRect wrapperFrame = [wrapperView frame];
+                    wrapperFrame.origin.y = -bottomBarHeight;
+                    [wrapperView setFrame:wrapperFrame];
+    
+                    CGRect shadowFrame = [shadowView frame];
+                    shadowFrame.origin.y = [wrapperView bounds].size.height + -bottomBarHeight;
+                    [shadowView setFrame:shadowFrame];
+                    [shadowView setAlpha:0.0f];
 
-                CGRect switcherShadowFrame = [switcherShadowView frame];
-                switcherShadowFrame.origin.y = [contentView bounds].size.height + -bottomBarHeight;
-                [switcherShadowView setFrame:switcherShadowFrame];
+                    CGRect switcherShadowFrame = [switcherShadowView frame];
+                    switcherShadowFrame.origin.y = [contentView bounds].size.height + -bottomBarHeight;
+                    [switcherShadowView setFrame:switcherShadowFrame];
 
-                CGRect contentFrame = [contentView frame];
-                contentFrame.origin.y = -bottomBarHeight;
-                [contentView setFrame:contentFrame];
-            } completion:^(BOOL finished) {
-                [self cleanupViews];
+                    CGRect contentFrame = [contentView frame];
+                    contentFrame.origin.y = -bottomBarHeight;
+                    [contentView setFrame:contentFrame];
+                } completion:^(BOOL finished) {
+                    [self cleanupViews];
+    
+                    CGRect contentFrame = [contentView frame];
+                    contentFrame.origin.y = 0;
+                    [contentView setFrame:contentFrame];
+    
+                    [switcherShadowView removeFromSuperview];
+                    [switcherShadowView release];
+    
+                    ActivateSwitcherFromToDuration(bottomBarHeight, bottomBarHeight, 0.0f);
+                }];
 
-                CGRect contentFrame = [contentView frame];
-                contentFrame.origin.y = 0;
-                [contentView setFrame:contentFrame];
-
-                [switcherShadowView removeFromSuperview];
-                [switcherShadowView release];
-
-                ActivateSwitcherFromToDuration(bottomBarHeight, bottomBarHeight, 0.0f);
-            }];
-
-            [self cancelGesture];
-        } repeats:NO], nil]];
+                [self cancelGesture];
+            } repeats:NO], nil]];
+        }
     }
 }
 
