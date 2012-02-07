@@ -81,7 +81,7 @@ static CGFloat HeightFromScreenPercentage(CGFloat percentage) {
 
     SwipeUpAction action = (SwipeUpAction) [(NSNumber *) PreferencesGet(@"SwipeUpAction", [NSNumber numberWithInt:kSwipeUpActionCloseApp]) intValue];
 
-    // This is needed to prevent re-activation before the animatino completes, crashing.
+    // This is needed to prevent re-activation before the animation completes, crashing.
     BOOL currentlyPendingSwitcherActivationsExist = (pendingSwitcherActivations != nil);
 
     return ![[objc_getClass("SBAwayController") sharedAwayController] isLocked]
