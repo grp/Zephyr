@@ -7,10 +7,10 @@
 static BOOL disableUnscatterFlag = NO;
 
 @interface SBMusicController : NSObject
-- (void) switcherDidShow:(float)duration orientation:(UIInterfaceOrientation)orientation;
+- (void) switcherDidShow:(double)duration orientation:(UIInterfaceOrientation)orientation;
 @end
 
-static void OpenMusicControlsTaskSwitcherIfNecessaryWithDuration(float duration) {
+static void OpenMusicControlsTaskSwitcherIfNecessaryWithDuration(double duration) {
     Class $SBMusicController = objc_getClass("SBMusicController");
     if ($SBMusicController) {
         bool defaultValue = YES;
