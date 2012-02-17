@@ -1,0 +1,136 @@
+
+#import "BaseGesture.h"
+#import "OffscreenGesture.h"
+#import "Preferences.h"
+#import "Keyboard.h"
+
+static NSMutableArray *allGestures = nil;
+
+%ctor {
+    // XXX: memory leak?
+    allGestures = [[NSMutableArray alloc] init];
+}
+
+@implementation OffscreenGesture
+@synthesize isActive, gestureRecognizers;
+
++ (BOOL)isAnyGestureActive {
+    BOOL isActive = NO;
+
+    for (OffscreenGesture *gesture in allGestures) {
+        if ([gesture isActive]) {
+            isActive = YES;
+        }
+    }
+
+    return isActive;
+}
+
+- (id)init {
+    if ((self = [super init])) {
+        gestureRecognizers = [[NSMutableArray alloc] init];
+        [allGestures addObject:self];
+    }
+
+    return self;
+}
+
+- (void)cancelGesture {
+    isActive = NO;
+}
+
+- (void)addOffscreenEdge:(SBOffscreenEdge)edge minimumTouchCount:(int)touchCount {
+    SBOffscreenSwipeGestureRecognizer *gestureRecognizer = [[objc_getClass("SBOffscreenSwipeGestureRecognizer") alloc] initForOffscreenEdge:edge];
+    [gestureRecognizer setSendsTouchesCancelledToApplication:YES];
+    [gestureRecognizer setAllowableDistanceFromEdgeCenter:160.0f];
+    [gestureRecognizer setEdgeCenter:160.0f];
+    [gestureRecognizer setTypes:0x10];
+    [gestureRecognizer setRequiresSecondTouchInRange:NO];
+    [gestureRecognizer setMinTouches:touchCount];
+
+    [gestureRecognizer setHandler:^{
+        CGFloat distance = [gestureRecognizer cumulativePercentage];
+        CGPoint velocity = [gestureRecognizer movementVelocityInPointsPerSecond];
+
+        switch ([gestureRecognizer state]) {
+            case 0:
+                break;
+            case 1:
+                if (![self isActive] && ![OffscreenGesture isAnyGestureActive]) {
+                    [self handleGestureBeganWithLocation:distance];
+                    isActive = YES;
+                }
+                break;
+            case 2:
+                if ([self isActive]) {
+                    [self handleGestureChangedWithLocation:distance velocity:velocity];
+                }
+                break;
+            case 3:
+                if ([self isActive]) {
+                    [self handleGestureEndedWithLocation:distance velocity:velocity completionType:[gestureRecognizer completionTypeProjectingMomentumForInterval:5.0f]];
+                    isActive = NO;
+                }
+                break;
+            case 4:
+                // XXX: this is disabled because it is called even if the gesture was never actually "started":
+                // there is no way (currently) to tell if a gesture was started before it got cancelled, so this
+                // gives us spurious cancelations that break any gesture with two possible recognizers. :(
+                // XXX: the above text is not true. if both gestures are enabled then the active gesture is somehow
+                // automatically canceled. I do not know why this is, but it requires us to sadly ignore cancels now.
+                // [self handleGestureCanceled];
+                // isActive = NO;
+                break;
+            default:
+                if ([self isActive]) {
+                    NSLog(@"BUG: Weird recognizer state in %@.", self);
+                    isActive = NO;
+                }
+                break;
+        }
+    }];
+
+    [gestureRecognizer setCanBeginCondition:^BOOL {
+        BOOL should = [self shouldActivate];
+        if (!should) return NO;
+
+		return YES;
+    }];
+
+    [gestureRecognizers addObject:gestureRecognizer];
+    SBGestureRecognizerRegister(gestureRecognizer);
+}
+
+- (void)dealloc {
+    for (SBGestureRecognizer *gestureRecognizer in gestureRecognizers) {
+        [gestureRecognizers removeObject:gestureRecognizer];
+        SBGestureRecognizerUnregister(gestureRecognizer);
+
+        [gestureRecognizer release];
+    }
+
+    [super dealloc];
+}
+
+- (BOOL)shouldActivate {
+    return NO;
+}
+
+- (void)handleGestureBeganWithLocation:(CGFloat)location {
+
+}
+
+- (void)handleGestureChangedWithLocation:(CGFloat)location velocity:(CGPoint)velocity {
+
+}
+
+- (void)handleGestureEndedWithLocation:(CGFloat)location velocity:(CGPoint)velocity completionType:(int)type {
+
+}
+
+- (void)handleGestureCanceled {
+
+}
+
+@end
+
