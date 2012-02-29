@@ -1,9 +1,9 @@
- - (1.1.3) home button or power button during gestures needs reboot
- - (1.2) Smoothly fade out icons when showing switcher.
- - (1.2) swipe down switcher w/ smooth finger tracking
- - (1.2) rotate gesture to switch to landscape (?)
- - (1.3) remove slide to unlock, swipe up to close lockscreen
+ - (1.2) home button or power button during gestures needs reboot
+ - (1.2) sensitivity slider for all gesture
+ - (1.3) Smoothly fade out icons when showing switcher.
+ - (1.3) swipe down switcher w/ smooth finger tracking
+ - (1.4) rotate gesture to switch to landscape (?)
+ - (1.4) remove slide to unlock, swipe up to close lockscreen
  - (X) bounce when pulling up switcher
- - (X) sensitivity slider for all gesture
  - (X) fix bug with auto-canceled swipe gestures
 
