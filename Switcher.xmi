@@ -5,6 +5,9 @@
 #import "NSTimer+Blocks.h"
 
 #import "SwitchApp.h"
+#import "LayerSnapshotter.h"
+
+#include <dlfcn.h>
 
 static BOOL disableUnscatterFlag = NO;
 
@@ -59,14 +62,15 @@ static void TransformGestureViewContainer(UIView *container) {
 }
 
 static UIView *ViewWithScreenshotOfView(UIView *view) {
-    UIGraphicsBeginImageContext([view bounds].size);
-    [[view layer] renderInContext:UIGraphicsGetCurrentContext()];
-    UIImage *viewImage = UIGraphicsGetImageFromCurrentImageContext();
-    UIGraphicsEndImageContext();
-
-    UIImageView *screenshotView = [[UIImageView alloc] initWithImage:viewImage];
-    [screenshotView setFrame:[view frame]];
-    return [screenshotView autorelease];
+    dlopen("/usr/lib/liblayersnapshotter.dylib", RTLD_LAZY);
+    if ([view respondsToSelector:@selector(renderSnapshot)]) {
+        UIImage *viewImage = [view renderSnapshot];
+        UIImageView *screenshotView = [[UIImageView alloc] initWithImage:viewImage];
+        [screenshotView setFrame:[view frame]];
+        return [screenshotView autorelease];
+    } else {
+        return [[[UIView alloc] initWithFrame:view.frame] autorelease];
+    }
 }
 
 static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat duration) {
