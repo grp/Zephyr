@@ -12,6 +12,7 @@ typedef enum {
     UIView *appView;
     UIView *wrapperView;
     UIView *switcherView;
+    UIView *linenView;
     UIImageView *shadowView;
     NSMutableSet *pendingSwitcherActivations;
 }

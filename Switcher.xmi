@@ -260,6 +260,16 @@ static CGFloat HeightFromScreenPercentage(CGFloat percentage) {
     UIView *rootView = [[objc_getClass("SBUIController") sharedInstance] rootView];
 
     if ([self effectiveSwipeUpAction] == kSwipeUpActionSwitcher) {
+        if (!linenView) {
+            // TODO: Figure out why SBLinenView cannot give linens the full 320x480
+            CGRect frame = rootView.bounds;
+            frame.origin.y = switcherView.bounds.size.height - 320.0f;
+            frame.size.height = 320.0f;
+            linenView = [[%c(SBLinenView) alloc] initWithFrame:frame];
+        }
+        [switcherView insertSubview:linenView atIndex:0];
+        MSHookIvar<UIView *>(switcherView, "_backgroundView").alpha = 0.0f;
+
         [rootView addSubview:switcherView];
     }
 
@@ -279,6 +289,12 @@ static CGFloat HeightFromScreenPercentage(CGFloat percentage) {
     }];
 }
 
+static CGFloat ScreenRounded(CGFloat value)
+{
+    CGFloat scale = [UIScreen mainScreen].scale;
+    return roundf(value * scale) / scale;
+}
+
 - (void)handleGestureChangedWithLocation:(CGFloat)location velocity:(CGPoint)velocity {
     location = HeightFromScreenPercentage(location);
 
@@ -289,7 +305,9 @@ static CGFloat HeightFromScreenPercentage(CGFloat percentage) {
 
     if ([self effectiveSwipeUpAction] == kSwipeUpActionSwitcher) {
         // constrain to top of switcher
-        if (-location > bottomBarHeight) location = -bottomBarHeight;
+        if (location < -bottomBarHeight) {
+            location = ScreenRounded((location + bottomBarHeight) * 0.2f - bottomBarHeight);
+        }
     }
 
     CGRect wrapperFrame = [wrapperView frame];
@@ -390,20 +408,23 @@ static CGFloat HeightFromScreenPercentage(CGFloat percentage) {
         // XXX: maybe use the completionType here
         CGFloat bottomBarHeight = [[objc_getClass("SBAppSwitcherController") sharedInstance] bottomBarHeight];
         if (-location >= bottomBarHeight * (2.0f / 3.0f)) {
-            [self cleanupViews];
-
             CGFloat from, to, duration;
-            if (-location >= bottomBarHeight) {
-                from = bottomBarHeight;
-                to = bottomBarHeight;
-                duration = app == nil ? 0.3f : 0;
-            } else {
-                from = -location;
-                to = bottomBarHeight;
-                duration = 0.3f;
-            }
+            if (location < -bottomBarHeight)
+                location = ScreenRounded((location + bottomBarHeight) * 0.2f - bottomBarHeight);
+            from = -location;
+            to = bottomBarHeight;
+            duration = 0.3f;
 
             dispatch_async(dispatch_get_main_queue(), ^{
+                [linenView.superview sendSubviewToBack:linenView];
+                [UIView animateWithDuration:duration animations:^{
+                    MSHookIvar<UIView *>(switcherView, "_backgroundView").alpha = 1.0f;
+                } completion:^(BOOL completed) {
+                    [linenView removeFromSuperview];
+                    [linenView release];
+                    linenView = nil;
+                }];
+                [self cleanupViews];
                 ActivateSwitcherFromToDuration(from, to, duration);
             });
         } else {
@@ -417,6 +438,9 @@ static CGFloat HeightFromScreenPercentage(CGFloat percentage) {
                 [shadowView setFrame:shadowFrame];
             } completion:^(BOOL completed) {
                 [self cleanupViews];
+                [linenView removeFromSuperview];
+                [linenView release];
+                linenView = nil;
             }];
         }
     } else {
