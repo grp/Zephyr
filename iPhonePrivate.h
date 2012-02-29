@@ -8,10 +8,12 @@
 
 @class SBApplication;
 @interface SpringBoard : UIApplication
-- (UIInterfaceOrientation)activeInterfaceOrientation;
 - (SBApplication *)_accessibilityFrontMostApplication;
+- (BOOL)_accessibilityIsSystemGestureActive;
 - (void)showSpringBoardStatusBar;
 - (void)hideSpringBoardStatusBar;
+- (UIInterfaceOrientation)activeInterfaceOrientation;
+- (UIInterfaceOrientation)interfaceOrientationForCurrentDeviceOrientation;
 - (void)noteInterfaceOrientationChanged:(UIInterfaceOrientation)orientation;
 @end
 
@@ -65,6 +67,7 @@ static SpringBoard *SBApp = nil;
 @interface SBAppSwitcherController : SBShowcaseViewController
 + (id)sharedInstance;
 - (BOOL)printViewIsShowing;
+- (CGFloat)bottomBarHeight;
 - (void)setupForApp:(SBApplication *)app orientation:(UIInterfaceOrientation)orientation;
 @end
 

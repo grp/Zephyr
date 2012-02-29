@@ -11,13 +11,17 @@ static NSMutableArray *allGestures = nil;
     allGestures = [[NSMutableArray alloc] init];
 }
 
-@implementation OffscreenGesture
+UIInterfaceOrientation CurrentInterfaceOrientation() {
+    return [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone ? UIInterfaceOrientationPortrait : [SBApp activeInterfaceOrientation];
+}
+
+@implementation BaseGesture
 @synthesize isActive, gestureRecognizers;
 
 + (BOOL)isAnyGestureActive {
     BOOL isActive = NO;
 
-    for (OffscreenGesture *gesture in allGestures) {
+    for (BaseGesture *gesture in allGestures) {
         if ([gesture isActive]) {
             isActive = YES;
         }
@@ -41,12 +45,13 @@ static NSMutableArray *allGestures = nil;
 
 - (void)addOffscreenEdge:(SBOffscreenEdge)edge minimumTouchCount:(int)touchCount {
     SBOffscreenSwipeGestureRecognizer *gestureRecognizer = [[objc_getClass("SBOffscreenSwipeGestureRecognizer") alloc] initForOffscreenEdge:edge];
+    [gestureRecognizer setAllowableDistanceFromEdgeCenter:CGFLOAT_MAX];
     [gestureRecognizer setSendsTouchesCancelledToApplication:YES];
-    [gestureRecognizer setAllowableDistanceFromEdgeCenter:160.0f];
-    [gestureRecognizer setEdgeCenter:160.0f];
-    [gestureRecognizer setTypes:0x10];
     [gestureRecognizer setRequiresSecondTouchInRange:NO];
     [gestureRecognizer setMinTouches:touchCount];
+    // [gestureRecognizer setEdgeMargin:30.0f]; // sensitivity? default is 30.0f
+    // [gestureRecognizer setFalseEdge:-1.0f]; // what is this?
+    [gestureRecognizer setTypes:0x10];
 
     [gestureRecognizer setHandler:^{
         CGFloat distance = [gestureRecognizer cumulativePercentage];
@@ -56,7 +61,7 @@ static NSMutableArray *allGestures = nil;
             case 0:
                 break;
             case 1:
-                if (![self isActive] && ![OffscreenGesture isAnyGestureActive]) {
+                if (![self isActive] && ![BaseGesture isAnyGestureActive]) {
                     [self handleGestureBeganWithLocation:distance];
                     isActive = YES;
                 }
@@ -110,6 +115,10 @@ static NSMutableArray *allGestures = nil;
     }
 
     [super dealloc];
+}
+
+- (BOOL)currentOrientationIsSupported {
+    return [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad || CurrentInterfaceOrientation() == UIInterfaceOrientationPortrait;
 }
 
 - (BOOL)shouldActivate {

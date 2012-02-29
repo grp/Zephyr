@@ -1,4 +1,5 @@
 
+#import "BaseGesture.h"
 #import "OffscreenGesture.h"
 
 typedef enum {
@@ -7,7 +8,7 @@ typedef enum {
     kSwipeUpActionSwitcher
 } SwipeUpAction;
 
-@interface SwitcherGesture : OffscreenGesture {
+@interface SwitcherGesture : BaseGesture {
     UIView *appView;
     UIView *wrapperView;
     UIView *switcherView;

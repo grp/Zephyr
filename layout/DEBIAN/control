@@ -4,7 +4,7 @@ Section: Tweaks
 Version: 1.1.2
 Pre-Depends: firmware (>= 5.0)
 Depends: mobilesubstrate, preferenceloader, applist
-Conflicts: gsc.ipad, com.dapetcu21.MultiCleaner (<= 2.9.4), com.xsellize.multicleaner, com.xsellize.zephyr
+Conflicts: com.dapetcu21.MultiCleaner (<= 2.9.4), com.xsellize.multicleaner, com.xsellize.zephyr
 Icon: file:///Library/PreferenceLoader/Preferences/Zephyr@2x.png
 Architecture: iphoneos-arm
 Description: Awesome, useful swipe multitasking!

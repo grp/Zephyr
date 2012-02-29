@@ -1,5 +1,4 @@
  - (1.1.3) home button or power button during gestures needs reboot
- - (1.1.3) crash swiping up during end of list bounce
  - (1.2) Smoothly fade out icons when showing switcher.
  - (1.2) swipe down switcher w/ smooth finger tracking
  - (1.2) rotate gesture to switch to landscape (?)
@@ -7,5 +6,4 @@
  - (X) bounce when pulling up switcher
  - (X) sensitivity slider for all gesture
  - (X) fix bug with auto-canceled swipe gestures
- - (X) support the iPad
 

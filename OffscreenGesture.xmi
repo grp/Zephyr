@@ -48,6 +48,7 @@ void SBGestureRecognizerUnregister(SBGestureRecognizer *recognizer) {
                 if (count > 0) {
                     if (state == 0) {
                         BOOL numberOfTouchesIsValid = YES;
+
                         if ([gu isKindOfClass:objc_getClass("SBFluidSlideGestureRecognizer")]) {
                             SBFluidSlideGestureRecognizer *swipeRecognizer = (SBFluidSlideGestureRecognizer *) gu;
                             numberOfTouchesIsValid = (count >= (unsigned int) [swipeRecognizer minTouches]);
@@ -91,9 +92,10 @@ void SBGestureRecognizerUnregister(SBGestureRecognizer *recognizer) {
 
 %hook SBOffscreenSwipeGestureRecognizer
 
-// XXX: Hack to workaround Apple bug.
+// XXX: Hack to workaround Apple bug. <rdar://10801257>
 // Basically, this method is fail iff m_offscreenEdge is kSBOffscreenEdgeLeft,
 // so work around that by flipping the touch and testing it as on the right.
+// XXX: Jon Drummond (SpringBoard team) cannot reproduce this. (Can I still?)
 - (BOOL)firstTouchInRange:(CGPoint)touch {
     if (MSHookIvar<SBOffscreenEdge>(self, "m_offscreenEdge") == kSBOffscreenEdgeLeft) {
         touch.x = [[UIScreen mainScreen] bounds].size.width - touch.x;

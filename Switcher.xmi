@@ -4,6 +4,8 @@
 #import "Keyboard.h"
 #import "NSTimer+Blocks.h"
 
+#import "SwitchApp.h"
+
 static BOOL disableUnscatterFlag = NO;
 
 @interface SBMusicController : NSObject
@@ -23,9 +25,48 @@ static void OpenMusicControlsTaskSwitcherIfNecessaryWithDuration(double duration
         }
 
         if (defaultValue) {
-            [[$SBMusicController sharedInstance] switcherDidShow:duration orientation:UIInterfaceOrientationPortrait];
+            [[$SBMusicController sharedInstance] switcherDidShow:duration orientation:CurrentInterfaceOrientation()];
         }
     }
+}
+
+// based off of -[SBSwitchAppGestureView transofrmGestureViewContainer:]
+static void TransformGestureViewContainer(UIView *container) {
+    UIInterfaceOrientation currentOrientation = CurrentInterfaceOrientation();
+
+    CGAffineTransform transform = CGAffineTransformIdentity;
+    CGRect frame = CGRectZero;
+
+    switch (currentOrientation) {
+        case UIInterfaceOrientationPortrait:
+            break;
+        case UIInterfaceOrientationPortraitUpsideDown:
+            transform = CGAffineTransformMakeRotation(M_PI);
+            break;
+        case UIInterfaceOrientationLandscapeLeft:
+            transform = CGAffineTransformMakeRotation(M_PI / 2.0f);
+            frame = [container frame];
+            transform = CGAffineTransformTranslate(transform, (frame.size.width - frame.size.height) / 2.0f, (frame.size.width - frame.size.height) / 2.0f);
+            break;
+        case UIInterfaceOrientationLandscapeRight:
+            transform = CGAffineTransformMakeRotation(M_PI / -2.0f);
+            frame = [container frame];
+            transform = CGAffineTransformTranslate(transform, (frame.size.width - frame.size.height) / -2.0f, (frame.size.width - frame.size.height) / -2.0f);
+            break;
+    }
+
+    [container setTransform:transform];
+}
+
+static UIView *ViewWithScreenshotOfView(UIView *view) {
+    UIGraphicsBeginImageContext([view bounds].size);
+    [[view layer] renderInContext:UIGraphicsGetCurrentContext()];
+    UIImage *viewImage = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+
+    UIImageView *screenshotView = [[UIImageView alloc] initWithImage:viewImage];
+    [screenshotView setFrame:[view frame]];
+    return [screenshotView autorelease];
 }
 
 static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat duration) {
@@ -34,13 +75,13 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
     SBShowcaseContext *zeroContext = [uic _showcaseContextForOffset:from];
     SBShowcaseContext *barContext = [uic _showcaseContextForOffset:to];
 
-    [zeroContext setShowcaseOrientation:UIInterfaceOrientationPortrait];
-    [barContext setShowcaseOrientation:UIInterfaceOrientationPortrait];
+    [zeroContext setShowcaseOrientation:CurrentInterfaceOrientation()];
+    [barContext setShowcaseOrientation:CurrentInterfaceOrientation()];
 
     SBAppSwitcherController *switcher = [objc_getClass("SBAppSwitcherController") sharedInstance];
 
     SBApplication *app = [SBApp _accessibilityFrontMostApplication];
-    [switcher setupForApp:app orientation:UIInterfaceOrientationPortrait];
+    [switcher setupForApp:app orientation:CurrentInterfaceOrientation()];
 
     if (![objc_getClass("SBApplication") multitaskingIsSupported]) return;
     if ([switcher printViewIsShowing]) return;
@@ -83,15 +124,16 @@ static CGFloat HeightFromScreenPercentage(CGFloat percentage) {
 
     // This is needed to prevent re-activation before the animation completes, crashing.
     BOOL currentlyPendingSwitcherActivationsExist = (pendingSwitcherActivations != nil);
+    BOOL switchAppGestureIsAnimating = SwitchAppGestureIsAnimatingCompletion();
 
-    return ![[objc_getClass("SBAwayController") sharedAwayController] isLocked]
+    return ![SBApp _accessibilityIsSystemGestureActive]
+        && ![[objc_getClass("SBAwayController") sharedAwayController] isLocked]
         && ![[objc_getClass("SBUIController") sharedInstance] isSwitcherShowing]
         && ![[objc_getClass("SBAssistantController") sharedInstance] isAssistantVisible]
-        && ![[objc_getClass("SBBulletinListController") sharedInstanceIfExists] listViewIsActive]
-        && ![[objc_getClass("SBBulletinWindowController") sharedInstance] isBusy]
         && ![[objc_getClass("SBIconController") sharedInstance] isEditing]
         && !currentlyPendingSwitcherActivationsExist
-        && [SBApp activeInterfaceOrientation] == UIInterfaceOrientationPortrait
+        && !switchAppGestureIsAnimating
+        && [self currentOrientationIsSupported]
         && (topApplication == nil || displayFlagsAllowed)
         && (action == kSwipeUpActionSwitcher || action == kSwipeUpActionCloseApp);
 }
@@ -111,33 +153,21 @@ static CGFloat HeightFromScreenPercentage(CGFloat percentage) {
     SBApplication *app = [SBApp _accessibilityFrontMostApplication];
 
     if (app != nil) {
-        [wrapperView release];
-        [wrapperView removeFromSuperview];
-        wrapperView = nil;
-
         [app disableContextHostingForRequester:(CFStringRef) @"SwitchApp"];
-
-        [switcherView removeFromSuperview];
-        switcherView = nil;
-
-        [shadowView removeFromSuperview];
-        [shadowView release];
-        shadowView = nil;
-    } else {
-        CGRect wrapperFrame = [wrapperView frame];
-        wrapperFrame.origin = CGPointZero;
-        [wrapperView setFrame:wrapperFrame];
-        wrapperView = nil;
-
-        appView = nil;
-
-        [switcherView removeFromSuperview];
-        switcherView = nil;
-
-        [shadowView removeFromSuperview];
-        [shadowView release];
-        shadowView = nil;
     }
+
+    [appView removeFromSuperview];
+    appView = nil;
+
+    [switcherView removeFromSuperview];
+    switcherView = nil;
+
+    [shadowView removeFromSuperview];
+    shadowView = nil;
+
+    [wrapperView release];
+    [wrapperView removeFromSuperview];
+    wrapperView = nil;
 
     for (NSArray *locationAndTimer in pendingSwitcherActivations) {
         NSTimer *timer = [locationAndTimer objectAtIndex:1];
@@ -159,6 +189,10 @@ static CGFloat HeightFromScreenPercentage(CGFloat percentage) {
 
     SBApplication *app = [SBApp _accessibilityFrontMostApplication];
 
+    UIInterfaceOrientation currentOrientation = (UIInterfaceOrientation)(int)[SBApp interfaceOrientationForCurrentDeviceOrientation];
+    [[UIDevice currentDevice] setOrientation:currentOrientation animated:NO];
+    [SBApp noteInterfaceOrientationChanged:currentOrientation];
+
     // Ensure app is properly launched and ready.
     if (app != nil) {
         if ([app displayFlag:0x3]) return;
@@ -167,10 +201,25 @@ static CGFloat HeightFromScreenPercentage(CGFloat percentage) {
 
     if (app != nil) {
         [[[objc_getClass("SBUIController") sharedInstance] rootView] setAlpha:1.0f];
-        appView = [[objc_getClass("SBGestureViewVendor") sharedInstance] viewForApp:app gestureType:kSBGestureTypeSwitchApp includeStatusBar:YES];
+
+        UIView *gestureView = [[objc_getClass("SBGestureViewVendor") sharedInstance] viewForApp:app gestureType:kSBGestureTypeSwitchApp includeStatusBar:YES];
+
+        CGRect gestureFrame = [gestureView frame];
+        gestureFrame.origin = CGPointZero;
+
+        if (UIInterfaceOrientationIsLandscape(CurrentInterfaceOrientation())) {
+            gestureFrame.size.width = [gestureView frame].size.height;
+            gestureFrame.size.height = [gestureView frame].size.width;
+        }
+
+        appView = [[UIView alloc] initWithFrame:gestureFrame];
+        [appView addSubview:gestureView];
+        [appView autorelease];
+
+        TransformGestureViewContainer(gestureView);
     } else {
         // XXX: using contentView here isn't necessarily the best option, but it works.
-        appView = [[objc_getClass("SBUIController") sharedInstance] contentView];
+        appView = ViewWithScreenshotOfView([[objc_getClass("SBUIController") sharedInstance] contentView]);
 
         // Call private UIKit API to cancel touches on the icon lists while swiping.
         // This fixes the bug where swiping up on an icon would start editing mode.
@@ -184,6 +233,7 @@ static CGFloat HeightFromScreenPercentage(CGFloat percentage) {
     shadowFrame.size.width = [appView bounds].size.width;
     shadowFrame.origin.y = [appView bounds].size.height;
     [shadowView setFrame:shadowFrame];
+    [shadowView autorelease];
 
     wrapperView = [[UIView alloc] initWithFrame:[appView bounds]];
     [wrapperView setClipsToBounds:NO];
@@ -191,9 +241,10 @@ static CGFloat HeightFromScreenPercentage(CGFloat percentage) {
     [wrapperView addSubview:shadowView];
 
     switcherView = [[objc_getClass("SBAppSwitcherController") sharedInstance] view];
-    [[objc_getClass("SBAppSwitcherController") sharedInstance] setupForApp:app orientation:UIInterfaceOrientationPortrait];
-    CGRect switcherFrame = [switcherView frame];
+    [[objc_getClass("SBAppSwitcherController") sharedInstance] setupForApp:app orientation:CurrentInterfaceOrientation()];
+
     CGFloat bottomBarHeight = [[objc_getClass("SBAppSwitcherController") sharedInstance] bottomBarHeight];
+    CGRect switcherFrame = [switcherView frame];
     switcherFrame.origin.y = [appView bounds].size.height - bottomBarHeight;
     [switcherView setFrame:switcherFrame];
 
@@ -273,7 +324,8 @@ static CGFloat HeightFromScreenPercentage(CGFloat percentage) {
 
                 CGFloat bottomBarHeight = [[objc_getClass("SBAppSwitcherController") sharedInstance] bottomBarHeight];
 
-                UIView *contentView = [[objc_getClass("SBUIController") sharedInstance] contentView];
+                UIView *contentView = ViewWithScreenshotOfView([[objc_getClass("SBUIController") sharedInstance] contentView]);
+                UIView *rootView = [[objc_getClass("SBUIController") sharedInstance] rootView];
 
                 // XXX: this is a horrible hack
                 UIImageView *switcherShadowView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"SwitcherShadowTop.png"]];
@@ -282,21 +334,22 @@ static CGFloat HeightFromScreenPercentage(CGFloat percentage) {
                 shadowFrame.size.width = [contentView bounds].size.width;
                 shadowFrame.origin.y = [contentView bounds].size.height;
                 [switcherShadowView setFrame:shadowFrame];
+                [switcherShadowView autorelease];
 
                 CGRect switcherFrame = [switcherView frame];
-                switcherFrame.origin.y = [appView bounds].size.height + -bottomBarHeight;
+                switcherFrame.origin.y = [appView bounds].size.height - bottomBarHeight;
                 [switcherView setFrame:switcherFrame];
 
-                [[contentView superview] addSubview:switcherView];
-                [[contentView superview] addSubview:switcherShadowView];
-                [[contentView superview] addSubview:contentView];
-                [[contentView superview] addSubview:wrapperView];
+                [rootView addSubview:switcherView];
+                [rootView addSubview:switcherShadowView];
+                [rootView addSubview:contentView];
+                [rootView addSubview:wrapperView];
 
                 [UIView animateWithDuration:0.4f animations:^{
                     CGRect wrapperFrame = [wrapperView frame];
                     wrapperFrame.origin.y = -bottomBarHeight;
                     [wrapperView setFrame:wrapperFrame];
-    
+
                     CGRect shadowFrame = [shadowView frame];
                     shadowFrame.origin.y = [wrapperView bounds].size.height + -bottomBarHeight;
                     [shadowView setFrame:shadowFrame];
@@ -311,14 +364,10 @@ static CGFloat HeightFromScreenPercentage(CGFloat percentage) {
                     [contentView setFrame:contentFrame];
                 } completion:^(BOOL finished) {
                     [self cleanupViews];
-    
-                    CGRect contentFrame = [contentView frame];
-                    contentFrame.origin.y = 0;
-                    [contentView setFrame:contentFrame];
-    
+
+                    [contentView removeFromSuperview];
                     [switcherShadowView removeFromSuperview];
-                    [switcherShadowView release];
-    
+
                     ActivateSwitcherFromToDuration(bottomBarHeight, bottomBarHeight, 0.0f);
                 }];
 
@@ -343,7 +392,7 @@ static CGFloat HeightFromScreenPercentage(CGFloat percentage) {
             if (-location >= bottomBarHeight) {
                 from = bottomBarHeight;
                 to = bottomBarHeight;
-                duration = app == nil ? 0.3 : 0;
+                duration = app == nil ? 0.3f : 0;
             } else {
                 from = -location;
                 to = bottomBarHeight;
@@ -431,12 +480,14 @@ static CGFloat HeightFromScreenPercentage(CGFloat percentage) {
 
 %hook SBUIController
 
+static SwitcherGesture *gesture = nil;
+
 - (void)finishLaunching {
     %orig;
 
     int touches = [(NSNumber *) PreferencesGet(@"BottomMinimumTouchCount", PreferencesGet(@"MinimumTouchCount", [NSNumber numberWithInt:1])) intValue];
 
-    SwitcherGesture *gesture = [[SwitcherGesture alloc] init];
+    gesture = [[SwitcherGesture alloc] init];
     [gesture addOffscreenEdge:kSBOffscreenEdgeBottom minimumTouchCount:touches];
 
     PreferencesApplyActionRegister(^{

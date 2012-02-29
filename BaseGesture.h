@@ -1,7 +1,9 @@
 
 #import "iPhonePrivate.h"
 
-@interface OffscreenGesture : NSObject {
+UIInterfaceOrientation CurrentInterfaceOrientation();
+
+@interface BaseGesture : NSObject {
     NSMutableArray *gestureRecognizers;
     BOOL isActive;
 }
@@ -10,6 +12,7 @@
 @property (nonatomic, readonly) NSMutableArray *gestureRecognizers;
 
 - (void)addOffscreenEdge:(SBOffscreenEdge)edge minimumTouchCount:(int)count;
+- (BOOL)currentOrientationIsSupported;
 - (BOOL)shouldActivate;
 
 - (void)handleGestureBeganWithLocation:(CGFloat)location;

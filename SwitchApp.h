@@ -1,6 +1,9 @@
 
+#import "BaseGesture.h"
 #import "OffscreenGesture.h"
 
-@interface SwitchAppGesture : OffscreenGesture
+BOOL SwitchAppGestureIsAnimatingCompletion();
+
+@interface SwitchAppGesture : BaseGesture
 @end
 

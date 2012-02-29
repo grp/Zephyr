@@ -3,6 +3,12 @@
 #import "Preferences.h"
 #import "Keyboard.h"
 
+static BOOL isAnimatingCompletion = NO;
+
+BOOL SwitchAppGestureIsAnimatingCompletion() {
+    return isAnimatingCompletion;
+}
+
 @implementation SwitchAppGesture
 
 - (BOOL)shouldActivate {
@@ -22,10 +28,10 @@
     if (topApplication == nil) topApplication = MSHookIvar<SBApplication *>([objc_getClass("SBUIController") sharedInstance], "_pendingAppActivatedByGesture");
 
     return topApplication != nil
-        && [SBApp activeInterfaceOrientation] == UIInterfaceOrientationPortrait
+        && [self currentOrientationIsSupported]
+        && ![SBApp _accessibilityIsSystemGestureActive]
         && ![[objc_getClass("SBUIController") sharedInstance] isSwitcherShowing]
         && ![[objc_getClass("SBAssistantController") sharedInstance] isAssistantVisible]
-        && ![[objc_getClass("SBBulletinListController") sharedInstanceIfExists] listViewIsActive]
         && [(NSNumber *) PreferencesGet(@"SwipeSideEnabled", [NSNumber numberWithBool:YES]) boolValue];
 }
 
@@ -62,6 +68,9 @@
 // many of those functions that call it /break/ if you apply the necessary
 // hooks around them (as well as the C function setting the varaible). Ugh. :(
 - (void)_switchAppGestureBegan {
+    // Attempt to emulate the C function call here.
+    if ([SBApp _accessibilityIsSystemGestureActive]) return;
+
     SBApplication *topApplication = [SBApp _accessibilityFrontMostApplication];
 
     if (topApplication != nil) {
@@ -156,13 +165,21 @@
     SBSwitchAppGestureView *gestureView = MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView");
 
     void (^completion)() = ^{
+        isAnimatingCompletion = NO; // chpwn addition
+
         [self _switchAppGestureViewAnimationComplete];
     };
 
-    if (type == 1) {
-        [gestureView finishForwardToEndWithPercentage:percentage completion:completion];
-    } else if (type == -1) {
-        [gestureView finishBackwardToStartWithCompletion:completion];
+    if (gestureView != nil) {
+        if (type == 1) {
+            isAnimatingCompletion = YES; // chpwn addition
+
+            [gestureView finishForwardToEndWithPercentage:percentage completion:completion];
+        } else if (type == -1) {
+            isAnimatingCompletion = YES; // chpwn addition
+
+            [gestureView finishBackwardToStartWithCompletion:completion];
+        }
     }
 
     [self updateSwitchAppGestureStatusBar];
@@ -234,7 +251,9 @@
         [self scheduleApplicationForLaunchByGesture:endingApplication];
         [self _installSwitchAppGesturePlaceholderViewForEndingApp:endingApplication];
 
-        shouldShowSwitcherAgain = YES;
+        if (startingApplication == endingApplication) {
+            shouldShowSwitcherAgain = YES;
+        }
     } else {
         [endingApplication disableContextHostingForRequester:CFSTR("SwitchApp")];
         [endingApplication disableContextHostingForRequester:CFSTR("LaunchSuspend")];
@@ -255,9 +274,9 @@
     if (shouldShowSwitcherAgain && MSHookIvar<BOOL>(self, "_switcherVisibleWhenSwitchAppGestureStarted")) {
         // show switcher again if it was hidden for the gesture to start
 
-        //SBAppSwitcherController *appSwitcherController = [objc_getClass("SBAppSwitcherController") sharedInstance];
+        SBAppSwitcherController *appSwitcherController = [objc_getClass("SBAppSwitcherController") sharedInstance];
         SBShowcaseContext *zeroContext = [self _showcaseContextForOffset:0];
-        SBShowcaseContext *barContext = [self _showcaseContextForOffset:[self bottomBarHeight]];
+        SBShowcaseContext *barContext = [self _showcaseContextForOffset:[appSwitcherController bottomBarHeight]];
 
         UIInterfaceOrientation currentOrientation = [SBApp activeInterfaceOrientation]; // also someting about "CAMediaTime", huh
         [zeroContext setShowcaseOrientation:currentOrientation];
@@ -278,12 +297,14 @@
     }
 }
 
+static SwitchAppGesture *gesture = nil;
+
 - (void)finishLaunching {
     %orig;
 
     int touches = [(NSNumber *) PreferencesGet(@"SideMinimumTouchCount", PreferencesGet(@"MinimumTouchCount", [NSNumber numberWithInt:1])) intValue];
 
-    SwitchAppGesture *gesture = [[SwitchAppGesture alloc] init];
+    gesture = [[SwitchAppGesture alloc] init];
     [gesture addOffscreenEdge:kSBOffscreenEdgeRight minimumTouchCount:touches];
     [gesture addOffscreenEdge:kSBOffscreenEdgeLeft minimumTouchCount:touches];
 
@@ -296,12 +317,18 @@
     });
 }
 
+// avoid conflict between native gesture and custom gesture on the iPad
+- (void)handleFluidHorizontalSystemGesture:(SBGestureRecognizer *)recognizer {
+    if (SwitchAppGestureIsAnimatingCompletion()) return;
+
+    %orig;
+}
+
 %end
 
 %end
 
 %ctor {
     %init(SwitchApp);
-
 }
 
