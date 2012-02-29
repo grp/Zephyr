@@ -239,6 +239,17 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
         [[objc_getClass("SBUIController") sharedInstance] restoreIconListAnimated:NO animateWallpaper:NO keepSwitcher:NO];
         [[objc_getClass("SBUIController") sharedInstance] notifyAppResignActive:app];
     } else if ([self effectiveSwipeUpAction] == kSwipeUpActionSwitcher) {
+        if (linenView = nil) {
+            // TODO: Figure out why SBLinenView cannot give linens the full 320x480
+            CGRect frame = rootView.bounds;
+            frame.origin.y = switcherView.bounds.size.height - 320.0f;
+            frame.size.height = 320.0f;
+            linenView = [[%c(SBLinenView) alloc] initWithFrame:frame];
+        }
+
+        [switcherView insertSubview:linenView atIndex:0];
+        MSHookIvar<UIView *>(switcherView, "_backgroundView").alpha = 0.0f;
+
         [wrapperView addSubview:switcherView];
         [wrapperView sendSubviewToBack:switcherView];
     }
@@ -249,14 +260,26 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
     }];
 }
 
+static CGFloat ScreenRounded(CGFloat value)
+{
+    CGFloat scale = [UIScreen mainScreen].scale;
+    return roundf(value * scale) / scale;
+}
+
 - (void)handleGestureChangedWithLocation:(CGFloat)location velocity:(CGPoint)velocity {
     location = ZephyrHeightFromScreenPercentage(location, ZephyrCurrentInterfaceOrientation());
     CGFloat bottomBarHeight = [[objc_getClass("SBAppSwitcherController") sharedInstance] bottomBarHeight];
 
     // constrain to not going way off the screen
     if (location > 20.0f) location = 20.0f;
-    // constrain to top of switcher
-    if ([self effectiveSwipeUpAction] == kSwipeUpActionSwitcher && -location > bottomBarHeight) location = -bottomBarHeight;
+
+    if ([self effectiveSwipeUpAction] == kSwipeUpActionSwitcher) {
+        // constrain to top of switcher
+        if (location < -bottomBarHeight) {
+            location = ScreenRounded((location + bottomBarHeight) * 0.2f - bottomBarHeight);
+        }
+    }
+
 
     [self positionAtLocation:location];
 
@@ -354,20 +377,23 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
         // XXX: maybe use the completionType here
         CGFloat bottomBarHeight = [[objc_getClass("SBAppSwitcherController") sharedInstance] bottomBarHeight];
         if (-location >= bottomBarHeight * (2.0f / 3.0f)) {
-            [self cleanupViews];
-
             CGFloat from, to, duration;
-            if (-location >= bottomBarHeight) {
-                from = bottomBarHeight;
-                to = bottomBarHeight;
-                duration = app == nil ? 0.3f : 0;
-            } else {
-                from = -location;
-                to = bottomBarHeight;
-                duration = 0.3f;
-            }
+            if (location < -bottomBarHeight)
+                location = ScreenRounded((location + bottomBarHeight) * 0.2f - bottomBarHeight);
+            from = -location;
+            to = bottomBarHeight;
+            duration = 0.3f;
 
             dispatch_async(dispatch_get_main_queue(), ^{
+                [linenView.superview sendSubviewToBack:linenView];
+                [UIView animateWithDuration:duration animations:^{
+                    MSHookIvar<UIView *>(switcherView, "_backgroundView").alpha = 1.0f;
+                } completion:^(BOOL completed) {
+                    [linenView removeFromSuperview];
+                    [linenView release];
+                    linenView = nil;
+                }];
+                [self cleanupViews];
                 ActivateSwitcherFromToDuration(from, to, duration);
             });
         } else {
@@ -375,6 +401,9 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
                 [self positionAtLocation:0];
             } completion:^(BOOL completed) {
                 [self cleanupViews];
+                [linenView removeFromSuperview];
+                [linenView release];
+                linenView = nil;
             }];
         }
     } else {
