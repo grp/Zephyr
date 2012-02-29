@@ -1,4 +1,3 @@
-
 #import "SwitchApp.h"
 #import "Preferences.h"
 #import "Keyboard.h"
@@ -31,7 +30,9 @@ BOOL SwitchAppGestureIsAnimatingCompletion() {
         && [self currentOrientationIsSupported]
         && ![SBApp _accessibilityIsSystemGestureActive]
         && ![[objc_getClass("SBUIController") sharedInstance] isSwitcherShowing]
+        && ![[objc_getClass("SBBulletinWindowController") sharedInstance] isBusy]
         && ![[objc_getClass("SBAssistantController") sharedInstance] isAssistantVisible]
+        && ![[objc_getClass("SBBulletinListController") sharedInstanceIfExists] listViewIsActive]
         && [(NSNumber *) PreferencesGet(@"SwipeSideEnabled", [NSNumber numberWithBool:YES]) boolValue];
 }
 
