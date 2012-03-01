@@ -1,6 +1,7 @@
 
 #import <UIKit/UIKit.h>
 #import <QuartzCore/QuartzCore.h>
+#import <GraphicsServices/GraphicsServices.h>
 #import <objc/runtime.h>
 #import <substrate.h>
 
@@ -10,6 +11,10 @@
 @interface SpringBoard : UIApplication
 - (SBApplication *)_accessibilityFrontMostApplication;
 - (BOOL)_accessibilityIsSystemGestureActive;
+- (void)menuButtonDown:(GSEventRef)event;
+- (void)menuButtonUp:(GSEventRef)event;
+- (void)lockButtonDown:(GSEventRef)event;
+- (void)lockButtonUp:(GSEventRef)event;
 - (void)showSpringBoardStatusBar;
 - (void)hideSpringBoardStatusBar;
 - (UIInterfaceOrientation)activeInterfaceOrientation;

@@ -143,3 +143,38 @@ UIInterfaceOrientation CurrentInterfaceOrientation() {
 
 @end
 
+%group DisableHardwareButtons
+%hook SpringBoard
+
+- (void)lockButtonDown:(GSEventRef)event {
+    if ([BaseGesture isAnyGestureActive]) return;
+
+    %orig;
+}
+
+- (void)lockButtonUp:(GSEventRef)event {
+    if ([BaseGesture isAnyGestureActive]) return;
+
+    %orig;
+}
+
+- (void)menuButtonDown:(GSEventRef)event {
+    if ([BaseGesture isAnyGestureActive]) return;
+
+    %orig;
+}
+
+- (void)menuButtonUp:(GSEventRef)event {
+    if ([BaseGesture isAnyGestureActive]) return;
+
+    %orig;
+}
+
+%end
+%end
+
+%ctor {
+    %init(DisableHardwareButtons);
+}
+
+
