@@ -281,6 +281,7 @@
 			<string>Switcher Delay</string>
 			<key>validTitles</key>
 			<array>
+				<string>0.1 seconds</string>
 				<string>0.2 seconds</string>
 				<string>0.3 seconds</string>
 				<string>0.4 seconds</string>
@@ -299,6 +300,7 @@
 			</array>
 			<key>validValues</key>
 			<array>
+                <real>0.1</real>
                 <real>0.2</real>
                 <real>0.3</real>
                 <real>0.4</real>
