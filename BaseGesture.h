@@ -11,7 +11,7 @@ UIInterfaceOrientation CurrentInterfaceOrientation();
 @property (nonatomic, readonly) BOOL isActive;
 @property (nonatomic, readonly) NSMutableArray *gestureRecognizers;
 
-- (void)addOffscreenEdge:(SBOffscreenEdge)edge minimumTouchCount:(int)count;
+- (void)addOffscreenEdge:(SBOffscreenEdge)edge minimumTouchCount:(int)count edgeMargin:(CGFloat)edgeMargin;
 - (BOOL)currentOrientationIsSupported;
 - (BOOL)shouldActivate;
 

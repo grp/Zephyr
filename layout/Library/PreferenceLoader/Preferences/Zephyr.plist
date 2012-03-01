@@ -67,6 +67,44 @@
 		</dict>
 		<dict>
 			<key>cell</key>
+			<string>PSLinkListCell</string>
+			<key>default</key>
+			<real>30.0</real>
+			<key>detail</key>
+			<string>PSListItemsController</string>
+			<key>key</key>
+			<string>SideSensitivityDistance</string>
+			<key>label</key>
+			<string>Sensitivity</string>
+			<key>validTitles</key>
+			<array>
+				<string>Tiny</string>
+				<string>Wee</string>
+				<string>Small</string>
+				<string>Normal</string>
+				<string>Large</string>
+				<string>Big</string>
+                <string>Huge</string>
+                <string>Gigantic</string>
+			</array>
+			<key>validValues</key>
+			<array>
+				<real>15.0</real>
+				<real>20.0</real>
+				<real>25.0</real>
+				<real>30.0</real>
+				<real>40.0</real>
+				<real>55.0</real>
+				<real>80.0</real>
+				<real>120.0</real>
+			</array>
+			<key>defaults</key>
+			<string>com.chpwn.zephyr</string>
+			<key>PostNotification</key>
+			<string>com.chpwn.zephyr.preferences-changed</string>
+		</dict>
+		<dict>
+			<key>cell</key>
 			<string>PSSwitchCell</string>
 			<key>default</key>
 			<true/>
@@ -156,6 +194,44 @@
 				<integer>2</integer>
 				<integer>3</integer>
 				<integer>4</integer>
+			</array>
+			<key>defaults</key>
+			<string>com.chpwn.zephyr</string>
+			<key>PostNotification</key>
+			<string>com.chpwn.zephyr.preferences-changed</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSLinkListCell</string>
+			<key>default</key>
+			<real>30.0</real>
+			<key>detail</key>
+			<string>PSListItemsController</string>
+			<key>key</key>
+			<string>BottomSensitivityDistance</string>
+			<key>label</key>
+			<string>Sensitivity</string>
+			<key>validTitles</key>
+			<array>
+				<string>Tiny</string>
+				<string>Wee</string>
+				<string>Small</string>
+				<string>Normal</string>
+				<string>Large</string>
+				<string>Big</string>
+                <string>Huge</string>
+                <string>Gigantic</string>
+			</array>
+			<key>validValues</key>
+			<array>
+				<real>15.0</real>
+				<real>20.0</real>
+				<real>25.0</real>
+				<real>30.0</real>
+				<real>40.0</real>
+				<real>55.0</real>
+				<real>80.0</real>
+				<real>120.0</real>
 			</array>
 			<key>defaults</key>
 			<string>com.chpwn.zephyr</string>

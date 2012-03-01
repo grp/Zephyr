@@ -304,16 +304,19 @@ static SwitchAppGesture *gesture = nil;
     %orig;
 
     int touches = [(NSNumber *) PreferencesGet(@"SideMinimumTouchCount", PreferencesGet(@"MinimumTouchCount", [NSNumber numberWithInt:1])) intValue];
+    CGFloat edgeMargin = [(NSNumber *) PreferencesGet(@"SideSensitivityDistance", [NSNumber numberWithFloat:30.0f]) floatValue];
 
     gesture = [[SwitchAppGesture alloc] init];
-    [gesture addOffscreenEdge:kSBOffscreenEdgeRight minimumTouchCount:touches];
-    [gesture addOffscreenEdge:kSBOffscreenEdgeLeft minimumTouchCount:touches];
+    [gesture addOffscreenEdge:kSBOffscreenEdgeRight minimumTouchCount:touches edgeMargin:edgeMargin];
+    [gesture addOffscreenEdge:kSBOffscreenEdgeLeft minimumTouchCount:touches edgeMargin:edgeMargin];
 
     PreferencesApplyActionRegister(^{
         int touches = [(NSNumber *) PreferencesGet(@"SideMinimumTouchCount", PreferencesGet(@"MinimumTouchCount", [NSNumber numberWithInt:1])) intValue];
+        CGFloat edgeMargin = [(NSNumber *) PreferencesGet(@"SideSensitivityDistance", [NSNumber numberWithFloat:30.0f]) floatValue];
 
         for (SBOffscreenSwipeGestureRecognizer *recognizer in [gesture gestureRecognizers]) {
             [recognizer setMinTouches:touches];
+            [recognizer setEdgeMargin:edgeMargin];
         }
     });
 }
