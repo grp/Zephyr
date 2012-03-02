@@ -118,7 +118,8 @@ UIInterfaceOrientation CurrentInterfaceOrientation() {
 }
 
 - (BOOL)currentOrientationIsSupported {
-    return [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad || CurrentInterfaceOrientation() == UIInterfaceOrientationPortrait;
+    // Use -activeInterfaceOrientation to get around the faked orientation as reported by CurrentInterfaceOrientation() on the iPhone.
+    return [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad || [SBApp activeInterfaceOrientation] == UIInterfaceOrientationPortrait;
 }
 
 - (BOOL)shouldActivate {
