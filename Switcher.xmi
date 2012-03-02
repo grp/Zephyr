@@ -194,9 +194,11 @@ static CGFloat HeightFromScreenPercentage(CGFloat percentage) {
 
     SBApplication *app = [SBApp _accessibilityFrontMostApplication];
 
-    UIInterfaceOrientation currentOrientation = (UIInterfaceOrientation)(int)[SBApp interfaceOrientationForCurrentDeviceOrientation];
-    [[UIDevice currentDevice] setOrientation:currentOrientation animated:NO];
-    [SBApp noteInterfaceOrientationChanged:currentOrientation];
+    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
+        UIInterfaceOrientation currentOrientation = (UIInterfaceOrientation) [SBApp interfaceOrientationForCurrentDeviceOrientation];
+        [[UIDevice currentDevice] setOrientation:currentOrientation animated:NO];
+        [SBApp noteInterfaceOrientationChanged:currentOrientation];
+    }
 
     // Ensure app is properly launched and ready.
     if (app != nil) {
