@@ -323,7 +323,7 @@ static SwitchAppGesture *gesture = nil;
 
 // avoid conflict between native gesture and custom gesture on the iPad
 - (void)handleFluidHorizontalSystemGesture:(SBGestureRecognizer *)recognizer {
-    if (SwitchAppGestureIsAnimatingCompletion()) return;
+    if ([gesture isActive] || SwitchAppGestureIsAnimatingCompletion()) return;
 
     %orig;
 }
