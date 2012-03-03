@@ -97,7 +97,11 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
 }
 
 static CGFloat HeightFromScreenPercentage(CGFloat percentage) {
-    return [[UIScreen mainScreen] bounds].size.height * percentage;
+    if (UIInterfaceOrientationIsLandscape(CurrentInterfaceOrientation())) {
+        return [[UIScreen mainScreen] bounds].size.width * percentage;
+    } else {
+        return [[UIScreen mainScreen] bounds].size.height * percentage;
+    }
 }
 
 @implementation SwitcherGesture
@@ -188,17 +192,16 @@ static CGFloat HeightFromScreenPercentage(CGFloat percentage) {
 }
 
 - (void)handleGestureBeganWithLocation:(CGFloat)location {
-    location = HeightFromScreenPercentage(location);
-
-    pendingSwitcherActivations = [[NSMutableSet alloc] init];
-
-    SBApplication *app = [SBApp _accessibilityFrontMostApplication];
-
     if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
         UIInterfaceOrientation currentOrientation = (UIInterfaceOrientation) [SBApp interfaceOrientationForCurrentDeviceOrientation];
         [[UIDevice currentDevice] setOrientation:currentOrientation animated:NO];
         [SBApp noteInterfaceOrientationChanged:currentOrientation];
     }
+
+    pendingSwitcherActivations = [[NSMutableSet alloc] init];
+
+    location = HeightFromScreenPercentage(location);
+    SBApplication *app = [SBApp _accessibilityFrontMostApplication];
 
     // Ensure app is properly launched and ready.
     if (app != nil) {
