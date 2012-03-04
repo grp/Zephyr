@@ -1,4 +1,3 @@
-
 #import "SwitchApp.h"
 #import "Preferences.h"
 #import "Keyboard.h"
@@ -31,7 +30,9 @@ BOOL SwitchAppGestureIsAnimatingCompletion() {
         && [self currentOrientationIsSupported]
         && ![SBApp _accessibilityIsSystemGestureActive]
         && ![[objc_getClass("SBUIController") sharedInstance] isSwitcherShowing]
+        && ![[objc_getClass("SBBulletinWindowController") sharedInstance] isBusy]
         && ![[objc_getClass("SBAssistantController") sharedInstance] isAssistantVisible]
+        && ![[objc_getClass("SBBulletinListController") sharedInstanceIfExists] listViewIsActive]
         && [(NSNumber *) PreferencesGet(@"SwipeSideEnabled", [NSNumber numberWithBool:YES]) boolValue];
 }
 
@@ -303,23 +304,26 @@ static SwitchAppGesture *gesture = nil;
     %orig;
 
     int touches = [(NSNumber *) PreferencesGet(@"SideMinimumTouchCount", PreferencesGet(@"MinimumTouchCount", [NSNumber numberWithInt:1])) intValue];
+    CGFloat edgeMargin = [(NSNumber *) PreferencesGet(@"SideSensitivityDistance", [NSNumber numberWithFloat:30.0f]) floatValue];
 
     gesture = [[SwitchAppGesture alloc] init];
-    [gesture addOffscreenEdge:kSBOffscreenEdgeRight minimumTouchCount:touches];
-    [gesture addOffscreenEdge:kSBOffscreenEdgeLeft minimumTouchCount:touches];
+    [gesture addOffscreenEdge:kSBOffscreenEdgeRight minimumTouchCount:touches edgeMargin:edgeMargin];
+    [gesture addOffscreenEdge:kSBOffscreenEdgeLeft minimumTouchCount:touches edgeMargin:edgeMargin];
 
     PreferencesApplyActionRegister(^{
         int touches = [(NSNumber *) PreferencesGet(@"SideMinimumTouchCount", PreferencesGet(@"MinimumTouchCount", [NSNumber numberWithInt:1])) intValue];
+        CGFloat edgeMargin = [(NSNumber *) PreferencesGet(@"SideSensitivityDistance", [NSNumber numberWithFloat:30.0f]) floatValue];
 
         for (SBOffscreenSwipeGestureRecognizer *recognizer in [gesture gestureRecognizers]) {
             [recognizer setMinTouches:touches];
+            [recognizer setEdgeMargin:edgeMargin];
         }
     });
 }
 
 // avoid conflict between native gesture and custom gesture on the iPad
 - (void)handleFluidHorizontalSystemGesture:(SBGestureRecognizer *)recognizer {
-    if (SwitchAppGestureIsAnimatingCompletion()) return;
+    if ([gesture isActive] || SwitchAppGestureIsAnimatingCompletion()) return;
 
     %orig;
 }

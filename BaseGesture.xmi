@@ -43,13 +43,13 @@ UIInterfaceOrientation CurrentInterfaceOrientation() {
     isActive = NO;
 }
 
-- (void)addOffscreenEdge:(SBOffscreenEdge)edge minimumTouchCount:(int)touchCount {
+- (void)addOffscreenEdge:(SBOffscreenEdge)edge minimumTouchCount:(int)touchCount edgeMargin:(CGFloat)sensitivity {
     SBOffscreenSwipeGestureRecognizer *gestureRecognizer = [[objc_getClass("SBOffscreenSwipeGestureRecognizer") alloc] initForOffscreenEdge:edge];
     [gestureRecognizer setAllowableDistanceFromEdgeCenter:CGFLOAT_MAX];
     [gestureRecognizer setSendsTouchesCancelledToApplication:YES];
     [gestureRecognizer setRequiresSecondTouchInRange:NO];
     [gestureRecognizer setMinTouches:touchCount];
-    // [gestureRecognizer setEdgeMargin:30.0f]; // sensitivity? default is 30.0f
+    [gestureRecognizer setEdgeMargin:sensitivity];
     // [gestureRecognizer setFalseEdge:-1.0f]; // what is this?
     [gestureRecognizer setTypes:0x10];
 
@@ -118,7 +118,8 @@ UIInterfaceOrientation CurrentInterfaceOrientation() {
 }
 
 - (BOOL)currentOrientationIsSupported {
-    return [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad || CurrentInterfaceOrientation() == UIInterfaceOrientationPortrait;
+    // Use -activeInterfaceOrientation to get around the faked orientation as reported by CurrentInterfaceOrientation() on the iPhone.
+    return [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad || [SBApp activeInterfaceOrientation] == UIInterfaceOrientationPortrait;
 }
 
 - (BOOL)shouldActivate {
@@ -142,4 +143,39 @@ UIInterfaceOrientation CurrentInterfaceOrientation() {
 }
 
 @end
+
+%group DisableHardwareButtons
+%hook SpringBoard
+
+- (void)lockButtonDown:(GSEventRef)event {
+    if ([BaseGesture isAnyGestureActive]) return;
+
+    %orig;
+}
+
+- (void)lockButtonUp:(GSEventRef)event {
+    if ([BaseGesture isAnyGestureActive]) return;
+
+    %orig;
+}
+
+- (void)menuButtonDown:(GSEventRef)event {
+    if ([BaseGesture isAnyGestureActive]) return;
+
+    %orig;
+}
+
+- (void)menuButtonUp:(GSEventRef)event {
+    if ([BaseGesture isAnyGestureActive]) return;
+
+    %orig;
+}
+
+%end
+%end
+
+%ctor {
+    %init(DisableHardwareButtons);
+}
+
 

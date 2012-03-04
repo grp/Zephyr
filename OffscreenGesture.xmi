@@ -17,7 +17,6 @@ void SBGestureRecognizerUnregister(SBGestureRecognizer *recognizer) {
 }
 
 %group OffscreenSwipes
-
 %hook SBHandMotionExtractor
 
 - (void)extractHandMotionForActiveTouches:(SBTouchInfo *)activeTouches count:(unsigned int)count centroid:(CGPoint)centroid {
@@ -89,29 +88,6 @@ void SBGestureRecognizerUnregister(SBGestureRecognizer *recognizer) {
 }
 
 %end
-
-%hook SBOffscreenSwipeGestureRecognizer
-
-// XXX: Hack to workaround Apple bug. <rdar://10801257>
-// Basically, this method is fail iff m_offscreenEdge is kSBOffscreenEdgeLeft,
-// so work around that by flipping the touch and testing it as on the right.
-// XXX: Jon Drummond (SpringBoard team) cannot reproduce this. (Can I still?)
-- (BOOL)firstTouchInRange:(CGPoint)touch {
-    if (MSHookIvar<SBOffscreenEdge>(self, "m_offscreenEdge") == kSBOffscreenEdgeLeft) {
-        touch.x = [[UIScreen mainScreen] bounds].size.width - touch.x;
-
-        MSHookIvar<SBOffscreenEdge>(self, "m_offscreenEdge") = kSBOffscreenEdgeRight;
-        int orig = %orig;
-        MSHookIvar<SBOffscreenEdge>(self, "m_offscreenEdge") = kSBOffscreenEdgeLeft;
-
-        return orig;
-    } else {
-        return %orig;
-    }
-}
-
-%end
-
 %end
 
 %ctor {
