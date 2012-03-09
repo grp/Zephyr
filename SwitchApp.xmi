@@ -43,7 +43,11 @@ BOOL SwitchAppGestureIsAnimatingCompletion() {
 
 - (void)handleGestureBeganWithLocation:(CGFloat)location {
     SBUIController *uic = [objc_getClass("SBUIController") sharedInstance];
-    [uic _switchAppGestureBegan];
+
+    if ([uic respondsToSelector:@selector(_switchAppGestureBegan)])
+        [uic _switchAppGestureBegan];
+    else if ([uic respondsToSelector:@selector(_switchAppGestureBegan:)])
+        [uic _switchAppGestureBegan:location];
 }
 
 - (void)handleGestureChangedWithLocation:(CGFloat)location velocity:(CGPoint)velocity {
@@ -58,6 +62,10 @@ BOOL SwitchAppGestureIsAnimatingCompletion() {
 
 @end
 
+@interface SBUIController (Zephyr)
+- (void)_switchAppGestureBeganInternal;
+@end
+
 %group SwitchApp
 
 %hook SBUIController
@@ -68,7 +76,17 @@ BOOL SwitchAppGestureIsAnimatingCompletion() {
 // called from dozens of methods, and as such cannot be hooked, especially as
 // many of those functions that call it /break/ if you apply the necessary
 // hooks around them (as well as the C function setting the varaible). Ugh. :(
+
 - (void)_switchAppGestureBegan {
+    [self _switchAppGestureBeganInternal];
+}
+
+- (void)_switchAppGestureBegan:(CGFloat)location {
+    [self _switchAppGestureBeganInternal];
+}
+
+%new(v@:)
+- (void)_switchAppGestureBeganInternal {
     // Attempt to emulate the C function call here.
     if ([SBApp _accessibilityIsSystemGestureActive]) return;
 

@@ -134,18 +134,18 @@ typedef enum {
 @interface SBUIController : NSObject
 + (id)sharedInstance;
 - (void)_revealShowcase:(SBShowcaseViewController *)showcase duration:(NSTimeInterval)duration from:(SBShowcaseContext *)from to:(SBShowcaseContext *)to;
-- (void)restoreIconListAnimated:(BOOL)animated animateWallpaper:(BOOL)animateWallpaper keepSwitcher:(BOOL)keepSwitcher;
-- (void)stopRestoringIconList;
-- (void)tearDownIconListAndBar;
-- (void)_switchAppGestureBegan;
+
+- (id)_calculateSwitchAppList;
+- (void)_switchAppGestureBegan; // iOS 5.0
+- (void)_switchAppGestureBegan:(float)location; // iOS 5.1
+- (void)_switchAppGestureChanged:(float)location;
+- (void)_switchAppGestureEndedWithCompletionType:(int)type cumulativePercentage:(float)location;
 - (void)_switchAppGestureCancelled;
-- (void)_switchAppGestureChanged:(float)changed;
-- (void)_switchAppGestureEndedWithCompletionType:(int)completionType cumulativePercentage:(float)percentage;
 - (void)_switchAppGestureViewAnimationComplete;
+
 - (void)_dismissShowcase:(double)unk unhost:(BOOL)unhost;
 - (int)_dismissSheetsAndDetermineAlertStateForMenuClickOrSystemGesture;
-- (BOOL)_activateSwitcherFrom:(id)from to:(id)to duration:(double)duration;
-- (id)_calculateSwitchAppList;
+- (BOOL)_activateSwitcherFrom:(SBShowcaseContext *)from to:(SBShowcaseContext *)to duration:(NSTimeInterval)duration;
 - (void)_resumeEventsIfNecessary;
 - (void)_lockOrientationForSystemGesture;
 - (void)_releaseSystemGestureOrientationLock;
@@ -153,6 +153,10 @@ typedef enum {
 - (void)_releaseSystemGestureOrientationLock;
 - (void)_installSwitchAppGesturePlaceholderViewForEndingApp:(SBApplication *)endingApp;
 - (id)_showcaseContextForOffset:(CGFloat)offset;
+
+- (void)restoreIconListAnimated:(BOOL)animated animateWallpaper:(BOOL)animateWallpaper keepSwitcher:(BOOL)keepSwitcher;
+- (void)stopRestoringIconList;
+- (void)tearDownIconListAndBar;
 - (CGFloat)bottomBarHeight;
 - (UIView *)rootView;
 - (void)clearPendingAppActivatedByGesture;
