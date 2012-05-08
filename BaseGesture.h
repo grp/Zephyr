@@ -2,6 +2,7 @@
 #import "iPhonePrivate.h"
 
 UIInterfaceOrientation CurrentInterfaceOrientation();
+UIInterfaceOrientation HomeInterfaceOrientation();
 
 @interface BaseGesture : NSObject {
     NSMutableArray *gestureRecognizers;

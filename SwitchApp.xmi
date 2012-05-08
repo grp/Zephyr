@@ -85,6 +85,33 @@ BOOL SwitchAppGestureIsAnimatingCompletion() {
     [self _switchAppGestureBeganInternal];
 }
 
+static void RotateView(UIView *container) {
+    UIInterfaceOrientation currentOrientation = CurrentInterfaceOrientation();
+
+    CGAffineTransform transform = CGAffineTransformIdentity;
+    CGRect frame = CGRectZero;
+
+    switch (currentOrientation) {
+        case UIInterfaceOrientationPortrait:
+            break;
+        case UIInterfaceOrientationPortraitUpsideDown:
+            transform = CGAffineTransformMakeRotation(M_PI);
+            break;
+        case UIInterfaceOrientationLandscapeLeft:
+            transform = CGAffineTransformMakeRotation(M_PI / 2.0f);
+            frame = [container frame];
+            transform = CGAffineTransformTranslate(transform, (frame.size.width - frame.size.height) / 2.0f, (frame.size.width - frame.size.height) / 2.0f);
+            break;
+        case UIInterfaceOrientationLandscapeRight:
+            transform = CGAffineTransformMakeRotation(M_PI / -2.0f);
+            frame = [container frame];
+            transform = CGAffineTransformTranslate(transform, (frame.size.width - frame.size.height) / -2.0f, (frame.size.width - frame.size.height) / -2.0f);
+            break;
+    }
+
+    [container setTransform:transform];
+}
+
 %new(v@:)
 - (void)_switchAppGestureBeganInternal {
     // Attempt to emulate the C function call here.
@@ -144,7 +171,7 @@ BOOL SwitchAppGestureIsAnimatingCompletion() {
     }
 
     // some c function... and another one.. sorta the second one below
-    UIInterfaceOrientation currentOrientation = [SBApp activeInterfaceOrientation]; // also someting about "CAMediaTime", huh
+    UIInterfaceOrientation currentOrientation = CurrentInterfaceOrientation(); // also someting about "CAMediaTime", huh
     [[UIDevice currentDevice] setOrientation:currentOrientation animated:NO];
     [SBApp noteInterfaceOrientationChanged:currentOrientation];
 
@@ -169,6 +196,8 @@ BOOL SwitchAppGestureIsAnimatingCompletion() {
     [self prepareSwitchAppGestureStatusBar];
     [self setRootViewHiddenForScatter:0 duration:0.0 startTime:0.0];
     [self updateSwitchAppGestureStatusBar];
+
+    RotateView(MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView"));
 
     if ([self isSwitcherShowing]) {
         [self _dismissShowcase:0.0f unhost:NO];
@@ -297,7 +326,7 @@ BOOL SwitchAppGestureIsAnimatingCompletion() {
         SBShowcaseContext *zeroContext = [self _showcaseContextForOffset:0];
         SBShowcaseContext *barContext = [self _showcaseContextForOffset:[appSwitcherController bottomBarHeight]];
 
-        UIInterfaceOrientation currentOrientation = [SBApp activeInterfaceOrientation]; // also someting about "CAMediaTime", huh
+        UIInterfaceOrientation currentOrientation = HomeInterfaceOrientation(); // also someting about "CAMediaTime", huh
         [zeroContext setShowcaseOrientation:currentOrientation];
         [barContext setShowcaseOrientation:currentOrientation];
 

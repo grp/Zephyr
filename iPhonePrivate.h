@@ -18,6 +18,7 @@
 - (void)showSpringBoardStatusBar;
 - (void)hideSpringBoardStatusBar;
 - (UIInterfaceOrientation)activeInterfaceOrientation;
+- (UIInterfaceOrientation)_frontMostAppOrientation;
 - (UIInterfaceOrientation)interfaceOrientationForCurrentDeviceOrientation;
 - (void)noteInterfaceOrientationChanged:(UIInterfaceOrientation)orientation;
 @end

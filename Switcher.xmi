@@ -27,7 +27,7 @@ static void OpenMusicControlsTaskSwitcherIfNecessaryWithDuration(double duration
         }
 
         if (defaultValue) {
-            [[$SBMusicController sharedInstance] switcherDidShow:duration orientation:CurrentInterfaceOrientation()];
+            [[$SBMusicController sharedInstance] switcherDidShow:duration orientation:HomeInterfaceOrientation()];
         }
     }
 }
@@ -78,13 +78,13 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
     SBShowcaseContext *zeroContext = [uic _showcaseContextForOffset:from];
     SBShowcaseContext *barContext = [uic _showcaseContextForOffset:to];
 
-    [zeroContext setShowcaseOrientation:CurrentInterfaceOrientation()];
-    [barContext setShowcaseOrientation:CurrentInterfaceOrientation()];
+    [zeroContext setShowcaseOrientation:HomeInterfaceOrientation()];
+    [barContext setShowcaseOrientation:HomeInterfaceOrientation()];
 
     SBAppSwitcherController *switcher = [objc_getClass("SBAppSwitcherController") sharedInstance];
 
     SBApplication *app = [SBApp _accessibilityFrontMostApplication];
-    [switcher setupForApp:app orientation:CurrentInterfaceOrientation()];
+    [switcher setupForApp:app orientation:HomeInterfaceOrientation()];
 
     if (![objc_getClass("SBApplication") multitaskingIsSupported]) return;
     if ([switcher printViewIsShowing]) return;
@@ -264,6 +264,7 @@ static CGFloat HeightFromScreenPercentage(CGFloat percentage) {
     }
 
     UIView *rootView = [[objc_getClass("SBUIController") sharedInstance] rootView];
+    TransformGestureViewContainer(rootView);
 
     if ([self effectiveSwipeUpAction] == kSwipeUpActionSwitcher) {
         [rootView addSubview:switcherView];

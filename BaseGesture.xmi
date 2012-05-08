@@ -12,7 +12,11 @@ static NSMutableArray *allGestures = nil;
 }
 
 UIInterfaceOrientation CurrentInterfaceOrientation() {
-    return [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone ? UIInterfaceOrientationPortrait : [SBApp activeInterfaceOrientation];
+    return [SBApp _frontMostAppOrientation];
+}
+
+UIInterfaceOrientation HomeInterfaceOrientation() {
+    return [SBApp activeInterfaceOrientation];
 }
 
 @implementation BaseGesture
@@ -118,6 +122,7 @@ UIInterfaceOrientation CurrentInterfaceOrientation() {
 }
 
 - (BOOL)currentOrientationIsSupported {
+    return YES;
     // Use -activeInterfaceOrientation to get around the faked orientation as reported by CurrentInterfaceOrientation() on the iPhone.
     return [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad || [SBApp activeInterfaceOrientation] == UIInterfaceOrientationPortrait;
 }
