@@ -141,7 +141,7 @@
 			<key>key</key>
 			<string>SideLandscape</string>
 			<key>label</key>
-			<string>Landscape</string>
+			<string>Landscape (iPhone)</string>
 			<key>PostNotification</key>
 			<string>com.chpwn.zephyr.preferences-changed</string>
 			<key>defaults</key>
@@ -344,7 +344,7 @@
 			<key>key</key>
 			<string>BottomLandscape</string>
 			<key>label</key>
-			<string>Landscape</string>
+			<string>Landscape (iPhone)</string>
 			<key>PostNotification</key>
 			<string>com.chpwn.zephyr.preferences-changed</string>
 			<key>defaults</key>
