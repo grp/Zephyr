@@ -27,7 +27,7 @@ static void OpenMusicControlsTaskSwitcherIfNecessaryWithDuration(double duration
         }
 
         if (defaultValue) {
-            [[$SBMusicController sharedInstance] switcherDidShow:duration orientation:CurrentInterfaceOrientation()];
+            [[$SBMusicController sharedInstance] switcherDidShow:duration orientation:ZephyrCurrentInterfaceOrientation()];
         }
     }
 }
@@ -38,13 +38,13 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
     SBShowcaseContext *zeroContext = [uic _showcaseContextForOffset:from];
     SBShowcaseContext *barContext = [uic _showcaseContextForOffset:to];
 
-    [zeroContext setShowcaseOrientation:CurrentInterfaceOrientation()];
-    [barContext setShowcaseOrientation:CurrentInterfaceOrientation()];
+    [zeroContext setShowcaseOrientation:ZephyrCurrentInterfaceOrientation()];
+    [barContext setShowcaseOrientation:ZephyrCurrentInterfaceOrientation()];
 
     SBAppSwitcherController *switcher = [objc_getClass("SBAppSwitcherController") sharedInstance];
 
     SBApplication *app = [SBApp _accessibilityFrontMostApplication];
-    [switcher setupForApp:app orientation:CurrentInterfaceOrientation()];
+    [switcher setupForApp:app orientation:ZephyrCurrentInterfaceOrientation()];
 
     if (![objc_getClass("SBApplication") multitaskingIsSupported]) return;
     if ([switcher printViewIsShowing]) return;
@@ -127,10 +127,6 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
     [shadowView removeFromSuperview];
     shadowView = nil;
 
-    [wrapperView release];
-    [wrapperView removeFromSuperview];
-    wrapperView = nil;
-
     for (NSArray *locationAndTimer in pendingSwitcherActivations) {
         NSTimer *timer = [locationAndTimer objectAtIndex:1];
         [timer invalidate];
@@ -138,6 +134,13 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
 
     [pendingSwitcherActivations release];
     pendingSwitcherActivations = nil;
+
+
+    [[objc_getClass("SBOrientationLockManager") sharedInstance] setLockOverrideEnabled:NO forReason:@"ZephyrSwitcher"];
+}
+
+- (BOOL)isRotated {
+    return ZephyrHomeInterfaceOrientation() != ZephyrCurrentInterfaceOrientation();
 }
 
 - (void)handleGestureCanceled {
@@ -146,14 +149,16 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
 
 - (void)handleGestureBeganWithLocation:(CGFloat)location {
     if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
-        UIInterfaceOrientation currentOrientation = (UIInterfaceOrientation) [SBApp interfaceOrientationForCurrentDeviceOrientation];
+        UIInterfaceOrientation currentOrientation = ZephyrDeviceInterfaceOrientation();
         [[UIDevice currentDevice] setOrientation:currentOrientation animated:NO];
         [SBApp noteInterfaceOrientationChanged:currentOrientation];
     }
 
+    [[objc_getClass("SBOrientationLockManager") sharedInstance] setLockOverrideEnabled:YES forReason:@"ZephyrSwitcher"];
+
     pendingSwitcherActivations = [[NSMutableSet alloc] init];
 
-    location = ZephyrHeightFromScreenPercentage(location, CurrentInterfaceOrientation());
+    location = ZephyrHeightFromScreenPercentage(location, ZephyrCurrentInterfaceOrientation());
     SBApplication *app = [SBApp _accessibilityFrontMostApplication];
 
     // Ensure app is properly launched and ready.
@@ -170,16 +175,9 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
         CGRect gestureFrame = [gestureView frame];
         gestureFrame.origin = CGPointZero;
 
-        if (UIInterfaceOrientationIsLandscape(CurrentInterfaceOrientation())) {
-            gestureFrame.size.width = [gestureView frame].size.height;
-            gestureFrame.size.height = [gestureView frame].size.width;
-        }
-
         appView = [[UIView alloc] initWithFrame:gestureFrame];
         [appView addSubview:gestureView];
         [appView autorelease];
-
-        ZephyrRotateView(gestureView, CurrentInterfaceOrientation());
     } else {
         // XXX: using contentView here isn't necessarily the best option, but it works.
         appView = ZephyrViewWithScreenshotOfView([[objc_getClass("SBUIController") sharedInstance] contentView]);
@@ -193,55 +191,66 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
     shadowView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"SwitcherShadowTop.png"]];
     CGRect shadowFrame = [shadowView frame];
     shadowFrame.size = [[shadowView image] size];
-    shadowFrame.size.width = [appView bounds].size.width;
-    shadowFrame.origin.y = [appView bounds].size.height;
+    if ([self isRotated]) {
+        shadowFrame.size.width = [appView bounds].size.height;
+        shadowFrame.origin.x = [appView bounds].size.width;
+    } else {
+        shadowFrame.origin.y = [appView bounds].size.height;
+        shadowFrame.size.width = [appView bounds].size.width;
+    }
     [shadowView setFrame:shadowFrame];
+    ZephyrRotateViewFromOrientationToOrientation(shadowView, ZephyrHomeInterfaceOrientation(), ZephyrCurrentInterfaceOrientation(), NO);
     [shadowView autorelease];
 
-    wrapperView = [[UIView alloc] initWithFrame:[appView bounds]];
-    [wrapperView setClipsToBounds:NO];
-    [wrapperView addSubview:appView];
-    [wrapperView addSubview:shadowView];
 
     switcherView = [[objc_getClass("SBAppSwitcherController") sharedInstance] view];
-    [[objc_getClass("SBAppSwitcherController") sharedInstance] setupForApp:app orientation:CurrentInterfaceOrientation()];
+    [[objc_getClass("SBAppSwitcherController") sharedInstance] setupForApp:app orientation:ZephyrCurrentInterfaceOrientation()];
 
     CGFloat bottomBarHeight = [[objc_getClass("SBAppSwitcherController") sharedInstance] bottomBarHeight];
     CGRect switcherFrame = [switcherView frame];
-    switcherFrame.origin.y = [appView bounds].size.height - bottomBarHeight;
+    if ([self isRotated]) {
+        switcherFrame.origin.x = [appView bounds].size.width - bottomBarHeight;
+    } else {
+        switcherFrame.origin.y = [appView bounds].size.height - bottomBarHeight;
+    }
     [switcherView setFrame:switcherFrame];
+    ZephyrRotateViewFromOrientationToOrientation(switcherView, ZephyrHomeInterfaceOrientation(), ZephyrCurrentInterfaceOrientation(), NO);
+
+
+    UIView *rootView = [[objc_getClass("SBUIController") sharedInstance] rootView];
 
     if ([self effectiveSwipeUpAction] == kSwipeUpActionCloseApp) {
         [[objc_getClass("SBUIController") sharedInstance] restoreIconListAnimated:NO animateWallpaper:NO keepSwitcher:NO];
         [[objc_getClass("SBUIController") sharedInstance] notifyAppResignActive:app];
-    }
-
-    UIView *rootView = [[objc_getClass("SBUIController") sharedInstance] rootView];
-
-    if ([self effectiveSwipeUpAction] == kSwipeUpActionSwitcher) {
+    } else if ([self effectiveSwipeUpAction] == kSwipeUpActionSwitcher) {
         [rootView addSubview:switcherView];
     }
 
-    [rootView addSubview:wrapperView];
+    [rootView addSubview:appView];
     [rootView addSubview:shadowView];
 
+
     [UIView animateWithDuration:0.08f animations:^{
-        CGFloat loc = ZephyrHeightFromScreenPercentage(location, CurrentInterfaceOrientation());
+        CGFloat loc = ZephyrHeightFromScreenPercentage(location, ZephyrCurrentInterfaceOrientation());
 
-        CGRect wrapperFrame = [wrapperView frame];
-        wrapperFrame.origin.y = loc;
-        [wrapperView setFrame:wrapperFrame];
-
+        CGRect appFrame = [appView frame];
         CGRect shadowFrame = [shadowView frame];
-        shadowFrame.origin.y = wrapperFrame.size.height + loc;
+        if ([self isRotated]) {
+            appFrame.origin.x = loc;
+            shadowFrame.origin.x = appFrame.size.width + loc;
+        } else {
+            appFrame.origin.y = loc;
+            shadowFrame.origin.y = appFrame.size.height + loc;
+        }
+        [appView setFrame:appFrame];
         [shadowView setFrame:shadowFrame];
     }];
 }
 
 - (void)handleGestureChangedWithLocation:(CGFloat)location velocity:(CGPoint)velocity {
-    location = ZephyrHeightFromScreenPercentage(location, CurrentInterfaceOrientation());
-
+    location = ZephyrHeightFromScreenPercentage(location, ZephyrCurrentInterfaceOrientation());
     CGFloat bottomBarHeight = [[objc_getClass("SBAppSwitcherController") sharedInstance] bottomBarHeight];
+
 
     // constrain to not going way off the screen
     if (location > 20.0f) location = 20.0f;
@@ -251,13 +260,19 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
         if (-location > bottomBarHeight) location = -bottomBarHeight;
     }
 
-    CGRect wrapperFrame = [wrapperView frame];
-    wrapperFrame.origin.y = location;
-    [wrapperView setFrame:wrapperFrame];
 
+    CGRect appFrame = [appView frame];
     CGRect shadowFrame = [shadowView frame];
-    shadowFrame.origin.y = wrapperFrame.size.height + location;
+    if ([self isRotated]) {
+        appFrame.origin.x = location;
+        shadowFrame.origin.x = appFrame.size.width + location;
+    } else {
+        appFrame.origin.y = location;
+        shadowFrame.origin.y = appFrame.size.height + location;
+    }
+    [appView setFrame:appFrame];
     [shadowView setFrame:shadowFrame];
+
 
     // Remove pending switcher activations outside range.
     NSMutableSet *pendingSwitcherActivationsToRemove = [NSMutableSet set];
@@ -294,36 +309,55 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
                 UIImageView *switcherShadowView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"SwitcherShadowTop.png"]];
                 CGRect shadowFrame = [switcherShadowView frame];
                 shadowFrame.size = [[switcherShadowView image] size];
-                shadowFrame.size.width = [contentView bounds].size.width;
-                shadowFrame.origin.y = [contentView bounds].size.height;
+                if ([self isRotated]) {
+                    shadowFrame.size.width = [contentView bounds].size.height;
+                    shadowFrame.origin.x = [contentView bounds].size.width;
+                } else {
+                    shadowFrame.size.width = [contentView bounds].size.width;
+                    shadowFrame.origin.y = [contentView bounds].size.height;
+                }
+                ZephyrRotateViewFromOrientationToOrientation(switcherShadowView, ZephyrHomeInterfaceOrientation(), ZephyrCurrentInterfaceOrientation(), NO);
                 [switcherShadowView setFrame:shadowFrame];
                 [switcherShadowView autorelease];
 
                 CGRect switcherFrame = [switcherView frame];
-                switcherFrame.origin.y = [appView bounds].size.height - bottomBarHeight;
+                if ([self isRotated]) {
+                    switcherFrame.origin.x = [appView bounds].size.width - bottomBarHeight;
+                } else {
+                    switcherFrame.origin.y = [appView bounds].size.height - bottomBarHeight;
+                }
                 [switcherView setFrame:switcherFrame];
 
                 [rootView addSubview:switcherView];
                 [rootView addSubview:switcherShadowView];
                 [rootView addSubview:contentView];
-                [rootView addSubview:wrapperView];
+                [rootView addSubview:appView];
 
                 [UIView animateWithDuration:0.4f animations:^{
-                    CGRect wrapperFrame = [wrapperView frame];
-                    wrapperFrame.origin.y = -bottomBarHeight;
-                    [wrapperView setFrame:wrapperFrame];
-
+                    CGRect appFrame = [appView frame];
                     CGRect shadowFrame = [shadowView frame];
-                    shadowFrame.origin.y = [wrapperView bounds].size.height + -bottomBarHeight;
+                    if ([self isRotated]) {
+                        appFrame.origin.x = -bottomBarHeight;
+                        shadowFrame.origin.x = [appView bounds].size.width + -bottomBarHeight;
+                    } else {
+                        appFrame.origin.y = -bottomBarHeight;
+                        shadowFrame.origin.y = [appView bounds].size.height + -bottomBarHeight;
+                    }
+                    [appView setFrame:appFrame];
                     [shadowView setFrame:shadowFrame];
+
                     [shadowView setAlpha:0.0f];
 
                     CGRect switcherShadowFrame = [switcherShadowView frame];
-                    switcherShadowFrame.origin.y = [contentView bounds].size.height + -bottomBarHeight;
-                    [switcherShadowView setFrame:switcherShadowFrame];
-
                     CGRect contentFrame = [contentView frame];
-                    contentFrame.origin.y = -bottomBarHeight;
+                    if ([self isRotated]) {
+                        switcherShadowFrame.origin.x = [contentView bounds].size.width + -bottomBarHeight;
+                        contentFrame.origin.x = -bottomBarHeight;
+                    } else {
+                        switcherShadowFrame.origin.y = [contentView bounds].size.height + -bottomBarHeight;
+                        contentFrame.origin.y = -bottomBarHeight;
+                    }
+                    [switcherShadowView setFrame:switcherShadowFrame];
                     [contentView setFrame:contentFrame];
                 } completion:^(BOOL finished) {
                     [self cleanupViews];
@@ -341,7 +375,7 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
 }
 
 - (void)handleGestureEndedWithLocation:(CGFloat)location velocity:(CGPoint)velocity completionType:(int)type {
-    location = ZephyrHeightFromScreenPercentage(location, CurrentInterfaceOrientation());
+    location = ZephyrHeightFromScreenPercentage(location, ZephyrCurrentInterfaceOrientation());
 
     SBApplication *app = [SBApp _accessibilityFrontMostApplication];
 
@@ -367,12 +401,16 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
             });
         } else {
             [UIView animateWithDuration:0.3f animations:^{
-                CGRect wrapperFrame = [wrapperView frame];
-                wrapperFrame.origin = CGPointZero;
-                [wrapperView setFrame:wrapperFrame];
+                CGRect appFrame = [appView frame];
+                appFrame.origin = CGPointZero;
+                [appView setFrame:appFrame];
 
                 CGRect shadowFrame = [shadowView frame];
-                shadowFrame.origin.y = wrapperFrame.size.height;
+                if ([self isRotated]) {
+                    shadowFrame.origin.x = appFrame.size.width;
+                } else {
+                    shadowFrame.origin.y = appFrame.size.height;
+                }
                 [shadowView setFrame:shadowFrame];
             } completion:^(BOOL completed) {
                 [self cleanupViews];
@@ -384,12 +422,16 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
 
             UIViewAnimationOptions options = (UIViewAnimationOptionCurveEaseOut | UIViewAnimationOptionBeginFromCurrentState);
             [UIView animateWithDuration:0.3f delay:0.0f options:options animations:^{
-                CGRect wrapperFrame = [wrapperView frame];
-                wrapperFrame.origin.y = -wrapperFrame.size.height;
-                [wrapperView setFrame:wrapperFrame];
-
+                CGRect appFrame = [appView frame];
                 CGRect shadowFrame = [shadowView frame];
-                shadowFrame.origin = CGPointZero;
+                if ([self isRotated]) {
+                    appFrame.origin.x = -appFrame.size.width;
+                    shadowFrame.origin = CGPointZero;
+                } else {
+                    appFrame.origin.y = -appFrame.size.height;
+                    shadowFrame.origin = CGPointZero;
+                }
+                [appView setFrame:appFrame];
                 [shadowView setFrame:shadowFrame];
             } completion:^(BOOL completed) {
                 [self cleanupViews];
@@ -419,12 +461,16 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
             }];
         } else {
             [UIView animateWithDuration:0.3f animations:^{
-                CGRect wrapperFrame = [wrapperView frame];
-                wrapperFrame.origin = CGPointZero;
-                [wrapperView setFrame:wrapperFrame];
-
+                CGRect appFrame = [appView frame];
                 CGRect shadowFrame = [shadowView frame];
-                shadowFrame.origin.y = wrapperFrame.size.height;
+                if ([self isRotated]) {
+                    shadowFrame.origin.x = appFrame.size.width;
+                    appFrame.origin = CGPointZero;
+                } else {
+                    shadowFrame.origin.y = appFrame.size.height;
+                    appFrame.origin = CGPointZero;
+                }
+                [appView setFrame:appFrame];
                 [shadowView setFrame:shadowFrame];
             } completion:^(BOOL completed) {
                 [self cleanupViews];
@@ -440,6 +486,33 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
 @end
 
 %group Switcher
+
+%hook SBAppSwitcherBarView
+
+- (id)initWithFrame:(CGRect)frame {
+    self = %orig;
+
+    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone) {
+        // this stupidiy is necessary because Apple limits SBLinenView to 320px wide on iPhone
+        SBLinenView *linen = nil;
+
+        linen = [[objc_getClass("SBLinenView") alloc] initWithFrame:CGRectMake(0, 0, 320.0f, [self bounds].size.height)];
+        [linen setAutoresizingMask:UIViewAutoresizingFlexibleLeftMargin];
+        [self addSubview:linen];
+        [self sendSubviewToBack:linen];
+        [linen release];
+
+        linen = [[objc_getClass("SBLinenView") alloc] initWithFrame:CGRectMake(0, 0, 320.0f, [self bounds].size.height)];
+        [linen setAutoresizingMask:UIViewAutoresizingFlexibleRightMargin];
+        [self addSubview:linen];
+        [self sendSubviewToBack:linen];
+        [linen release];
+    }
+
+    return self;
+}
+
+%end
 
 %hook SBUIController
 

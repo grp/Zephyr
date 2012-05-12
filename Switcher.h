@@ -10,7 +10,6 @@ typedef enum {
 
 @interface SwitcherGesture : BaseGesture {
     UIView *appView;
-    UIView *wrapperView;
     UIView *switcherView;
     UIImageView *shadowView;
     NSMutableSet *pendingSwitcherActivations;

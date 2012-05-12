@@ -1,4 +1,6 @@
+
 #import "SwitchApp.h"
+#import "Common.h"
 #import "Preferences.h"
 #import "Keyboard.h"
 
@@ -69,6 +71,8 @@ BOOL SwitchAppGestureIsAnimatingCompletion() {
 %group SwitchApp
 
 %hook SBUIController
+
+static UIView *containerView = nil;
 
 // This is dumb as fuck. The "has multitasking gestures" state is stored in
 // a random global variable which we cannot hook, and is set in a C function
@@ -143,10 +147,12 @@ BOOL SwitchAppGestureIsAnimatingCompletion() {
         }
     }
 
-    // some c function... and another one.. sorta the second one below
-    UIInterfaceOrientation currentOrientation = [SBApp activeInterfaceOrientation]; // also someting about "CAMediaTime", huh
-    [[UIDevice currentDevice] setOrientation:currentOrientation animated:NO];
-    [SBApp noteInterfaceOrientationChanged:currentOrientation];
+    UIInterfaceOrientation currentOrientation = ZephyrCurrentInterfaceOrientation();
+    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
+        // some c function... and another one.. sorta the second one below
+        [[UIDevice currentDevice] setOrientation:currentOrientation animated:NO];
+        [SBApp noteInterfaceOrientationChanged:currentOrientation];
+    }
 
     [self showSystemGestureBackdrop];
 
@@ -157,18 +163,25 @@ BOOL SwitchAppGestureIsAnimatingCompletion() {
     if (leftApplication == topApplication) leftApplication = nil;
     if (rightApplication == topApplication) rightApplication = nil;
 
+    [containerView removeFromSuperview];
     [MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView") removeFromSuperview];
     [MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView") release];
 
     MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView") = [[objc_getClass("SBSwitchAppGestureView") alloc] initWithInterfaceOrientation:currentOrientation startingApp:topApplication leftwardApp:leftApplication rightwardApp:rightApplication];
-    MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView").contentScaleFactor = [UIScreen mainScreen].scale;
+    [MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView") setContentScaleFactor:[[UIScreen mainScreen] scale]];
 
-    [MSHookIvar<UIView *>(self, "_contentView") addSubview:MSHookIvar<UIView *>(self, "_switchAppGestureView")];
+    containerView = [[UIView alloc] initWithFrame:[MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView") bounds]];
+    [containerView addSubview:MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView")];
+    [MSHookIvar<UIView *>(self, "_contentView") addSubview:containerView];
+    ZephyrRotateViewFromOrientationToOrientation(containerView, ZephyrHomeInterfaceOrientation(), ZephyrCurrentInterfaceOrientation(), YES);
+    [containerView release];
+
     [MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView") beginPaging];
 
     [self prepareSwitchAppGestureStatusBar];
     [self setRootViewHiddenForScatter:0 duration:0.0 startTime:0.0];
     [self updateSwitchAppGestureStatusBar];
+
 
     if ([self isSwitcherShowing]) {
         [self _dismissShowcase:0.0f unhost:NO];
@@ -224,6 +237,8 @@ BOOL SwitchAppGestureIsAnimatingCompletion() {
     SBApplication *startingApplication = [gestureView startingApp];
     SBApplication *endingApplication = [gestureView endingApp];
 
+    [containerView removeFromSuperview];
+    containerView = nil;
     [gestureView removeFromSuperview];
     [gestureView release];
     MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView") = nil;

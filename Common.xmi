@@ -2,30 +2,138 @@
 #import "Common.h"
 #import "LayerSnapshotter.h"
 
-// based off of -[SBSwitchAppGestureView transofrmGestureViewContainer:]
-void ZephyrRotateView(UIView *container, UIInterfaceOrientation currentOrientation) {
-    CGAffineTransform transform = CGAffineTransformIdentity;
-    CGRect frame = CGRectZero;
-
-    switch (currentOrientation) {
+NSString *ZephyrDescriptionForOrientation(UIInterfaceOrientation orientation) {
+    switch (orientation) {
         case UIInterfaceOrientationPortrait:
+            return @"portrait";
             break;
         case UIInterfaceOrientationPortraitUpsideDown:
-            transform = CGAffineTransformMakeRotation(M_PI);
+            return @"portrait upside-down";
             break;
         case UIInterfaceOrientationLandscapeLeft:
-            transform = CGAffineTransformMakeRotation(M_PI / 2.0f);
-            frame = [container frame];
-            transform = CGAffineTransformTranslate(transform, (frame.size.width - frame.size.height) / 2.0f, (frame.size.width - frame.size.height) / 2.0f);
+            return @"landscape left";
             break;
         case UIInterfaceOrientationLandscapeRight:
-            transform = CGAffineTransformMakeRotation(M_PI / -2.0f);
-            frame = [container frame];
-            transform = CGAffineTransformTranslate(transform, (frame.size.width - frame.size.height) / -2.0f, (frame.size.width - frame.size.height) / -2.0f);
+            return @"landscape right";
             break;
     }
 
-    [container setTransform:transform];
+    return @"invalid orientation";
+}
+
+UIInterfaceOrientation ZephyrOrientationFlip(UIInterfaceOrientation orientation) {
+    switch (orientation) {
+        case UIInterfaceOrientationPortrait:
+            return UIInterfaceOrientationPortraitUpsideDown;
+        case UIInterfaceOrientationPortraitUpsideDown:
+            return UIInterfaceOrientationPortrait;
+        case UIInterfaceOrientationLandscapeLeft:
+            return UIInterfaceOrientationLandscapeRight;
+        case UIInterfaceOrientationLandscapeRight:
+            return UIInterfaceOrientationLandscapeLeft;
+    }
+
+    return orientation;
+}
+
+void ZephyrRotateViewFromOrientationToOrientation(UIView *view, UIInterfaceOrientation fromOrientation, UIInterfaceOrientation toOrientation, BOOL inPlace) {
+    CGAffineTransform transform = [view transform];
+    CGRect frame = [view frame];
+
+    // NSLog(@"rotating %@ from %@ to %@", view, ZephyrDescriptionForOrientation(fromOrientation), ZephyrDescriptionForOrientation(toOrientation));
+
+    CGFloat rotation = 0.0f;
+    BOOL perpendicular = NO;
+
+    switch (fromOrientation) {
+        case UIInterfaceOrientationPortrait:
+            switch (toOrientation) {
+                case UIInterfaceOrientationPortrait:
+                    rotation = 0.0f;
+                    break;
+                case UIInterfaceOrientationPortraitUpsideDown:
+                    rotation = M_PI;
+                    break;
+                case UIInterfaceOrientationLandscapeLeft:
+                    rotation = -(M_PI / 2.0f);
+                    perpendicular = YES;
+                    break;
+                case UIInterfaceOrientationLandscapeRight:
+                    rotation = (M_PI / 2.0f);
+                    perpendicular = YES;
+                    break;
+            }
+            break;
+        case UIInterfaceOrientationPortraitUpsideDown:
+            switch (toOrientation) {
+                case UIInterfaceOrientationPortrait:
+                    rotation = M_PI;
+                    break;
+                case UIInterfaceOrientationPortraitUpsideDown:
+                    rotation = 0.0f;
+                    break;
+                case UIInterfaceOrientationLandscapeLeft:
+                    rotation = (M_PI / 2.0f);
+                    perpendicular = YES;
+                    break;
+                case UIInterfaceOrientationLandscapeRight:
+                    rotation = -(M_PI / 2.0f);
+                    perpendicular = YES;
+                    break;
+            }
+            break;
+        case UIInterfaceOrientationLandscapeLeft:
+            switch (toOrientation) {
+                case UIInterfaceOrientationPortrait:
+                    rotation = (M_PI / 2.0f);
+                    perpendicular = YES;
+                    break;
+                case UIInterfaceOrientationPortraitUpsideDown:
+                    rotation = -(M_PI / 2.0f);
+                    perpendicular = YES;
+                    break;
+                case UIInterfaceOrientationLandscapeLeft:
+                    rotation = 0.0f;
+                    break;
+                case UIInterfaceOrientationLandscapeRight:
+                    rotation = M_PI;
+                    break;
+            }
+            break;
+        case UIInterfaceOrientationLandscapeRight:
+            switch (toOrientation) {
+                case UIInterfaceOrientationPortrait:
+                    rotation = -(M_PI / 2.0f);
+                    perpendicular = YES;
+                    break;
+                case UIInterfaceOrientationPortraitUpsideDown:
+                    rotation = (M_PI / 2.0f);
+                    perpendicular = YES;
+                    break;
+                case UIInterfaceOrientationLandscapeLeft:
+                    rotation = M_PI;
+                    break;
+                case UIInterfaceOrientationLandscapeRight:
+                    rotation = 0.0f;
+                    break;
+            }
+            break;
+    }
+
+    transform = CGAffineTransformRotate(transform, rotation);
+
+    if (perpendicular) {
+        transform = CGAffineTransformTranslate(transform, (frame.size.width - frame.size.height) / -2.0f, (frame.size.height - frame.size.width) / -2.0f);
+
+        if (inPlace) {
+            CGRect frame = [view frame];
+            frame.size.width = [view frame].size.height;
+            frame.size.height = [view frame].size.width;
+            [view setFrame:frame];
+        }
+    }
+
+    [view setTransform:transform];
 }
 
 UIView *ZephyrViewWithScreenshotOfView(UIView *view) {
@@ -51,6 +159,18 @@ CGFloat ZephyrHeightForOrientation(UIInterfaceOrientation orientation) {
 
 CGFloat ZephyrHeightFromScreenPercentage(CGFloat percentage, UIInterfaceOrientation orientation) {
     return ZephyrHeightForOrientation(orientation) * percentage;
+}
+
+UIInterfaceOrientation ZephyrCurrentInterfaceOrientation() {
+    return [SBApp _frontMostAppOrientation];
+}
+
+UIInterfaceOrientation ZephyrDeviceInterfaceOrientation() {
+    return [SBApp interfaceOrientationForCurrentDeviceOrientation];
+}
+
+UIInterfaceOrientation ZephyrHomeInterfaceOrientation() {
+    return [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? ZephyrCurrentInterfaceOrientation() : UIInterfaceOrientationPortrait;
 }
 
 

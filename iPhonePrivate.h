@@ -11,6 +11,7 @@
 @interface SpringBoard : UIApplication
 - (SBApplication *)_accessibilityFrontMostApplication;
 - (BOOL)_accessibilityIsSystemGestureActive;
+- (UIInterfaceOrientation)_frontMostAppOrientation;
 - (void)menuButtonDown:(GSEventRef)event;
 - (void)menuButtonUp:(GSEventRef)event;
 - (void)lockButtonDown:(GSEventRef)event;
@@ -85,10 +86,53 @@ static SpringBoard *SBApp = nil;
 @property(assign, nonatomic) int showcaseOrientation;
 @end
 
+@interface SBOrientationLockManager : NSObject
++ (id)sharedInstance;
+- (void)setLockOverrideEnabled:(BOOL)enabled forReason:(id)reason;
+@end
+
+@interface SBBulletinListView : UIView
+@property(readonly, assign) float currentY;
+@property(readonly, retain) UIImageView *linenView;
+@property(readonly, retain) UIView *slidingView;
+@property(readonly, retain) UITableView *tableView;
++ (id)_pathToLinenCache;
++ (id)linen;
++ (void)loadLinen;
++ (void)removeCachedLinen;
+- (float)offscreenY;
+- (float)onscreenY;
+- (void)positionSlidingViewAtY:(float)y;
+- (void)setBottomCornersOffscreen:(BOOL)offscreen animated:(BOOL)animated;
+- (void)setBottomShadowAlpha:(float)alpha;
+- (void)setCornerAlpha:(float)alpha;
+- (void)setShowsNoNotificationsLabel:(BOOL)label animated:(BOOL)animated;
+- (CGRect)slidingViewFrame;
+@end
+
 @interface SBBulletinListController : NSObject
+@property(readonly, retain) SBBulletinListView *listView;
+@property(readonly, assign) BOOL listViewIsActive;
++ (id)sharedInstance;
 + (id)sharedInstanceIfExists;
-- (BOOL)listViewIsActive;
+- (void)_cleanupAfterHideListView;
+- (void)_cleanupAfterShowListView;
+- (void)_updateForTouchBeganOrMovedWithLocation:(CGPoint)location velocity:(CGPoint)velocity;
+- (void)_updateForTouchCanceled;
+- (void)_updateForTouchEndedWithVelocity:(CGPoint)velocity completion:(id)completion;
+- (void)handleShowNotificationsGestureBeganWithTouchLocation:(CGPoint)touchLocation;
+- (void)handleShowNotificationsGestureCanceled;
+- (void)handleShowNotificationsGestureChangedWithTouchLocation:(CGPoint)touchLocation velocity:(CGPoint)velocity;
+- (void)handleShowNotificationsGestureEndedWithVelocity:(CGPoint)velocity completion:(id)completion;
 - (void)hideListViewAnimated:(BOOL)animated;
+- (void)hideListViewWithInitialVelocity:(float)initialVelocity completion:(id)completion;
+- (void)hideListViewWithInitialVelocity:(float)initialVelocity hiddenY:(float)y extraPull:(BOOL)pull additionalValueApplier:(id)applier completion:(id)completion;
+- (void)prepareToHideListViewAnimated:(BOOL)hideListViewAnimated;
+- (void)prepareToShowListViewAnimated:(BOOL)showListViewAnimated aboveBanner:(BOOL)banner;
+- (void)positionListViewAtY:(float)y;
+- (void)showListViewAnimated:(BOOL)animated;
+- (void)showListViewWithInitialVelocity:(float)initialVelocity additionalValueApplier:(id)applier completion:(id)completion;
+- (void)showListViewWithInitialVelocity:(float)initialVelocity completion:(id)completion;
 @end
 
 @interface SBBulletinWindowController : NSObject
@@ -101,6 +145,8 @@ static SpringBoard *SBApp = nil;
 - (BOOL)isBusy;
 @end
 
+@interface SBLinenView : UIView
+@end
 
 @interface SBSwitchAppGestureView : UIView
 @property(assign, nonatomic) CGFloat percentage;
