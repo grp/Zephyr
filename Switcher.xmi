@@ -100,10 +100,11 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
 }
 
 - (BOOL)currentOrientationIsSupported {
+    BOOL portrait = UIInterfaceOrientationIsPortrait(ZephyrCurrentInterfaceOrientation());
     BOOL preference = [PreferencesGet(@"BottomLandscape", [NSNumber numberWithBool:YES]) boolValue];
     BOOL ipad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
 
-    return preference || ipad;
+    return portrait || (preference || ipad);
 }
 
 - (SwipeUpAction)effectiveSwipeUpAction {
