@@ -1,10 +1,10 @@
+#import "Common.h"
 #import "Switcher.h"
 #import "Preferences.h"
 #import "Keyboard.h"
 #import "NSTimer+Blocks.h"
 
 #import "SwitchApp.h"
-#import "LayerSnapshotter.h"
 
 #include <dlfcn.h>
 
@@ -32,46 +32,6 @@ static void OpenMusicControlsTaskSwitcherIfNecessaryWithDuration(double duration
     }
 }
 
-// based off of -[SBSwitchAppGestureView transofrmGestureViewContainer:]
-static void TransformGestureViewContainer(UIView *container) {
-    UIInterfaceOrientation currentOrientation = CurrentInterfaceOrientation();
-
-    CGAffineTransform transform = CGAffineTransformIdentity;
-    CGRect frame = CGRectZero;
-
-    switch (currentOrientation) {
-        case UIInterfaceOrientationPortrait:
-            break;
-        case UIInterfaceOrientationPortraitUpsideDown:
-            transform = CGAffineTransformMakeRotation(M_PI);
-            break;
-        case UIInterfaceOrientationLandscapeLeft:
-            transform = CGAffineTransformMakeRotation(M_PI / 2.0f);
-            frame = [container frame];
-            transform = CGAffineTransformTranslate(transform, (frame.size.width - frame.size.height) / 2.0f, (frame.size.width - frame.size.height) / 2.0f);
-            break;
-        case UIInterfaceOrientationLandscapeRight:
-            transform = CGAffineTransformMakeRotation(M_PI / -2.0f);
-            frame = [container frame];
-            transform = CGAffineTransformTranslate(transform, (frame.size.width - frame.size.height) / -2.0f, (frame.size.width - frame.size.height) / -2.0f);
-            break;
-    }
-
-    [container setTransform:transform];
-}
-
-static UIView *ViewWithScreenshotOfView(UIView *view) {
-    dlopen("/usr/lib/liblayersnapshotter.dylib", RTLD_LAZY);
-    if ([view respondsToSelector:@selector(renderSnapshot)]) {
-        UIImage *viewImage = [view renderSnapshot];
-        UIImageView *screenshotView = [[UIImageView alloc] initWithImage:viewImage];
-        [screenshotView setFrame:[view frame]];
-        return [screenshotView autorelease];
-    } else {
-        return [[[UIView alloc] initWithFrame:view.frame] autorelease];
-    }
-}
-
 static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat duration) {
     SBUIController *uic = [objc_getClass("SBUIController") sharedInstance];
 
@@ -94,14 +54,6 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
 
     // Support Music Controls Pro, code by phoenixdev.
     OpenMusicControlsTaskSwitcherIfNecessaryWithDuration(duration);
-}
-
-static CGFloat HeightFromScreenPercentage(CGFloat percentage) {
-    if (UIInterfaceOrientationIsLandscape(CurrentInterfaceOrientation())) {
-        return [[UIScreen mainScreen] bounds].size.width * percentage;
-    } else {
-        return [[UIScreen mainScreen] bounds].size.height * percentage;
-    }
 }
 
 @implementation SwitcherGesture
@@ -200,7 +152,7 @@ static CGFloat HeightFromScreenPercentage(CGFloat percentage) {
 
     pendingSwitcherActivations = [[NSMutableSet alloc] init];
 
-    location = HeightFromScreenPercentage(location);
+    location = ZephyrHeightFromScreenPercentage(location, CurrentInterfaceOrientation());
     SBApplication *app = [SBApp _accessibilityFrontMostApplication];
 
     // Ensure app is properly launched and ready.
@@ -226,10 +178,10 @@ static CGFloat HeightFromScreenPercentage(CGFloat percentage) {
         [appView addSubview:gestureView];
         [appView autorelease];
 
-        TransformGestureViewContainer(gestureView);
+        ZephyrRotateView(gestureView, CurrentInterfaceOrientation());
     } else {
         // XXX: using contentView here isn't necessarily the best option, but it works.
-        appView = ViewWithScreenshotOfView([[objc_getClass("SBUIController") sharedInstance] contentView]);
+        appView = ZephyrViewWithScreenshotOfView([[objc_getClass("SBUIController") sharedInstance] contentView]);
 
         // Call private UIKit API to cancel touches on the icon lists while swiping.
         // This fixes the bug where swiping up on an icon would start editing mode.
@@ -273,7 +225,7 @@ static CGFloat HeightFromScreenPercentage(CGFloat percentage) {
     [rootView addSubview:shadowView];
 
     [UIView animateWithDuration:0.08f animations:^{
-        CGFloat loc = HeightFromScreenPercentage(location);
+        CGFloat loc = ZephyrHeightFromScreenPercentage(location, CurrentInterfaceOrientation());
 
         CGRect wrapperFrame = [wrapperView frame];
         wrapperFrame.origin.y = loc;
@@ -286,7 +238,7 @@ static CGFloat HeightFromScreenPercentage(CGFloat percentage) {
 }
 
 - (void)handleGestureChangedWithLocation:(CGFloat)location velocity:(CGPoint)velocity {
-    location = HeightFromScreenPercentage(location);
+    location = ZephyrHeightFromScreenPercentage(location, CurrentInterfaceOrientation());
 
     CGFloat bottomBarHeight = [[objc_getClass("SBAppSwitcherController") sharedInstance] bottomBarHeight];
 
@@ -334,7 +286,7 @@ static CGFloat HeightFromScreenPercentage(CGFloat percentage) {
 
                 CGFloat bottomBarHeight = [[objc_getClass("SBAppSwitcherController") sharedInstance] bottomBarHeight];
 
-                UIView *contentView = ViewWithScreenshotOfView([[objc_getClass("SBUIController") sharedInstance] contentView]);
+                UIView *contentView = ZephyrViewWithScreenshotOfView([[objc_getClass("SBUIController") sharedInstance] contentView]);
                 UIView *rootView = [[objc_getClass("SBUIController") sharedInstance] rootView];
 
                 // XXX: this is a horrible hack
@@ -388,7 +340,7 @@ static CGFloat HeightFromScreenPercentage(CGFloat percentage) {
 }
 
 - (void)handleGestureEndedWithLocation:(CGFloat)location velocity:(CGPoint)velocity completionType:(int)type {
-    location = HeightFromScreenPercentage(location);
+    location = ZephyrHeightFromScreenPercentage(location, CurrentInterfaceOrientation());
 
     SBApplication *app = [SBApp _accessibilityFrontMostApplication];
 
