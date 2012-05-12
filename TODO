@@ -4,4 +4,6 @@
  - (1.4) remove slide to unlock, swipe up to close lockscreen
  - (X) bounce when pulling up switcher
  - (X) fix bug with auto-canceled swipe gestures
+ - (X) landscape support
+ - (X) alternate nc gesture
 
