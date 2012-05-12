@@ -355,7 +355,7 @@
 			<key>cell</key>
 			<string>PSGroupCell</string>
 			<key>label</key>
-			<string>Notification Center (iPhone only)</string>
+			<string>Notification Center (iPhone)</string>
 		</dict>
 		<dict>
 			<key>cell</key>
