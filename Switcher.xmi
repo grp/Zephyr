@@ -115,6 +115,7 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
 
     if (app != nil) {
         [app disableContextHostingForRequester:(CFStringRef) @"SwitchApp"];
+        [[[objc_getClass("SBUIController") sharedInstance] rootView] setAlpha:0.0f];
     }
 
     [appView removeFromSuperview];
