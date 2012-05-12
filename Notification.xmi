@@ -19,7 +19,6 @@
 %hook SBBulletinListController
 
 static UIView *appView = nil;
-static UIView *wrapperView = nil;
 static SBBulletinListView *centerView = nil;
 static UIImageView *shadowView = nil;
 static CGFloat grabLocation = NAN;
@@ -37,13 +36,8 @@ static CGFloat grabLocation = NAN;
     SBApplication *app = [SBApp _accessibilityFrontMostApplication];
 
     if (app != nil) {
-        [[[objc_getClass("SBUIController") sharedInstance] rootView] setAlpha:0.0f];
         [app disableContextHostingForRequester:(CFStringRef) @"SwitchApp"];
     }
-
-    [appView release];
-    [appView removeFromSuperview];
-    appView = nil;
 
     centerView = nil;
 
@@ -51,9 +45,9 @@ static CGFloat grabLocation = NAN;
     [shadowView removeFromSuperview];
     shadowView = nil;
 
-    [wrapperView release];
-    [wrapperView removeFromSuperview];
-    wrapperView = nil;
+    [appView release];
+    [appView removeFromSuperview];
+    appView = nil;
 }
 
 - (void)_cleanupAfterShowListView {
@@ -96,31 +90,29 @@ static CGFloat grabLocation = NAN;
     [self cleanupViews];
     grabLocation = location;
 
+    centerView = [self listView];
+    [centerView positionSlidingViewAtY:ZephyrHeightForOrientation(ZephyrCurrentInterfaceOrientation())];
+
+    appView = [[UIView alloc] initWithFrame:[centerView bounds]];
+    [appView setClipsToBounds:NO];
+    [centerView addSubview:appView];
+
     SBApplication *app = [SBApp _accessibilityFrontMostApplication];
 
     if (app != nil) {
-        [[[objc_getClass("SBUIController") sharedInstance] rootView] setAlpha:1.0f];
-
         UIView *gestureView = [[objc_getClass("SBGestureViewVendor") sharedInstance] viewForApp:app gestureType:kSBGestureTypeSwitchApp includeStatusBar:YES];
 
-        CGRect gestureFrame = [gestureView frame];
-        gestureFrame.origin = CGPointZero;
+        UIView *gestureWrapperView = [[UIView alloc] initWithFrame:[appView bounds]];
+        [gestureWrapperView addSubview:gestureView];
+        [appView addSubview:gestureWrapperView];
 
-        appView = [[UIView alloc] initWithFrame:gestureFrame];
-        [appView addSubview:gestureView];
+        if (!UIInterfaceOrientationIsPortrait(ZephyrCurrentInterfaceOrientation())) {
+            ZephyrRotateViewFromOrientationToOrientation(gestureWrapperView, UIInterfaceOrientationPortrait, ZephyrOrientationFlip(ZephyrCurrentInterfaceOrientation()), YES);
+        }
     } else {
         // XXX: using contentView here isn't necessarily the best option, but it works.
-        appView = ZephyrViewWithScreenshotOfView([[objc_getClass("SBUIController") sharedInstance] contentView]);
-        [appView retain];
-
-        // Call private UIKit API to cancel touches on the icon lists while swiping.
-        // This fixes the bug where swiping up on an icon would start editing mode.
-        if ([SBApp respondsToSelector:@selector(_cancelAllTouches)])
-            [SBApp performSelector:@selector(_cancelAllTouches)];
-    }
-
-    if (ZephyrCurrentInterfaceOrientation() != ZephyrHomeInterfaceOrientation()) {
-        ZephyrRotateViewFromOrientationToOrientation(appView, ZephyrHomeInterfaceOrientation(), ZephyrOrientationFlip(ZephyrCurrentInterfaceOrientation()), YES);
+        UIView *homeView = ZephyrViewWithScreenshotOfView([[objc_getClass("SBUIController") sharedInstance] contentView]);
+        [appView addSubview:homeView];
     }
 
     shadowView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"SwitcherShadowTop.png"]];
@@ -130,19 +122,11 @@ static CGFloat grabLocation = NAN;
     shadowFrame.origin.y = location - shadowFrame.size.height;
     [shadowView setFrame:shadowFrame];
     [shadowView setTransform:CGAffineTransformMakeScale(1, -1)];
-
-    wrapperView = [[UIView alloc] initWithFrame:[appView bounds]];
-    CGRect wrapperFrame = [wrapperView frame];
-    wrapperFrame.origin.y = location;
-    [wrapperView setFrame:wrapperFrame];
-    [wrapperView setClipsToBounds:NO];
-    [wrapperView addSubview:appView];
-
-    centerView = [self listView];
-    [centerView positionSlidingViewAtY:ZephyrHeightForOrientation(ZephyrCurrentInterfaceOrientation())];
-
-    [centerView addSubview:wrapperView];
     [centerView addSubview:shadowView];
+
+    CGRect appFrame = [appView frame];
+    appFrame.origin.y = location;
+    [appView setFrame:appFrame];
 }
 
 - (void)positionListViewAtY:(CGFloat)location {
@@ -152,9 +136,9 @@ static CGFloat grabLocation = NAN;
 
     if (location < 0) location = 0;
 
-    CGRect wrapperFrame = [wrapperView frame];
+    CGRect wrapperFrame = [appView frame];
     wrapperFrame.origin.y = location;
-    [wrapperView setFrame:wrapperFrame];
+    [appView setFrame:wrapperFrame];
 
     CGRect shadowFrame = [shadowView frame];
     shadowFrame.origin.y = wrapperFrame.origin.y - shadowFrame.size.height;

@@ -41,9 +41,9 @@ BOOL SwitchAppGestureIsAnimatingCompletion() {
 - (BOOL)currentOrientationIsSupported {
     BOOL portrait = UIInterfaceOrientationIsPortrait(ZephyrCurrentInterfaceOrientation());
     BOOL preference = [PreferencesGet(@"SideLandscape", [NSNumber numberWithBool:YES]) boolValue];
-    BOOL ipad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    BOOL pad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
 
-    return portrait || (preference || ipad);
+    return portrait || (preference || pad);
 }
 
 - (void)handleGestureCanceled {
@@ -178,7 +178,7 @@ static UIView *containerView = nil;
     MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView") = [[objc_getClass("SBSwitchAppGestureView") alloc] initWithInterfaceOrientation:currentOrientation startingApp:topApplication leftwardApp:leftApplication rightwardApp:rightApplication];
     [MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView") setContentScaleFactor:[[UIScreen mainScreen] scale]];
 
-    containerView = [[UIView alloc] initWithFrame:[MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView") bounds]];
+    containerView = [[UIView alloc] initWithFrame:[MSHookIvar<UIView *>(self, "_contentView") bounds]];
     [containerView addSubview:MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView")];
     [MSHookIvar<UIView *>(self, "_contentView") addSubview:containerView];
     ZephyrRotateViewFromOrientationToOrientation(containerView, ZephyrHomeInterfaceOrientation(), ZephyrCurrentInterfaceOrientation(), YES);
