@@ -38,6 +38,13 @@ BOOL SwitchAppGestureIsAnimatingCompletion() {
         && [(NSNumber *) PreferencesGet(@"SwipeSideEnabled", [NSNumber numberWithBool:YES]) boolValue];
 }
 
+- (BOOL)currentOrientationIsSupported {
+    BOOL preference = [PreferencesGet(@"SideLandscape", [NSNumber numberWithBool:YES]) boolValue];
+    BOOL ipad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+
+    return preference || ipad;
+}
+
 - (void)handleGestureCanceled {
     SBUIController *uic = [objc_getClass("SBUIController") sharedInstance];
     [uic _switchAppGestureCancelled];

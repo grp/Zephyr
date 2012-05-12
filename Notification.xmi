@@ -8,39 +8,10 @@
 
 #include <dlfcn.h>
 
-@implementation NotificationGesture
-
-- (BOOL)shouldActivate {
-    // This is needed to prevent re-activation before the animation completes, crashing.
-    BOOL switchAppGestureIsAnimating = SwitchAppGestureIsAnimatingCompletion();
-
-    return ![SBApp _accessibilityIsSystemGestureActive]
-        && ![[objc_getClass("SBAwayController") sharedAwayController] isLocked]
-        && ![[objc_getClass("SBUIController") sharedInstance] isSwitcherShowing]
-        && ![[objc_getClass("SBAssistantController") sharedInstance] isAssistantVisible]
-        /*&& ![[objc_getClass("SBBulletinWindowController") sharedInstance] isBusy]
-        && ![[objc_getClass("SBBulletinListController") sharedInstanceIfExists] listViewIsActive]*/
-        && !switchAppGestureIsAnimating
-        && [self currentOrientationIsSupported];
-}
-
-- (void)handleGestureCanceled {
-}
-
-- (void)handleGestureBeganWithLocation:(CGFloat)location {
-}
-
-- (void)handleGestureChangedWithLocation:(CGFloat)location velocity:(CGPoint)velocity {
-}
-
-- (void)handleGestureEndedWithLocation:(CGFloat)location velocity:(CGPoint)velocity completionType:(int)type {
-}
-
-@end
-
 %group Notification
 
 @interface SBBulletinListController (Zephyr)
+- (BOOL)shouldActivate;
 - (void)cleanupViews;
 - (void)prepareAtLocation:(CGFloat)location;
 @end
@@ -52,6 +23,14 @@ static UIView *wrapperView = nil;
 static SBBulletinListView *centerView = nil;
 static UIImageView *shadowView = nil;
 static CGFloat grabLocation = NAN;
+
+%new(c@:)
+- (BOOL)shouldActivate {
+    BOOL preference = [PreferencesGet(@"NotificationEnabled", [NSNumber numberWithBool:YES]) boolValue];
+    BOOL ipad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+
+    return preference && !ipad;
+}
 
 %new(v@:)
 - (void)cleanupViews {
@@ -78,26 +57,31 @@ static CGFloat grabLocation = NAN;
 }
 
 - (void)_cleanupAfterShowListView {
+    if (![self shouldActivate]) return %orig;
+
     %orig;
     grabLocation = NAN;
-
     [self cleanupViews];
 }
 
 - (void)_cleanupAfterHideListView {
+    if (![self shouldActivate]) return %orig;
+
     %orig;
     grabLocation = NAN;
-
     [self cleanupViews];
 }
 
 - (void)prepareToShowListViewAnimated:(BOOL)showListViewAnimated aboveBanner:(BOOL)banner {
-    %orig;
+    if (![self shouldActivate]) return %orig;
 
+    %orig;
     [self prepareAtLocation:0.0f];
 }
 
 - (void)prepareToHideListViewAnimated:(BOOL)animated {
+    if (![self shouldActivate]) return %orig;
+
     %orig;
 
     if (!isnan(grabLocation)) {
@@ -162,6 +146,8 @@ static CGFloat grabLocation = NAN;
 }
 
 - (void)positionListViewAtY:(CGFloat)location {
+    if (![self shouldActivate]) return %orig;
+
     grabLocation = location;
 
     if (location < 0) location = 0;
@@ -173,10 +159,6 @@ static CGFloat grabLocation = NAN;
     CGRect shadowFrame = [shadowView frame];
     shadowFrame.origin.y = wrapperFrame.origin.y - shadowFrame.size.height;
     [shadowView setFrame:shadowFrame];
-}
-
-- (void)_handleUngrabWithVelocity:(CGPoint)velocity completion:(id)complete {
-    %orig;
 }
 
 %end
@@ -191,42 +173,6 @@ static CGFloat grabLocation = NAN;
     } else {
         return %orig;
     }
-}
-
-%end
-
-%hook SBUIController
-
-static NotificationGesture *gesture = nil;
-
-- (void)finishLaunching {
-    %orig;
-
-    return;
-
-    int touches = [(NSNumber *) PreferencesGet(@"NotificationMinimumTouchCount", PreferencesGet(@"MinimumTouchCount", [NSNumber numberWithInt:1])) intValue];
-    CGFloat edgeMargin = [(NSNumber *) PreferencesGet(@"NotificationSensitivityDistance", [NSNumber numberWithFloat:30.0f]) floatValue];
-
-    gesture = [[NotificationGesture alloc] init];
-    [gesture addOffscreenEdge:kSBOffscreenEdgeTop minimumTouchCount:touches edgeMargin:edgeMargin];
-
-    PreferencesApplyActionRegister(^{
-        int touches = [(NSNumber *) PreferencesGet(@"NotificationMinimumTouchCount", PreferencesGet(@"MinimumTouchCount", [NSNumber numberWithInt:1])) intValue];
-        CGFloat edgeMargin = [(NSNumber *) PreferencesGet(@"NotificationSensitivityDistance", [NSNumber numberWithFloat:30.0f]) floatValue];
-
-        for (SBOffscreenSwipeGestureRecognizer *recognizer in [gesture gestureRecognizers]) {
-            [recognizer setMinTouches:touches];
-            [recognizer setEdgeMargin:edgeMargin];
-        }
-    });
-}
-
-%end
-
-%hook SBBulletinListView
-
-- (void)positionSlidingViewAtY:(CGFloat)y {
-    %orig;
 }
 
 %end

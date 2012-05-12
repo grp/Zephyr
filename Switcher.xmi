@@ -99,6 +99,13 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
         && (action == kSwipeUpActionSwitcher || action == kSwipeUpActionCloseApp);
 }
 
+- (BOOL)currentOrientationIsSupported {
+    BOOL preference = [PreferencesGet(@"BottomLandscape", [NSNumber numberWithBool:YES]) boolValue];
+    BOOL ipad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+
+    return preference || ipad;
+}
+
 - (SwipeUpAction)effectiveSwipeUpAction {
     SwipeUpAction action = (SwipeUpAction) [(NSNumber *) PreferencesGet(@"SwipeUpAction", [NSNumber numberWithInt:kSwipeUpActionCloseApp]) intValue];
     SBApplication *topApplication = [SBApp _accessibilityFrontMostApplication];
