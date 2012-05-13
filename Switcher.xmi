@@ -305,6 +305,7 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
                 [wrapperView addSubview:switcherView];
                 [wrapperView addSubview:switcherShadowView];
                 [wrapperView addSubview:homeView];
+                [wrapperView addSubview:shadowView];
                 [wrapperView addSubview:appView];
 
                 [UIView animateWithDuration:0.4f animations:^{
