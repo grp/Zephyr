@@ -109,8 +109,7 @@ static CGFloat grabLocation = NAN;
             ZephyrRotateViewFromOrientationToOrientation(gestureWrapperView, UIInterfaceOrientationPortrait, ZephyrOrientationFlip(ZephyrCurrentInterfaceOrientation()), YES);
         }
     } else {
-        // XXX: using contentView here isn't necessarily the best option, but it works.
-        UIView *homeView = ZephyrViewWithScreenshotOfView([[objc_getClass("SBUIController") sharedInstance] contentView]);
+        UIView *homeView = ZephyrViewWithScreenshotOfHomeScreen();
         [appView addSubview:homeView];
     }
 

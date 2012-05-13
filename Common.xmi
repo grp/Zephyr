@@ -155,12 +155,8 @@ void ZephyrRotateViewFromOrientationToOrientation(UIView *view, UIInterfaceOrien
     [view setTransform:transform];
 }
 
-static BOOL disableGestureViewMask = NO;
-
 UIView *ZephyrViewForApplication(SBApplication *app) {
-    disableGestureViewMask = YES;
     UIView *gestureView = [[objc_getClass("SBGestureViewVendor") sharedInstance] viewForApp:app gestureType:kSBGestureTypeSwitchApp includeStatusBar:YES];
-    disableGestureViewMask = NO;
     return gestureView;
 }
 
@@ -175,6 +171,15 @@ UIView *ZephyrViewWithScreenshotOfView(UIView *view) {
     } else {
         return [[[UIView alloc] initWithFrame:view.frame] autorelease];
     }
+}
+
+UIView *ZephyrViewWithScreenshotOfHomeScreen() {
+    // XXX: using contentView here isn't necessarily the best option, but it works.
+    UIView *homeView = ZephyrViewWithScreenshotOfView([[objc_getClass("SBUIController") sharedInstance] contentView]);
+    UIView *statusView = ZephyrViewWithScreenshotOfView([SBApp statusBarWindow]);
+    [homeView addSubview:statusView];
+
+    return homeView;
 }
 
 CGFloat ZephyrHeightForOrientation(UIInterfaceOrientation orientation) {

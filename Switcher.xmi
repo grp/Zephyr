@@ -204,8 +204,7 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
             ZephyrRotateViewFromOrientationToOrientation(gestureWrapperView, UIInterfaceOrientationPortrait, ZephyrOrientationFlip(ZephyrCurrentInterfaceOrientation()), YES);
         }
     } else {
-        // XXX: using contentView here isn't necessarily the best option, but it works.
-        UIView *homeView = ZephyrViewWithScreenshotOfView([[objc_getClass("SBUIController") sharedInstance] contentView]);
+        UIView *homeView = ZephyrViewWithScreenshotOfHomeScreen();
         [appView addSubview:homeView];
 
         // Call private UIKit API to cancel touches on the icon lists while swiping.
@@ -284,10 +283,10 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
 
                 CGFloat bottomBarHeight = [[objc_getClass("SBAppSwitcherController") sharedInstance] bottomBarHeight];
 
-                UIView *contentView = ZephyrViewWithScreenshotOfView([[objc_getClass("SBUIController") sharedInstance] contentView]);
-                [contentView setFrame:[wrapperView bounds]];
+                UIView *homeView = ZephyrViewWithScreenshotOfHomeScreen();
+                [homeView setFrame:[wrapperView bounds]];
                 if (ZephyrCurrentInterfaceOrientation() != ZephyrHomeInterfaceOrientation()) {
-                    ZephyrRotateViewFromOrientationToOrientation(contentView, ZephyrHomeInterfaceOrientation(), ZephyrOrientationFlip(ZephyrCurrentInterfaceOrientation()), YES);
+                    ZephyrRotateViewFromOrientationToOrientation(homeView, ZephyrHomeInterfaceOrientation(), ZephyrOrientationFlip(ZephyrCurrentInterfaceOrientation()), YES);
                 }
 
                 // XXX: this is a horrible hack
@@ -305,7 +304,7 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
 
                 [wrapperView addSubview:switcherView];
                 [wrapperView addSubview:switcherShadowView];
-                [wrapperView addSubview:contentView];
+                [wrapperView addSubview:homeView];
                 [wrapperView addSubview:appView];
 
                 [UIView animateWithDuration:0.4f animations:^{
@@ -314,15 +313,15 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
                     [shadowView setAlpha:0.0f];
 
                     CGRect switcherShadowFrame = [switcherShadowView frame];
-                    CGRect contentFrame = [contentView frame];
+                    CGRect homeFrame = [homeView frame];
                     switcherShadowFrame.origin.y = [wrapperView bounds].size.height + -bottomBarHeight;
-                    contentFrame.origin.y = -bottomBarHeight;
+                    homeFrame.origin.y = -bottomBarHeight;
                     [switcherShadowView setFrame:switcherShadowFrame];
-                    [contentView setFrame:contentFrame];
+                    [homeView setFrame:homeFrame];
                 } completion:^(BOOL finished) {
                     [self cleanupViews];
 
-                    [contentView removeFromSuperview];
+                    [homeView removeFromSuperview];
                     [switcherShadowView removeFromSuperview];
 
                     ActivateSwitcherFromToDuration(bottomBarHeight, bottomBarHeight, 0.0f);
