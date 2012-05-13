@@ -426,7 +426,7 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
         // this stupidiy is necessary because Apple limits SBLinenView to 320px wide on iPhone
         SBLinenView *linen = nil;
 
-        linen = [[objc_getClass("SBLinenView") alloc] initWithFrame:CGRectMake(0, 0, 320.0f, [self bounds].size.height)];
+        linen = [[objc_getClass("SBLinenView") alloc] initWithFrame:CGRectMake([self bounds].size.width - 320.0f, 0, 320.0f, [self bounds].size.height)];
         [linen setAutoresizingMask:UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleHeight];
         [self addSubview:linen];
         [self sendSubviewToBack:linen];
