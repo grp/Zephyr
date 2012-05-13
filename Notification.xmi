@@ -16,20 +16,19 @@
 - (void)prepareAtLocation:(CGFloat)location;
 @end
 
+static BOOL ZephyrNotificationShouldActivate() {
+    BOOL preference = [PreferencesGet(@"NotificationEnabled", [NSNumber numberWithBool:YES]) boolValue];
+    BOOL pad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+
+    return preference && !pad;
+}
+
 %hook SBBulletinListController
 
 static UIView *appView = nil;
 static SBBulletinListView *centerView = nil;
 static UIImageView *shadowView = nil;
 static CGFloat grabLocation = NAN;
-
-%new(c@:)
-- (BOOL)shouldActivate {
-    BOOL preference = [PreferencesGet(@"NotificationEnabled", [NSNumber numberWithBool:YES]) boolValue];
-    BOOL ipad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
-
-    return preference && !ipad;
-}
 
 %new(v@:)
 - (void)cleanupViews {
@@ -51,7 +50,7 @@ static CGFloat grabLocation = NAN;
 }
 
 - (void)_cleanupAfterShowListView {
-    if (![self shouldActivate]) return %orig;
+    if (!ZephyrNotificationShouldActivate()) return %orig;
 
     %orig;
     grabLocation = NAN;
@@ -59,7 +58,7 @@ static CGFloat grabLocation = NAN;
 }
 
 - (void)_cleanupAfterHideListView {
-    if (![self shouldActivate]) return %orig;
+    if (!ZephyrNotificationShouldActivate()) return %orig;
 
     %orig;
     grabLocation = NAN;
@@ -67,14 +66,14 @@ static CGFloat grabLocation = NAN;
 }
 
 - (void)prepareToShowListViewAnimated:(BOOL)showListViewAnimated aboveBanner:(BOOL)banner {
-    if (![self shouldActivate]) return %orig;
+    if (!ZephyrNotificationShouldActivate()) return %orig;
 
     %orig;
     [self prepareAtLocation:0.0f];
 }
 
 - (void)prepareToHideListViewAnimated:(BOOL)animated {
-    if (![self shouldActivate]) return %orig;
+    if (!ZephyrNotificationShouldActivate()) return %orig;
 
     %orig;
 
@@ -100,7 +99,7 @@ static CGFloat grabLocation = NAN;
     SBApplication *app = [SBApp _accessibilityFrontMostApplication];
 
     if (app != nil) {
-        UIView *gestureView = [[objc_getClass("SBGestureViewVendor") sharedInstance] viewForApp:app gestureType:kSBGestureTypeSwitchApp includeStatusBar:YES];
+        UIView *gestureView = ZephyrViewForApplication(app);
 
         UIView *gestureWrapperView = [[UIView alloc] initWithFrame:[appView bounds]];
         [gestureWrapperView addSubview:gestureView];
@@ -130,7 +129,7 @@ static CGFloat grabLocation = NAN;
 }
 
 - (void)positionListViewAtY:(CGFloat)location {
-    if (![self shouldActivate]) return %orig;
+    if (!ZephyrNotificationShouldActivate()) return %orig;
 
     grabLocation = location;
 
@@ -157,6 +156,19 @@ static CGFloat grabLocation = NAN;
     } else {
         return %orig;
     }
+}
+
+%end
+
+%hook SBUIController
+
+// we break if the switcher is also showing, so don't let it be
+- (void)handleHideNotificationsSystemGesture:(id)gesture {
+    if (!ZephyrNotificationShouldActivate()) return %orig;
+
+    if ([self isSwitcherShowing]) return;
+
+    %orig;
 }
 
 %end

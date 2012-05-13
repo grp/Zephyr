@@ -194,7 +194,7 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
     SBApplication *app = [SBApp _accessibilityFrontMostApplication];
 
     if (app != nil) {
-        UIView *gestureView = [[objc_getClass("SBGestureViewVendor") sharedInstance] viewForApp:app gestureType:kSBGestureTypeSwitchApp includeStatusBar:YES];
+        UIView *gestureView = ZephyrViewForApplication(app);
 
         UIView *gestureWrapperView = [[UIView alloc] initWithFrame:[appView bounds]];
         [gestureWrapperView addSubview:gestureView];

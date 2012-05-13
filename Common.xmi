@@ -155,6 +155,15 @@ void ZephyrRotateViewFromOrientationToOrientation(UIView *view, UIInterfaceOrien
     [view setTransform:transform];
 }
 
+static BOOL disableGestureViewMask = NO;
+
+UIView *ZephyrViewForApplication(SBApplication *app) {
+    disableGestureViewMask = YES;
+    UIView *gestureView = [[objc_getClass("SBGestureViewVendor") sharedInstance] viewForApp:app gestureType:kSBGestureTypeSwitchApp includeStatusBar:YES];
+    disableGestureViewMask = NO;
+    return gestureView;
+}
+
 UIView *ZephyrViewWithScreenshotOfView(UIView *view) {
     dlopen("/usr/lib/liblayersnapshotter.dylib", RTLD_LAZY);
 
