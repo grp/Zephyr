@@ -18,6 +18,7 @@
 - (void)lockButtonUp:(GSEventRef)event;
 - (void)showSpringBoardStatusBar;
 - (void)hideSpringBoardStatusBar;
+- (UIWindow *)statusBarWindow;
 - (UIInterfaceOrientation)activeInterfaceOrientation;
 - (UIInterfaceOrientation)interfaceOrientationForCurrentDeviceOrientation;
 - (void)noteInterfaceOrientationChanged:(UIInterfaceOrientation)orientation;
