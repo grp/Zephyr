@@ -40,8 +40,6 @@ void ZephyrRotateViewFromOrientationToOrientation(UIView *view, UIInterfaceOrien
     CGAffineTransform transform = [view transform];
     CGRect frame = [view frame];
 
-    // NSLog(@"rotating %@ from %@ to %@", view, ZephyrDescriptionForOrientation(fromOrientation), ZephyrDescriptionForOrientation(toOrientation));
-
     CGFloat rotation = 0.0f;
     BOOL perpendicular = NO;
     BOOL clockwise = NO;
@@ -141,16 +139,6 @@ void ZephyrRotateViewFromOrientationToOrientation(UIView *view, UIInterfaceOrien
             transform = CGAffineTransformTranslate(transform, (frame.size.width - frame.size.height) / -2.0f, (frame.size.height - frame.size.width) / 2.0f);
         }
     }
-
-    /*UIView *redView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, [view bounds].size.width / 2.0, [view bounds].size.height / 2.0)];
-    [redView setAutoresizingMask:UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleBottomMargin];
-    [redView setBackgroundColor:[UIColor redColor]];
-    [view addSubview:redView];
-
-    UIView *blueView = [[UIView alloc] initWithFrame:CGRectMake([view bounds].size.width - ([view bounds].size.width / 2.0), [view bounds].size.height - ([view bounds].size.height / 2.0), [view bounds].size.width / 2.0, [view bounds].size.height / 2.0)];
-    [blueView setAutoresizingMask:UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleTopMargin];
-    [blueView setBackgroundColor:[UIColor blueColor]];
-    [view addSubview:blueView];*/
 
     [view setTransform:transform];
 }
