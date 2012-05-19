@@ -201,6 +201,10 @@ typedef enum {
 - (void)_installSwitchAppGesturePlaceholderViewForEndingApp:(SBApplication *)endingApp;
 - (id)_showcaseContextForOffset:(CGFloat)offset;
 
+- (void)createFakeSpringBoardStatusBar;
+- (void)setFakeSpringBoardStatusBarVisible:(BOOL)visible;
+- (void)clearFakeSpringBoardStatusBarAndCorners;
+
 - (void)restoreIconListAnimated:(BOOL)animated animateWallpaper:(BOOL)animateWallpaper keepSwitcher:(BOOL)keepSwitcher;
 - (void)stopRestoringIconList;
 - (void)tearDownIconListAndBar;
