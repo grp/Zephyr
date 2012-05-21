@@ -371,35 +371,6 @@ static SwitchAppGesture *gesture = nil;
 
 %end
 
-// Fix bug with status bar removal causing one edge of the view
-// in landscape to lose 20 pixels. Basically, just completely disable
-// the status bar removal in landscape on iPhone devices.
-static BOOL switchAppStatusBarFlag = NO;
-
-%hook SBSwitchAppGestureView
-
-- (UIView *)viewForApp:(SBApplication *)app {
-    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone) switchAppStatusBarFlag = YES;
-    UIView *view = %orig;
-    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone) switchAppStatusBarFlag = NO;
-    return view;
-}
-
-%end
-
-%hook SBGestureViewVendor
-
-- (void)maskViewIfNeeded:(id)needed gestureType:(int)type viewType:(int)type3 contextHostViewRequester:(id)requester app:(id)app {
-    if (UIInterfaceOrientationIsLandscape(ZephyrCurrentInterfaceOrientation()) && switchAppStatusBarFlag) {
-        return;
-    } else {
-        return %orig;
-    }
-}
-
-
-%end
-
 %end
 
 %ctor {

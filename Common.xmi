@@ -148,6 +148,46 @@ UIView *ZephyrViewForApplication(SBApplication *app) {
     return gestureView;
 }
 
+%group GestureViewStatusBar
+
+// Fix bug with status bar removal causing one edge of the view
+// in landscape to lose 20 pixels. Basically, just completely disable
+// the status bar removal in landscape on iPhone devices.
+static BOOL switchAppStatusBarFlag = NO;
+
+%hook SBGestureViewVendor
+
+- (id)viewForApp:(id)app gestureType:(int)type includeStatusBar:(BOOL)bar {
+    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone) switchAppStatusBarFlag = YES;
+    UIView *view = %orig;
+    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone) switchAppStatusBarFlag = NO;
+    return view;
+}
+
+- (id)viewForApp:(id)app gestureType:(int)type includeStatusBar:(BOOL)bar decodeImage:(BOOL)image {
+    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone) switchAppStatusBarFlag = YES;
+    UIView *view = %orig;
+    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone) switchAppStatusBarFlag = NO;
+    return view;
+}
+
+- (void)maskViewIfNeeded:(id)needed gestureType:(int)type viewType:(int)type3 contextHostViewRequester:(id)requester app:(id)app {
+    if (switchAppStatusBarFlag) {
+        return;
+    } else {
+        return %orig;
+    }
+}
+
+%end
+
+%end
+
+%ctor {
+    %init(GestureViewStatusBar);
+}
+
+
 UIView *ZephyrViewWithScreenshotOfView(UIView *view) {
     dlopen("/usr/lib/liblayersnapshotter.dylib", RTLD_LAZY);
 
