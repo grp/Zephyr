@@ -123,6 +123,8 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
 
     if (app != nil) {
         [app disableContextHostingForRequester:(CFStringRef) @"SwitchApp"];
+    } else {
+        [SBApp showSpringBoardStatusBar];
     }
 
 
@@ -206,6 +208,8 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
     } else {
         UIView *homeView = ZephyrViewWithScreenshotOfHomeScreen();
         [appView addSubview:homeView];
+
+        [SBApp hideSpringBoardStatusBar];
 
         // Call private UIKit API to cancel touches on the icon lists while swiping.
         // This fixes the bug where swiping up on an icon would start editing mode.
