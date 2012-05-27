@@ -1,0 +1,237 @@
+
+#import "Common.h"
+#import "LayerSnapshotter.h"
+
+NSString *ZephyrDescriptionForOrientation(UIInterfaceOrientation orientation) {
+    switch (orientation) {
+        case UIInterfaceOrientationPortrait:
+            return @"portrait";
+            break;
+        case UIInterfaceOrientationPortraitUpsideDown:
+            return @"portrait upside-down";
+            break;
+        case UIInterfaceOrientationLandscapeLeft:
+            return @"landscape left";
+            break;
+        case UIInterfaceOrientationLandscapeRight:
+            return @"landscape right";
+            break;
+    }
+
+    return @"invalid orientation";
+}
+
+UIInterfaceOrientation ZephyrOrientationFlip(UIInterfaceOrientation orientation) {
+    switch (orientation) {
+        case UIInterfaceOrientationPortrait:
+            return UIInterfaceOrientationPortraitUpsideDown;
+        case UIInterfaceOrientationPortraitUpsideDown:
+            return UIInterfaceOrientationPortrait;
+        case UIInterfaceOrientationLandscapeLeft:
+            return UIInterfaceOrientationLandscapeRight;
+        case UIInterfaceOrientationLandscapeRight:
+            return UIInterfaceOrientationLandscapeLeft;
+    }
+
+    return orientation;
+}
+
+void ZephyrRotateViewFromOrientationToOrientation(UIView *view, UIInterfaceOrientation fromOrientation, UIInterfaceOrientation toOrientation, BOOL inPlace) {
+    CGAffineTransform transform = [view transform];
+    CGRect frame = [view frame];
+
+    CGFloat rotation = 0.0f;
+    BOOL perpendicular = NO;
+    BOOL clockwise = NO;
+
+    switch (fromOrientation) {
+        case UIInterfaceOrientationPortrait:
+            switch (toOrientation) {
+                case UIInterfaceOrientationPortrait:
+                    rotation = 0.0f;
+                    break;
+                case UIInterfaceOrientationPortraitUpsideDown:
+                    rotation = M_PI;
+                    break;
+                case UIInterfaceOrientationLandscapeLeft:
+                    rotation = -(M_PI / 2.0f);
+                    clockwise = YES;
+                    perpendicular = YES;
+                    break;
+                case UIInterfaceOrientationLandscapeRight:
+                    rotation = (M_PI / 2.0f);
+                    perpendicular = YES;
+                    break;
+            }
+            break;
+        case UIInterfaceOrientationPortraitUpsideDown:
+            switch (toOrientation) {
+                case UIInterfaceOrientationPortrait:
+                    rotation = M_PI;
+                    break;
+                case UIInterfaceOrientationPortraitUpsideDown:
+                    rotation = 0.0f;
+                    break;
+                case UIInterfaceOrientationLandscapeLeft:
+                    rotation = (M_PI / 2.0f);
+                    perpendicular = YES;
+                    break;
+                case UIInterfaceOrientationLandscapeRight:
+                    rotation = -(M_PI / 2.0f);
+                    clockwise = YES;
+                    perpendicular = YES;
+                    break;
+            }
+            break;
+        case UIInterfaceOrientationLandscapeLeft:
+            switch (toOrientation) {
+                case UIInterfaceOrientationPortrait:
+                    rotation = (M_PI / 2.0f);
+                    perpendicular = YES;
+                    break;
+                case UIInterfaceOrientationPortraitUpsideDown:
+                    rotation = -(M_PI / 2.0f);
+                    clockwise = YES;
+                    perpendicular = YES;
+                    break;
+                case UIInterfaceOrientationLandscapeLeft:
+                    rotation = 0.0f;
+                    break;
+                case UIInterfaceOrientationLandscapeRight:
+                    rotation = M_PI;
+                    break;
+            }
+            break;
+        case UIInterfaceOrientationLandscapeRight:
+            switch (toOrientation) {
+                case UIInterfaceOrientationPortrait:
+                    rotation = -(M_PI / 2.0f);
+                    clockwise = YES;
+                    perpendicular = YES;
+                    break;
+                case UIInterfaceOrientationPortraitUpsideDown:
+                    rotation = (M_PI / 2.0f);
+                    perpendicular = YES;
+                    break;
+                case UIInterfaceOrientationLandscapeLeft:
+                    rotation = M_PI;
+                    break;
+                case UIInterfaceOrientationLandscapeRight:
+                    rotation = 0.0f;
+                    break;
+            }
+            break;
+    }
+
+    transform = CGAffineTransformRotate(transform, rotation);
+
+    if (perpendicular) {
+        if (inPlace) {
+            CGRect frame = [view frame];
+            frame.size.width = [view frame].size.height;
+            frame.size.height = [view frame].size.width;
+            [view setFrame:frame];
+        }
+
+        if (clockwise) {
+            transform = CGAffineTransformTranslate(transform, (frame.size.width - frame.size.height) / 2.0f, (frame.size.height - frame.size.width) / -2.0f);
+        } else {
+            transform = CGAffineTransformTranslate(transform, (frame.size.width - frame.size.height) / -2.0f, (frame.size.height - frame.size.width) / 2.0f);
+        }
+    }
+
+    [view setTransform:transform];
+}
+
+UIView *ZephyrViewForApplication(SBApplication *app) {
+    UIView *gestureView = [[objc_getClass("SBGestureViewVendor") sharedInstance] viewForApp:app gestureType:kSBGestureTypeSwitchApp includeStatusBar:YES];
+    return gestureView;
+}
+
+%group GestureViewStatusBar
+
+// Fix bug with status bar removal causing one edge of the view
+// in landscape to lose 20 pixels. Basically, just completely disable
+// the status bar removal in landscape on iPhone devices.
+static BOOL switchAppStatusBarFlag = NO;
+
+%hook SBGestureViewVendor
+
+- (id)viewForApp:(id)app gestureType:(int)type includeStatusBar:(BOOL)bar {
+    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone) switchAppStatusBarFlag = YES;
+    UIView *view = %orig;
+    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone) switchAppStatusBarFlag = NO;
+    return view;
+}
+
+- (id)viewForApp:(id)app gestureType:(int)type includeStatusBar:(BOOL)bar decodeImage:(BOOL)image {
+    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone) switchAppStatusBarFlag = YES;
+    UIView *view = %orig;
+    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone) switchAppStatusBarFlag = NO;
+    return view;
+}
+
+- (void)maskViewIfNeeded:(id)needed gestureType:(int)type viewType:(int)type3 contextHostViewRequester:(id)requester app:(id)app {
+    if (switchAppStatusBarFlag) {
+        return;
+    } else {
+        return %orig;
+    }
+}
+
+%end
+
+%end
+
+%ctor {
+    %init(GestureViewStatusBar);
+}
+
+
+UIView *ZephyrViewWithScreenshotOfView(UIView *view) {
+    dlopen("/usr/lib/liblayersnapshotter.dylib", RTLD_LAZY);
+
+    if ([view respondsToSelector:@selector(renderSnapshot)]) {
+        UIImage *viewImage = [view renderSnapshot];
+        UIImageView *screenshotView = [[UIImageView alloc] initWithImage:viewImage];
+        [screenshotView setFrame:[view frame]];
+        return [screenshotView autorelease];
+    } else {
+        return [[[UIView alloc] initWithFrame:view.frame] autorelease];
+    }
+}
+
+UIView *ZephyrViewWithScreenshotOfHomeScreen() {
+    // XXX: using contentView here isn't necessarily the best option, but it works.
+    UIView *homeView = ZephyrViewWithScreenshotOfView([[objc_getClass("SBUIController") sharedInstance] contentView]);
+    UIView *statusView = ZephyrViewWithScreenshotOfView([SBApp statusBarWindow]);
+    [homeView addSubview:statusView];
+
+    return homeView;
+}
+
+CGFloat ZephyrHeightForOrientation(UIInterfaceOrientation orientation) {
+    if (UIInterfaceOrientationIsLandscape(orientation)) {
+        return [[UIScreen mainScreen] bounds].size.width;
+    } else {
+        return [[UIScreen mainScreen] bounds].size.height;
+    }
+}
+
+CGFloat ZephyrHeightFromScreenPercentage(CGFloat percentage, UIInterfaceOrientation orientation) {
+    return ZephyrHeightForOrientation(orientation) * percentage;
+}
+
+UIInterfaceOrientation ZephyrCurrentInterfaceOrientation() {
+    return [SBApp _frontMostAppOrientation];
+}
+
+UIInterfaceOrientation ZephyrDeviceInterfaceOrientation() {
+    return [SBApp interfaceOrientationForCurrentDeviceOrientation];
+}
+
+UIInterfaceOrientation ZephyrHomeInterfaceOrientation() {
+    return [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? ZephyrCurrentInterfaceOrientation() : UIInterfaceOrientationPortrait;
+}
+
+

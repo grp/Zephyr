@@ -133,6 +133,20 @@
 			<key>ALChangeNotification</key>
 			<string>com.chpwn.zephyr.preferences-changed</string>
 		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<true/>
+			<key>key</key>
+			<string>SideLandscape</string>
+			<key>label</key>
+			<string>Landscape (iPhone)</string>
+			<key>PostNotification</key>
+			<string>com.chpwn.zephyr.preferences-changed</string>
+			<key>defaults</key>
+			<string>com.chpwn.zephyr</string>
+		</dict>
 
         <dict>
 			<key>cell</key>
@@ -322,6 +336,42 @@
 			<key>PostNotification</key>
 			<string>com.chpwn.zephyr.preferences-changed</string>
 		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<true/>
+			<key>key</key>
+			<string>BottomLandscape</string>
+			<key>label</key>
+			<string>Landscape (iPhone)</string>
+			<key>PostNotification</key>
+			<string>com.chpwn.zephyr.preferences-changed</string>
+			<key>defaults</key>
+			<string>com.chpwn.zephyr</string>
+		</dict>
+
+        <dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Notification Center (iPhone)</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<true/>
+			<key>key</key>
+			<string>NotificationEnabled</string>
+			<key>label</key>
+			<string>Enabled</string>
+			<key>PostNotification</key>
+			<string>com.chpwn.zephyr.preferences-changed</string>
+			<key>defaults</key>
+			<string>com.chpwn.zephyr</string>
+		</dict>
+
         <dict>
             <key>cell</key>
             <string>PSGroupCell</string>

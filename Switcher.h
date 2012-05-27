@@ -9,11 +9,13 @@ typedef enum {
 } SwipeUpAction;
 
 @interface SwitcherGesture : BaseGesture {
-    UIView *appView;
     UIView *wrapperView;
+
+    UIView *appView;
     UIView *switcherView;
     UIView *linenView;
     UIImageView *shadowView;
+
     NSMutableSet *pendingSwitcherActivations;
 }
 

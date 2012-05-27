@@ -11,10 +11,6 @@ static NSMutableArray *allGestures = nil;
     allGestures = [[NSMutableArray alloc] init];
 }
 
-UIInterfaceOrientation CurrentInterfaceOrientation() {
-    return [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone ? UIInterfaceOrientationPortrait : [SBApp activeInterfaceOrientation];
-}
-
 @implementation BaseGesture
 @synthesize isActive, gestureRecognizers;
 
@@ -119,7 +115,8 @@ UIInterfaceOrientation CurrentInterfaceOrientation() {
 
 - (BOOL)currentOrientationIsSupported {
     // Use -activeInterfaceOrientation to get around the faked orientation as reported by CurrentInterfaceOrientation() on the iPhone.
-    return [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad || [SBApp activeInterfaceOrientation] == UIInterfaceOrientationPortrait;
+    //return [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad || [SBApp activeInterfaceOrientation] == UIInterfaceOrientationPortrait;
+    return YES;
 }
 
 - (BOOL)shouldActivate {

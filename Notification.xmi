@@ -1,0 +1,184 @@
+#import "Common.h"
+#import "Notification.h"
+#import "Preferences.h"
+#import "Keyboard.h"
+#import "NSTimer+Blocks.h"
+
+#import "SwitchApp.h"
+
+#include <dlfcn.h>
+
+%group Notification
+
+@interface SBBulletinListController (Zephyr)
+- (BOOL)shouldActivate;
+- (void)cleanupViews;
+- (void)prepareAtLocation:(CGFloat)location;
+@end
+
+static BOOL ZephyrNotificationShouldActivate() {
+    BOOL locked = [[objc_getClass("SBAwayController") sharedAwayController] isLocked];
+    BOOL preference = [PreferencesGet(@"NotificationEnabled", [NSNumber numberWithBool:YES]) boolValue];
+    BOOL pad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+
+    return preference && !pad && !locked;
+}
+
+%hook SBBulletinListController
+
+static UIView *appView = nil;
+static SBBulletinListView *centerView = nil;
+static UIImageView *shadowView = nil;
+static CGFloat grabLocation = NAN;
+
+%new(v@:)
+- (void)cleanupViews {
+    SBApplication *app = [SBApp _accessibilityFrontMostApplication];
+
+    if (app != nil) {
+        [app disableContextHostingForRequester:(CFStringRef) @"SwitchApp"];
+    }
+
+    centerView = nil;
+
+    [shadowView release];
+    [shadowView removeFromSuperview];
+    shadowView = nil;
+
+    [appView release];
+    [appView removeFromSuperview];
+    appView = nil;
+}
+
+- (void)_cleanupAfterShowListView {
+    if (!ZephyrNotificationShouldActivate()) return %orig;
+
+    %orig;
+    grabLocation = NAN;
+    [self cleanupViews];
+}
+
+- (void)_cleanupAfterHideListView {
+    if (!ZephyrNotificationShouldActivate()) return %orig;
+
+    %orig;
+    grabLocation = NAN;
+    [self cleanupViews];
+}
+
+- (void)prepareToShowListViewAnimated:(BOOL)showListViewAnimated aboveBanner:(BOOL)banner {
+    if (!ZephyrNotificationShouldActivate()) return %orig;
+
+    %orig;
+    [self prepareAtLocation:0.0f];
+}
+
+- (void)prepareToHideListViewAnimated:(BOOL)animated {
+    if (!ZephyrNotificationShouldActivate()) return %orig;
+
+    %orig;
+
+    if (!isnan(grabLocation)) {
+        [self prepareAtLocation:grabLocation];
+    } else {
+        [self prepareAtLocation:ZephyrHeightForOrientation(ZephyrCurrentInterfaceOrientation())];
+    }
+}
+
+%new(v@:f)
+- (void)prepareAtLocation:(CGFloat)location {
+    [self cleanupViews];
+    grabLocation = location;
+
+    centerView = [self listView];
+    [centerView positionSlidingViewAtY:ZephyrHeightForOrientation(ZephyrCurrentInterfaceOrientation())];
+    [MSHookIvar<UIView *>([self listView], "_grabber") setHidden:ZephyrNotificationShouldActivate()];
+
+    appView = [[UIView alloc] initWithFrame:[centerView bounds]];
+    [appView setClipsToBounds:NO];
+    [centerView addSubview:appView];
+
+    SBApplication *app = [SBApp _accessibilityFrontMostApplication];
+
+    if (app != nil) {
+        UIView *gestureView = ZephyrViewForApplication(app);
+
+        UIView *gestureWrapperView = [[UIView alloc] initWithFrame:[appView bounds]];
+        [gestureWrapperView addSubview:gestureView];
+        [appView addSubview:gestureWrapperView];
+
+        if (UIInterfaceOrientationIsLandscape(ZephyrCurrentInterfaceOrientation())) {
+            ZephyrRotateViewFromOrientationToOrientation(gestureWrapperView, UIInterfaceOrientationPortrait, ZephyrOrientationFlip(ZephyrCurrentInterfaceOrientation()), YES);
+        } else if (ZephyrCurrentInterfaceOrientation() == UIInterfaceOrientationPortraitUpsideDown) {
+            ZephyrRotateViewFromOrientationToOrientation(gestureWrapperView, UIInterfaceOrientationPortrait, ZephyrCurrentInterfaceOrientation(), YES);
+        }
+    } else {
+        UIView *homeView = ZephyrViewWithScreenshotOfHomeScreen();
+        [appView addSubview:homeView];
+    }
+
+    shadowView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"SwitcherShadowTop.png"]];
+    CGRect shadowFrame = [shadowView frame];
+    shadowFrame.size.height = [[shadowView image] size].height;
+    shadowFrame.size.width = [appView bounds].size.width;
+    shadowFrame.origin.y = location - shadowFrame.size.height;
+    [shadowView setFrame:shadowFrame];
+    [shadowView setTransform:CGAffineTransformMakeScale(1, -1)];
+    [centerView addSubview:shadowView];
+
+    CGRect appFrame = [appView frame];
+    appFrame.origin.y = location;
+    [appView setFrame:appFrame];
+}
+
+- (void)positionListViewAtY:(CGFloat)location {
+    if (!ZephyrNotificationShouldActivate()) return %orig;
+
+    grabLocation = location;
+
+    if (location < 0) location = 0;
+
+    CGRect wrapperFrame = [appView frame];
+    wrapperFrame.origin.y = location;
+    [appView setFrame:wrapperFrame];
+
+    CGRect shadowFrame = [shadowView frame];
+    shadowFrame.origin.y = wrapperFrame.origin.y - shadowFrame.size.height;
+    [shadowView setFrame:shadowFrame];
+}
+
+%end
+
+%hook SBBulletinListView
+
+// we fake the location in order to show the notification UI
+// while we are sliding down, so re-fake back the current Y
+- (CGFloat)currentY {
+    if (!isnan(grabLocation)) {
+        return grabLocation;
+    } else {
+        return %orig;
+    }
+}
+
+%end
+
+%hook SBUIController
+
+// we break if the switcher is also showing, so don't let it be
+- (void)handleHideNotificationsSystemGesture:(id)gesture {
+    if (!ZephyrNotificationShouldActivate()) return %orig;
+
+    if ([self isSwitcherShowing]) return;
+
+    %orig;
+}
+
+%end
+
+%end
+
+%ctor {
+    %init(Notification);
+}
+
