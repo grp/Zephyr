@@ -107,8 +107,10 @@ static CGFloat grabLocation = NAN;
         [gestureWrapperView addSubview:gestureView];
         [appView addSubview:gestureWrapperView];
 
-        if (!UIInterfaceOrientationIsPortrait(ZephyrCurrentInterfaceOrientation())) {
+        if (UIInterfaceOrientationIsLandscape(ZephyrCurrentInterfaceOrientation())) {
             ZephyrRotateViewFromOrientationToOrientation(gestureWrapperView, UIInterfaceOrientationPortrait, ZephyrOrientationFlip(ZephyrCurrentInterfaceOrientation()), YES);
+        } else if (ZephyrCurrentInterfaceOrientation() == UIInterfaceOrientationPortraitUpsideDown) {
+            ZephyrRotateViewFromOrientationToOrientation(gestureWrapperView, UIInterfaceOrientationPortrait, ZephyrCurrentInterfaceOrientation(), YES);
         }
     } else {
         UIView *homeView = ZephyrViewWithScreenshotOfHomeScreen();

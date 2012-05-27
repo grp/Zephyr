@@ -202,8 +202,10 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
         [gestureWrapperView addSubview:gestureView];
         [appView addSubview:gestureWrapperView];
 
-        if (!UIInterfaceOrientationIsPortrait(ZephyrCurrentInterfaceOrientation())) {
+        if (UIInterfaceOrientationIsLandscape(ZephyrCurrentInterfaceOrientation())) {
             ZephyrRotateViewFromOrientationToOrientation(gestureWrapperView, UIInterfaceOrientationPortrait, ZephyrOrientationFlip(ZephyrCurrentInterfaceOrientation()), YES);
+        } else if (ZephyrCurrentInterfaceOrientation() == UIInterfaceOrientationPortraitUpsideDown) {
+            ZephyrRotateViewFromOrientationToOrientation(gestureWrapperView, UIInterfaceOrientationPortrait, ZephyrCurrentInterfaceOrientation(), YES);
         }
     } else {
         UIView *homeView = ZephyrViewWithScreenshotOfHomeScreen();
@@ -289,8 +291,11 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
 
                 UIView *homeView = ZephyrViewWithScreenshotOfHomeScreen();
                 [homeView setFrame:[wrapperView bounds]];
-                if (ZephyrCurrentInterfaceOrientation() != ZephyrHomeInterfaceOrientation()) {
-                    ZephyrRotateViewFromOrientationToOrientation(homeView, ZephyrHomeInterfaceOrientation(), ZephyrOrientationFlip(ZephyrCurrentInterfaceOrientation()), YES);
+
+                if (UIInterfaceOrientationIsLandscape(ZephyrCurrentInterfaceOrientation())) {
+                    ZephyrRotateViewFromOrientationToOrientation(homeView, UIInterfaceOrientationPortrait, ZephyrOrientationFlip(ZephyrCurrentInterfaceOrientation()), YES);
+                } else if (ZephyrCurrentInterfaceOrientation() == UIInterfaceOrientationPortraitUpsideDown) {
+                    ZephyrRotateViewFromOrientationToOrientation(homeView, UIInterfaceOrientationPortrait, ZephyrCurrentInterfaceOrientation(), YES);
                 }
 
                 // XXX: this is a horrible hack
