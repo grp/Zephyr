@@ -92,6 +92,7 @@ static CGFloat grabLocation = NAN;
 
     centerView = [self listView];
     [centerView positionSlidingViewAtY:ZephyrHeightForOrientation(ZephyrCurrentInterfaceOrientation())];
+    [MSHookIvar<UIView *>([self listView], "_grabber") setHidden:ZephyrNotificationShouldActivate()];
 
     appView = [[UIView alloc] initWithFrame:[centerView bounds]];
     [appView setClipsToBounds:NO];
