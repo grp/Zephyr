@@ -270,7 +270,7 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
     if ([self effectiveSwipeUpAction] == kSwipeUpActionSwitcher) {
         // constrain to top of switcher
         if (location < -bottomBarHeight) {
-            location = ZephyrScreenRounded((location + bottomBarHeight) * 0.1f - bottomBarHeight);
+            location = ZephyrScreenRounded((location + bottomBarHeight) * 0.2f - bottomBarHeight);
         }
     }
 
@@ -374,7 +374,7 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
         if (-location >= bottomBarHeight * (2.0f / 3.0f)) {
             CGFloat from, to, duration;
             if (location < -bottomBarHeight)
-                location = ZephyrScreenRounded((location + bottomBarHeight) * 0.1f - bottomBarHeight);
+                location = ZephyrScreenRounded((location + bottomBarHeight) * 0.2f - bottomBarHeight);
             from = -location;
             to = bottomBarHeight;
             duration = 0.3f;
