@@ -292,10 +292,12 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
                 UIView *homeView = ZephyrViewWithScreenshotOfHomeScreen();
                 [homeView setFrame:[wrapperView bounds]];
 
-                if (UIInterfaceOrientationIsLandscape(ZephyrCurrentInterfaceOrientation())) {
-                    ZephyrRotateViewFromOrientationToOrientation(homeView, UIInterfaceOrientationPortrait, ZephyrOrientationFlip(ZephyrCurrentInterfaceOrientation()), YES);
-                } else if (ZephyrCurrentInterfaceOrientation() == UIInterfaceOrientationPortraitUpsideDown) {
-                    ZephyrRotateViewFromOrientationToOrientation(homeView, UIInterfaceOrientationPortrait, ZephyrCurrentInterfaceOrientation(), YES);
+                if ([[UIDevice currentDevice] userInterfaceIdiom] != UIUserInterfaceIdiomPad) {
+                    // Disable rotation on the iPad as the view behind is already rotated, so rotating it again is unnecessary.
+                    if (UIInterfaceOrientationIsLandscape(ZephyrCurrentInterfaceOrientation())) {
+                        ZephyrRotateViewFromOrientationToOrientation(homeView, UIInterfaceOrientationPortrait, ZephyrOrientationFlip(ZephyrCurrentInterfaceOrientation()), YES);
+                    } else if (ZephyrCurrentInterfaceOrientation() == UIInterfaceOrientationPortraitUpsideDown) { ZephyrRotateViewFromOrientationToOrientation(homeView, UIInterfaceOrientationPortrait, ZephyrCurrentInterfaceOrientation(), YES);
+                    }
                 }
 
                 // XXX: this is a horrible hack
