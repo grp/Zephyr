@@ -239,12 +239,12 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
         [[objc_getClass("SBUIController") sharedInstance] restoreIconListAnimated:NO animateWallpaper:NO keepSwitcher:NO];
         [[objc_getClass("SBUIController") sharedInstance] notifyAppResignActive:app];
     } else if ([self effectiveSwipeUpAction] == kSwipeUpActionSwitcher) {
-        if (linenView = nil) {
+        if (linenView == nil) {
             // TODO: Figure out why SBLinenView cannot give linens the full 320x480
             CGRect frame = rootView.bounds;
             frame.origin.y = switcherView.bounds.size.height - 320.0f;
             frame.size.height = 320.0f;
-            linenView = [[%c(SBLinenView) alloc] initWithFrame:frame];
+            linenView = [[objc_getClass("SBLinenView") alloc] initWithFrame:frame];
         }
 
         [switcherView insertSubview:linenView atIndex:0];
@@ -260,12 +260,6 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
     }];
 }
 
-static CGFloat ScreenRounded(CGFloat value)
-{
-    CGFloat scale = [UIScreen mainScreen].scale;
-    return roundf(value * scale) / scale;
-}
-
 - (void)handleGestureChangedWithLocation:(CGFloat)location velocity:(CGPoint)velocity {
     location = ZephyrHeightFromScreenPercentage(location, ZephyrCurrentInterfaceOrientation());
     CGFloat bottomBarHeight = [[objc_getClass("SBAppSwitcherController") sharedInstance] bottomBarHeight];
@@ -276,7 +270,7 @@ static CGFloat ScreenRounded(CGFloat value)
     if ([self effectiveSwipeUpAction] == kSwipeUpActionSwitcher) {
         // constrain to top of switcher
         if (location < -bottomBarHeight) {
-            location = ScreenRounded((location + bottomBarHeight) * 0.2f - bottomBarHeight);
+            location = ZephyrScreenRounded((location + bottomBarHeight) * 0.1f - bottomBarHeight);
         }
     }
 
@@ -376,10 +370,11 @@ static CGFloat ScreenRounded(CGFloat value)
     if ([self effectiveSwipeUpAction] == kSwipeUpActionSwitcher) {
         // XXX: maybe use the completionType here
         CGFloat bottomBarHeight = [[objc_getClass("SBAppSwitcherController") sharedInstance] bottomBarHeight];
+
         if (-location >= bottomBarHeight * (2.0f / 3.0f)) {
             CGFloat from, to, duration;
             if (location < -bottomBarHeight)
-                location = ScreenRounded((location + bottomBarHeight) * 0.2f - bottomBarHeight);
+                location = ZephyrScreenRounded((location + bottomBarHeight) * 0.1f - bottomBarHeight);
             from = -location;
             to = bottomBarHeight;
             duration = 0.3f;
@@ -393,7 +388,9 @@ static CGFloat ScreenRounded(CGFloat value)
                     [linenView release];
                     linenView = nil;
                 }];
+
                 [self cleanupViews];
+
                 ActivateSwitcherFromToDuration(from, to, duration);
             });
         } else {

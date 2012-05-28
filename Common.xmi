@@ -187,6 +187,10 @@ static BOOL switchAppStatusBarFlag = NO;
     %init(GestureViewStatusBar);
 }
 
+CGFloat ZephyrScreenRounded(CGFloat value) {
+    CGFloat scale = [UIScreen mainScreen].scale;
+    return roundf(value * scale) / scale;
+}
 
 UIView *ZephyrViewWithScreenshotOfView(UIView *view) {
     dlopen("/usr/lib/liblayersnapshotter.dylib", RTLD_LAZY);

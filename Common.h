@@ -6,6 +6,8 @@ CGFloat ZephyrHeightFromScreenPercentage(CGFloat percentage, UIInterfaceOrientat
 
 void ZephyrRotateViewFromOrientationToOrientation(UIView *view, UIInterfaceOrientation fromOrientation, UIInterfaceOrientation toOrientation, BOOL inPlace);
 
+CGFloat ZephyrScreenRounded(CGFloat value);
+
 UIView *ZephyrViewForApplication(SBApplication *app);
 UIView *ZephyrViewWithScreenshotOfHomeScreen();
 UIView *ZephyrViewWithScreenshotOfView(UIView *view);
