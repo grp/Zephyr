@@ -453,14 +453,14 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
     [linen release];
 
     linen = [[objc_getClass("SBLinenView") alloc] initWithFrame:CGRectMake(ZephyrScreenRounded(([self bounds].size.width - width) / 2.0f), [self bounds].size.height - height, width, height)];
-    [linen setAutoresizingMask:UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleTopMargin];
+    [linen setAutoresizingMask:UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleTopMargin];
     ZephyrRotateViewFromOrientationToOrientation(linen, UIInterfaceOrientationPortrait, UIInterfaceOrientationPortraitUpsideDown, YES);
     [self addSubview:linen];
     [self sendSubviewToBack:linen];
     [linen release];
 
     linen = [[objc_getClass("SBLinenView") alloc] initWithFrame:CGRectMake([self bounds].size.width - width, [self bounds].size.height - height, width, height)];
-    [linen setAutoresizingMask:UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleTopMargin];
+    [linen setAutoresizingMask:UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleTopMargin];
     ZephyrRotateViewFromOrientationToOrientation(linen, UIInterfaceOrientationPortrait, UIInterfaceOrientationPortraitUpsideDown, YES);
     [self addSubview:linen];
     [self sendSubviewToBack:linen];
