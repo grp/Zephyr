@@ -30,6 +30,12 @@ static SpringBoard *SBApp = nil;
 - (void)setOrientation:(int)orientation animated:(BOOL)animated; // not sure if UIInterfaceOrientation or UIDeviceOrientation
 @end
 
+@interface UIStatusBar : UIView
+- (void)requestStyle:(UIStatusBarStyle)style animated:(BOOL)animated;
+@end
+
+extern CGFloat UIStatusBarHeight;
+
 @interface SBDisplay : NSObject
 - (BOOL)displayFlag:(unsigned)flag;
 @end
