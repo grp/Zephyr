@@ -239,17 +239,6 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
         [[objc_getClass("SBUIController") sharedInstance] restoreIconListAnimated:NO animateWallpaper:NO keepSwitcher:NO];
         [[objc_getClass("SBUIController") sharedInstance] notifyAppResignActive:app];
     } else if ([self effectiveSwipeUpAction] == kSwipeUpActionSwitcher) {
-        if (linenView == nil) {
-            // TODO: Figure out why SBLinenView cannot give linens the full 320x480
-            CGRect frame = rootView.bounds;
-            frame.origin.y = switcherView.bounds.size.height - 320.0f;
-            frame.size.height = 320.0f;
-            linenView = [[objc_getClass("SBLinenView") alloc] initWithFrame:frame];
-        }
-
-        [switcherView insertSubview:linenView atIndex:0];
-        MSHookIvar<UIView *>(switcherView, "_backgroundView").alpha = 0.0f;
-
         [wrapperView addSubview:switcherView];
         [wrapperView sendSubviewToBack:switcherView];
     }
@@ -373,22 +362,14 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
 
         if (-location >= bottomBarHeight * (2.0f / 3.0f)) {
             CGFloat from, to, duration;
-            if (location < -bottomBarHeight)
+            if (location < -bottomBarHeight) {
                 location = ZephyrScreenRounded((location + bottomBarHeight) * 0.2f - bottomBarHeight);
+            }
             from = -location;
             to = bottomBarHeight;
             duration = 0.3f;
 
             dispatch_async(dispatch_get_main_queue(), ^{
-                [linenView.superview sendSubviewToBack:linenView];
-                [UIView animateWithDuration:duration animations:^{
-                    MSHookIvar<UIView *>(switcherView, "_backgroundView").alpha = 1.0f;
-                } completion:^(BOOL completed) {
-                    [linenView removeFromSuperview];
-                    [linenView release];
-                    linenView = nil;
-                }];
-
                 [self cleanupViews];
 
                 ActivateSwitcherFromToDuration(from, to, duration);
@@ -398,9 +379,6 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
                 [self positionAtLocation:0];
             } completion:^(BOOL completed) {
                 [self cleanupViews];
-                [linenView removeFromSuperview];
-                [linenView release];
-                linenView = nil;
             }];
         }
     } else {
@@ -459,22 +437,34 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
 - (id)initWithFrame:(CGRect)frame {
     self = %orig;
 
-    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone) {
-        // this stupidiy is necessary because Apple limits SBLinenView to 320px wide on iPhone
-        SBLinenView *linen = nil;
+    // this stupidiy is necessary because Apple limits SBLinenView to 320px wide on iPhone
+    SBLinenView *linen = nil;
 
-        linen = [[objc_getClass("SBLinenView") alloc] initWithFrame:CGRectMake([self bounds].size.width - 320.0f, 0, 320.0f, [self bounds].size.height)];
-        [linen setAutoresizingMask:UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleHeight];
-        [self addSubview:linen];
-        [self sendSubviewToBack:linen];
-        [linen release];
+    CGFloat height = 320.0f;
+    CGFloat width = ZephyrWidthForOrientation(UIInterfaceOrientationPortrait);
 
-        linen = [[objc_getClass("SBLinenView") alloc] initWithFrame:CGRectMake(0, 0, 320.0f, [self bounds].size.height)];
-        [linen setAutoresizingMask:UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleHeight];
-        [self addSubview:linen];
-        [self sendSubviewToBack:linen];
-        [linen release];
-    }
+    ZephyrRotateViewFromOrientationToOrientation(MSHookIvar<UIView *>(self, "_backgroundView"), UIInterfaceOrientationPortrait, UIInterfaceOrientationPortraitUpsideDown, YES);
+
+    linen = [[objc_getClass("SBLinenView") alloc] initWithFrame:CGRectMake(0, [self bounds].size.height - height, width, height)];
+    [linen setAutoresizingMask:UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleTopMargin];
+    ZephyrRotateViewFromOrientationToOrientation(linen, UIInterfaceOrientationPortrait, UIInterfaceOrientationPortraitUpsideDown, YES);
+    [self addSubview:linen];
+    [self sendSubviewToBack:linen];
+    [linen release];
+
+    linen = [[objc_getClass("SBLinenView") alloc] initWithFrame:CGRectMake(ZephyrScreenRounded(([self bounds].size.width - width) / 2.0f), [self bounds].size.height - height, width, height)];
+    [linen setAutoresizingMask:UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleTopMargin];
+    ZephyrRotateViewFromOrientationToOrientation(linen, UIInterfaceOrientationPortrait, UIInterfaceOrientationPortraitUpsideDown, YES);
+    [self addSubview:linen];
+    [self sendSubviewToBack:linen];
+    [linen release];
+
+    linen = [[objc_getClass("SBLinenView") alloc] initWithFrame:CGRectMake([self bounds].size.width - width, [self bounds].size.height - height, width, height)];
+    [linen setAutoresizingMask:UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleTopMargin];
+    ZephyrRotateViewFromOrientationToOrientation(linen, UIInterfaceOrientationPortrait, UIInterfaceOrientationPortraitUpsideDown, YES);
+    [self addSubview:linen];
+    [self sendSubviewToBack:linen];
+    [linen release];
 
     return self;
 }

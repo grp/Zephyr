@@ -3,6 +3,7 @@
 
 CGFloat ZephyrHeightForOrientation(UIInterfaceOrientation orientation);
 CGFloat ZephyrHeightFromScreenPercentage(CGFloat percentage, UIInterfaceOrientation orientation);
+CGFloat ZephyrWidthForOrientation(UIInterfaceOrientation orientation);
 
 void ZephyrRotateViewFromOrientationToOrientation(UIView *view, UIInterfaceOrientation fromOrientation, UIInterfaceOrientation toOrientation, BOOL inPlace);
 
