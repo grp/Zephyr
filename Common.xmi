@@ -208,6 +208,7 @@ UIView *ZephyrViewWithScreenshotOfView(UIView *view) {
 UIView *ZephyrViewWithScreenshotOfHomeScreen() {
     // XXX: using contentView here isn't necessarily the best option, but it works.
     UIView *homeView = ZephyrViewWithScreenshotOfView([[objc_getClass("SBUIController") sharedInstance] contentView]);
+    [homeView setBackgroundColor:[UIColor blackColor]];
 
     CGRect statusFrame = [homeView bounds];
     statusFrame.size.height = UIStatusBarHeight;
