@@ -1,3 +1,4 @@
+ - (1.3.2) disable iPad gestures during Zephyr gestures 
  - (1.3.2) issues opening switcher with folders open 
  - (1.3.2) switcher in landscape causes apps to freeze
  - (1.3.3) reorganize, clean up preferences
