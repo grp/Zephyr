@@ -59,7 +59,7 @@ void SBGestureRecognizerUnregister(SBGestureRecognizer *recognizer) {
                         } else {
                             [gu reset];
                         }
-                    } else {
+                    } else if (state == 1 || state == 2) {
                         // If we've already started, then continue.
                         [gu touchesMoved:gestureContext];
                     }
@@ -67,11 +67,9 @@ void SBGestureRecognizerUnregister(SBGestureRecognizer *recognizer) {
                     if (state == 2 || state == 1) {
                         // If we are active but no more touches, end.
                         [gu touchesEnded:gestureContext];
-                        [gu reset];
-                    } else {
-                        // Not sure how this would happen, bail out.
-                        [gu reset];
                     }
+
+                    [gu reset];
                 }
             } else {
                 // If it decides it doesn't want touches anymore, or is
