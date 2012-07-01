@@ -361,19 +361,29 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
         CGFloat bottomBarHeight = [[objc_getClass("SBAppSwitcherController") sharedInstance] bottomBarHeight];
 
         if (-location >= bottomBarHeight * (2.0f / 3.0f)) {
-            CGFloat from, to, duration;
             if (location < -bottomBarHeight) {
                 location = ZephyrScreenRounded((location + bottomBarHeight) * 0.2f - bottomBarHeight);
             }
-            from = -location;
-            to = bottomBarHeight;
-            duration = 0.3f;
 
-            dispatch_async(dispatch_get_main_queue(), ^{
-                [self cleanupViews];
+            CGFloat from = -location;
+            CGFloat to = bottomBarHeight;
+            CGFloat duration = 0.3f;
 
-                ActivateSwitcherFromToDuration(from, to, duration);
-            });
+            if ([[objc_getClass("SBIconController") sharedInstance] openFolder] != nil) {
+                [UIView animateWithDuration:duration animations:^{
+                    [self positionAtLocation:-to];
+                } completion:^(BOOL completed) {
+                    [self cleanupViews];
+
+                    ActivateSwitcherFromToDuration(to, to, duration);
+                }];
+            } else {
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    [self cleanupViews];
+
+                    ActivateSwitcherFromToDuration(from, to, duration);
+                });
+            }
         } else {
             [UIView animateWithDuration:0.3f animations:^{
                 [self positionAtLocation:0];
