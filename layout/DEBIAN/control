@@ -1,7 +1,7 @@
 Package: com.chpwn.zephyr
 Name: Zephyr
 Section: Tweaks
-Version: 1.3.2
+Version: 1.3.3
 Pre-Depends: firmware (>= 5.0)
 Depends: mobilesubstrate, preferenceloader, applist, com.rpetrich.layersnapshotter
 Conflicts: com.dapetcu21.MultiCleaner (<= 2.9.4), com.xsellize.multicleaner, com.xsellize.zephyr
