@@ -27,7 +27,7 @@ void SBGestureRecognizerUnregister(SBGestureRecognizer *recognizer) {
 
     dispatch_async(dispatch_get_main_queue(), ^{
         for (SBGestureRecognizer *gu in allGestureRecognizers) {
-            SBGestureContextRef gestureContext = (SBGestureContextRef) malloc(sizeof(__SBGestureContext));
+            SBGestureContext *gestureContext = (SBGestureContext *) malloc(sizeof(SBGestureContext));
             gestureContext->pixelDeltas = [self pixelDeltas];
             gestureContext->averageVelocities = [self averageVelocities];
             gestureContext->averageTranslation = [self averageTranslation];
@@ -41,41 +41,57 @@ void SBGestureRecognizerUnregister(SBGestureRecognizer *recognizer) {
             gestureContext->unk3 = 0;
             gestureContext->unk4 = 0;
 
-            int state = [gu state];
+            SBGestureRecognizerState state = [gu state];
 
-            if ([gu shouldReceiveTouches] && state <= 2) {
-                if (count > 0) {
-                    if (state == 0) {
-                        BOOL numberOfTouchesIsValid = YES;
+            BOOL shouldReceiveTouches = [gu shouldReceiveTouches];
+            BOOL hasTouches = (count > 0);
 
-                        if ([gu isKindOfClass:objc_getClass("SBFluidSlideGestureRecognizer")]) {
-                            SBFluidSlideGestureRecognizer *swipeRecognizer = (SBFluidSlideGestureRecognizer *) gu;
-                            numberOfTouchesIsValid = (count >= (unsigned int) [swipeRecognizer minTouches]);
-                        }
+            if (state == SBGestureRecognizerStatePossible) {
+                // Only start with enough touches for multi-touch gestures.
+                BOOL numberOfTouchesIsValid = hasTouches;
 
-                        if (numberOfTouchesIsValid) {
-                            // If state is "ready" and there are enough touches, start.
-                            [gu touchesBegan:gestureContext];
-                        } else {
-                            [gu reset];
-                        }
-                    } else if (state == 1 || state == 2) {
-                        // If we've already started, then continue.
-                        [gu touchesMoved:gestureContext];
+                if ([gu isKindOfClass:objc_getClass("SBFluidSlideGestureRecognizer")]) {
+                    SBFluidSlideGestureRecognizer *swipeRecognizer = (SBFluidSlideGestureRecognizer *) gu;
+                    numberOfTouchesIsValid = (count >= (unsigned int) [swipeRecognizer minTouches]);
+                }
+
+                if (shouldReceiveTouches) {
+                    if (numberOfTouchesIsValid) {
+                        // If state is "ready" and there are enough touches, start.
+                        [gu touchesBegan:gestureContext];
+                    } else {
+                        // Otherwise, reset: could still start if finger added.
+                        [gu reset];
                     }
                 } else {
-                    if (state == 2 || state == 1) {
-                        // If we are active but no more touches, end.
-                        [gu touchesEnded:gestureContext];
-                    }
+                    // Don't begin if doesn't want touches.
+                }
+            } else if (state == SBGestureRecognizerStateBegan || state == SBGestureRecognizerStateChanged) {
+                // Allow removing a finger after starting: don't check minTouches for moved.
 
+                if (shouldReceiveTouches) {
+                    if (hasTouches) {
+                        // Continue if still valid.
+                        [gu touchesMoved:gestureContext];
+                    } else {
+                        // End if no longer enough touches.
+                        [gu touchesEnded:gestureContext];
+                        [gu reset];
+                    }
+                } else {
+                    // Kill if no longer interested in touches.
+                    [gu reset];
+                }
+            } else if (state == SBGestureRecognizerStateEnded || state == SBGestureRecognizerStateCancelled) {
+                if (hasTouches) {
+                    // Do nothing to preserve ended/cancelled state to the end of the gesture.
+                } else {
+                    // When the gesture ends, reset.
                     [gu reset];
                 }
             } else {
-                // If it decides it doesn't want touches anymore, or is
-                // in the cancelled/ended state, reset it.
-                // XXX: this may be slow, it runs potentially multiple times per touch
-                [gu reset];
+                // Unknown state.
+                NSLog(@"Unknown SBGestureRecognizerState %d.", state);
             }
 
             free(gestureContext);

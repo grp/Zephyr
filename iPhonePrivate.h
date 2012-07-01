@@ -274,9 +274,17 @@ typedef struct {
     int unk4;
 
     SBTouchInfo activeTouches[30]; // 0x44; count is activeTouchCount
-} __SBGestureContext;
+} SBGestureContext;
 
-typedef __SBGestureContext *SBGestureContextRef;
+typedef enum {
+    SBGestureRecognizerStatePossible,
+    SBGestureRecognizerStateBegan,
+    SBGestureRecognizerStateChanged,
+    SBGestureRecognizerStateEnded,
+    SBGestureRecognizerStateCancelled,
+    SBGestureRecognizerStateFailed,
+    SBGestureRecognizerStateRecognized = SBGestureRecognizerStateEnded
+} SBGestureRecognizerState;
 
 typedef enum {
     kSBOffscreenEdgeLeft = 1,
@@ -289,16 +297,16 @@ typedef enum {
 @property (nonatomic, copy) void (^handler)();
 @property (nonatomic, copy) BOOL (^canBeginCondition)();
 @property (nonatomic, assign) int types;
-@property (nonatomic, assign) int state;
+@property (nonatomic, assign) SBGestureRecognizerState state;
 @property (nonatomic, assign) int minTouches;
 @property (assign, nonatomic) BOOL sendsTouchesCancelledToApplication;
 - (void)reset;
 - (BOOL)shouldReceiveTouches;
 - (int)templateMatch;
-- (void)touchesBegan:(SBGestureContextRef)began;
-- (void)touchesCancelled:(SBGestureContextRef)cancelled;
-- (void)touchesEnded:(SBGestureContextRef)ended;
-- (void)touchesMoved:(SBGestureContextRef)moved;
+- (void)touchesBegan:(SBGestureContext *)began;
+- (void)touchesCancelled:(SBGestureContext *)cancelled;
+- (void)touchesEnded:(SBGestureContext *)ended;
+- (void)touchesMoved:(SBGestureContext *)moved;
 @end
 
 @interface SBFluidSlideGestureRecognizer : SBGestureRecognizer
