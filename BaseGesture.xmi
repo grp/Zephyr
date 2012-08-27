@@ -3,6 +3,7 @@
 #import "OffscreenGesture.h"
 #import "Preferences.h"
 #import "Keyboard.h"
+#import "Grabber.h"
 
 static NSMutableArray *allGestures = nil;
 
@@ -58,8 +59,14 @@ static NSMutableArray *allGestures = nil;
                 break;
             case 1:
                 if (![self isActive] && ![BaseGesture isAnyGestureActive]) {
-                    [self handleGestureBeganWithLocation:distance];
-                    isActive = YES;
+                    if (![self shouldUseGrabberAtEdge:edge] || [[GrabberController sharedInstance] visibleAtEdge:edge]) {
+                        [[GrabberController sharedInstance] hideAtEdge:edge animated:YES];
+
+                        [self handleGestureBeganWithLocation:distance];
+                        isActive = YES;
+                    } else {
+                        [[GrabberController sharedInstance] showAtEdge:edge animated:YES];
+                    }
                 }
                 break;
             case 2:
@@ -84,7 +91,7 @@ static NSMutableArray *allGestures = nil;
                 break;
             default:
                 if ([self isActive]) {
-                    NSLog(@"BUG: Weird recognizer state in %@.", self);
+                    NSLog(@"[Zephyr] BUG: Weird recognizer state %d in %@.", [gestureRecognizer state], self);
                     isActive = NO;
                 }
                 break;
@@ -92,7 +99,7 @@ static NSMutableArray *allGestures = nil;
     }];
 
     [gestureRecognizer setCanBeginCondition:^BOOL {
-        BOOL should = [self shouldActivate];
+        BOOL should = [self shouldActivateAtEdge:edge];
         if (!should) return NO;
 
 		return YES;
@@ -119,7 +126,11 @@ static NSMutableArray *allGestures = nil;
     return YES;
 }
 
-- (BOOL)shouldActivate {
+- (BOOL)shouldUseGrabberAtEdge:(SBOffscreenEdge)edge {
+    return NO;
+}
+
+- (BOOL)shouldActivateAtEdge:(SBOffscreenEdge)edge {
     return NO;
 }
 

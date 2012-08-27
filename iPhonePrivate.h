@@ -57,6 +57,7 @@ extern CGFloat UIStatusBarHeight;
 + (BOOL)multitaskingIsSupported;
 - (NSString *)displayIdentifier;
 - (SBProcess *)process;
+- (void)enableContextHostingForRequester:(CFStringRef)requester orderFront:(BOOL)orderFront;
 - (void)disableContextHostingForRequester:(CFStringRef)requester;
 - (void)setActivationSetting:(unsigned)setting flag:(BOOL)flag;
 - (void)setActivationSetting:(unsigned)setting value:(id)value;
@@ -96,6 +97,9 @@ extern CGFloat UIStatusBarHeight;
 @interface SBOrientationLockManager : NSObject
 + (id)sharedInstance;
 - (void)setLockOverrideEnabled:(BOOL)enabled forReason:(id)reason;
+@end
+
+@interface SBBulletinListTabView : UIView
 @end
 
 @interface SBBulletinListView : UIView

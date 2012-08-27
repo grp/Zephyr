@@ -12,7 +12,7 @@ BOOL SwitchAppGestureIsAnimatingCompletion() {
 
 @implementation SwitchAppGesture
 
-- (BOOL)shouldActivate {
+- (BOOL)shouldActivateAtEdge:(SBOffscreenEdge)edge {
     BOOL disableKeyboard = [(NSNumber *) PreferencesGet(@"SideDisableKeyboard", PreferencesGet(@"DisableKeyboard", [NSNumber numberWithBool:YES])) boolValue];
     if (disableKeyboard) {
         if (KeyboardIsActive()) return NO;
@@ -36,6 +36,10 @@ BOOL SwitchAppGestureIsAnimatingCompletion() {
         && ![[objc_getClass("SBAssistantController") sharedInstance] isAssistantVisible]
         && ![[objc_getClass("SBBulletinListController") sharedInstanceIfExists] listViewIsActive]
         && [(NSNumber *) PreferencesGet(@"SwipeSideEnabled", [NSNumber numberWithBool:YES]) boolValue];
+}
+
+- (BOOL)shouldUseGrabberAtEdge:(SBOffscreenEdge)edge {
+    return [(NSNumber *) PreferencesGet(@"SideGrabberEnabled", NO) boolValue];
 }
 
 - (BOOL)currentOrientationIsSupported {

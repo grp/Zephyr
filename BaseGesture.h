@@ -11,7 +11,9 @@
 
 - (void)addOffscreenEdge:(SBOffscreenEdge)edge minimumTouchCount:(int)count edgeMargin:(CGFloat)edgeMargin;
 - (BOOL)currentOrientationIsSupported;
-- (BOOL)shouldActivate;
+
+- (BOOL)shouldActivateAtEdge:(SBOffscreenEdge)edge;
+- (BOOL)shouldUseGrabberAtEdge:(SBOffscreenEdge)edge;
 
 - (void)handleGestureBeganWithLocation:(CGFloat)location;
 - (void)handleGestureChangedWithLocation:(CGFloat)location velocity:(CGPoint)velocity;

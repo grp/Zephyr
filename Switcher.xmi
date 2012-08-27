@@ -58,7 +58,7 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
 
 @implementation SwitcherGesture
 
-- (BOOL)shouldActivate {
+- (BOOL)shouldActivateAtEdge:(SBOffscreenEdge)edge {
     SBApplication *topApplication = [SBApp _accessibilityFrontMostApplication];
     if (topApplication == nil) topApplication = MSHookIvar<SBApplication *>([objc_getClass("SBUIController") sharedInstance], "_pendingAppActivatedByGesture");
 
@@ -97,6 +97,10 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
         && [self currentOrientationIsSupported]
         && (topApplication == nil || displayFlagsAllowed)
         && (action == kSwipeUpActionSwitcher || action == kSwipeUpActionCloseApp);
+}
+
+- (BOOL)shouldUseGrabberAtEdge:(SBOffscreenEdge)edge {
+    return [(NSNumber *) PreferencesGet(@"BottomGrabberEnabled", NO) boolValue];
 }
 
 - (BOOL)currentOrientationIsSupported {
@@ -258,7 +262,7 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
 
     if ([self effectiveSwipeUpAction] == kSwipeUpActionSwitcher) {
         // constrain to top of switcher
-        if (location < -bottomBarHeight) {
+        if (-location > bottomBarHeight) {
             location = ZephyrScreenRounded((location + bottomBarHeight) * 0.2f - bottomBarHeight);
         }
     }
@@ -361,7 +365,7 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
         CGFloat bottomBarHeight = [[objc_getClass("SBAppSwitcherController") sharedInstance] bottomBarHeight];
 
         if (-location >= bottomBarHeight * (2.0f / 3.0f)) {
-            if (location < -bottomBarHeight) {
+            if (-location > bottomBarHeight) {
                 location = ZephyrScreenRounded((location + bottomBarHeight) * 0.2f - bottomBarHeight);
             }
 

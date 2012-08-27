@@ -1,0 +1,144 @@
+
+#import "Common.h"
+#import "Grabber.h"
+
+static CGFloat kGrabberControllerHideTemporalOffset = 1.0f;
+static CGFloat kGrabberControllerAnimationDuration = 0.3f;
+
+static NSNumber *SBOffscreenEdgeKey(SBOffscreenEdge edge) {
+    return [NSNumber numberWithInt:edge];
+}
+
+@implementation GrabberController
+
++ (id)sharedInstance {
+    static GrabberController *controller = nil;
+
+    if (controller == nil) {
+        controller = [[GrabberController alloc] init];
+    }
+
+    return controller;
+}
+
+- (id)init {
+    if ((self = [super init])) {
+        _grabberViews = [[NSMutableDictionary alloc] init];
+    }
+
+    return self;
+}
+
+- (void)dealloc {
+    [_grabberViews release];
+
+    [super dealloc];
+}
+
+- (void)transformGrabberView:(SBBulletinListTabView *)grabberView offscreen:(BOOL)offscreen atEdge:(SBOffscreenEdge)edge {
+    CGAffineTransform transform = CGAffineTransformIdentity;
+    CGPoint anchorPoint = CGPointMake(0.5, 0.5);
+
+    if (offscreen) {
+        CGSize size = [grabberView bounds].size;
+
+        if (edge == kSBOffscreenEdgeTop) {
+            transform = CGAffineTransformTranslate(transform, 0, -size.height);
+        } else if (edge == kSBOffscreenEdgeLeft) {
+            transform = CGAffineTransformTranslate(transform, -size.width, 0);
+        } else if (edge == kSBOffscreenEdgeBottom) {
+            transform = CGAffineTransformTranslate(transform, 0, +size.height);
+        } else if (edge == kSBOffscreenEdgeRight) {
+            transform = CGAffineTransformTranslate(transform, +size.width, 0);
+        }
+    }
+
+    if (edge == kSBOffscreenEdgeTop) {
+        transform = CGAffineTransformRotate(transform, 0);
+    } else if (edge == kSBOffscreenEdgeLeft) {
+        anchorPoint = CGPointMake(0.5, 1.11); // XXX: magic
+        transform = CGAffineTransformRotate(transform, M_PI / (2.0 / 3.0));
+    } else if (edge == kSBOffscreenEdgeBottom) {
+        transform = CGAffineTransformRotate(transform, M_PI);
+    } else if (edge == kSBOffscreenEdgeRight) {
+        anchorPoint = CGPointMake(0.5, 1.11); // XXX: magic
+        transform = CGAffineTransformRotate(transform, M_PI / 2.0);
+    }
+
+    [grabberView.layer setAnchorPoint:anchorPoint];
+    [grabberView setTransform:transform];
+}
+
+- (BOOL)visibleAtAnyEdge {
+    return [_grabberViews count] != 0;
+}
+
+- (BOOL)visibleAtEdge:(SBOffscreenEdge)edge {
+    return [_grabberViews objectForKey:SBOffscreenEdgeKey(edge)] != nil;
+}
+
+- (void)showAtEdge:(SBOffscreenEdge)edge animated:(BOOL)animated {
+    SBBulletinListTabView *grabberView = [[objc_getClass("SBBulletinListTabView") alloc] init];
+
+    UIWindow *window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
+    [window setUserInteractionEnabled:NO];
+    [window setHidden:NO];
+
+    UIView *rotationView = [[UIView alloc] initWithFrame:[window bounds]];
+    [rotationView setUserInteractionEnabled:NO];
+    ZephyrRotateViewFromOrientationToOrientation(rotationView, UIInterfaceOrientationPortrait, ZephyrCurrentInterfaceOrientation(), YES);
+    [rotationView addSubview:grabberView];
+    [window addSubview:rotationView];
+    [rotationView release];
+
+    CGRect windowFrame = [rotationView bounds];
+    CGRect frame = [grabberView frame];
+    if (edge == kSBOffscreenEdgeTop) {
+        frame = CGRectMake(roundf((windowFrame.size.width - frame.size.width) / 2), 0, frame.size.width, frame.size.height);
+    } else if (edge == kSBOffscreenEdgeLeft) {
+        frame = CGRectMake(0, roundf((windowFrame.size.height - frame.size.height) / 2), frame.size.width, frame.size.height);
+    } else if (edge == kSBOffscreenEdgeBottom) {
+        frame = CGRectMake(roundf((windowFrame.size.width - frame.size.width) / 2), windowFrame.size.height - frame.size.height, frame.size.width, frame.size.height);
+    } else if (edge == kSBOffscreenEdgeRight) {
+        frame = CGRectMake(windowFrame.size.width - frame.size.width, roundf((windowFrame.size.height - frame.size.height) / 2), frame.size.width, frame.size.height);
+    }
+    [grabberView setFrame:frame];
+
+    [self transformGrabberView:grabberView offscreen:YES atEdge:edge];
+    [UIView animateWithDuration:kGrabberControllerAnimationDuration animations:^{
+        [self transformGrabberView:grabberView offscreen:NO atEdge:edge];
+    }];
+
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, kGrabberControllerHideTemporalOffset * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+        [self hideAtEdge:edge animated:animated];
+    });
+
+    [_grabberViews setObject:grabberView forKey:SBOffscreenEdgeKey(edge)];
+    [_grabberWindows setObject:window forKey:SBOffscreenEdgeKey(edge)];
+}
+
+- (void)hideAtEdge:(SBOffscreenEdge)edge animated:(BOOL)animated {
+    SBBulletinListTabView *grabberView = [_grabberViews objectForKey:SBOffscreenEdgeKey(edge)];
+    UIWindow *window = [_grabberWindows objectForKey:SBOffscreenEdgeKey(edge)];
+
+    if (grabberView == nil) {
+        return;
+    }
+
+    [UIView animateWithDuration:kGrabberControllerAnimationDuration animations:^{
+        [self transformGrabberView:grabberView offscreen:YES atEdge:edge];
+    } completion:^(BOOL completed) {
+        [grabberView removeFromSuperview];
+        [grabberView release];
+
+        [window setHidden:YES];
+        [window release];
+    }];
+
+    [_grabberViews removeObjectForKey:SBOffscreenEdgeKey(edge)];
+    [_grabberWindows removeObjectForKey:SBOffscreenEdgeKey(edge)];
+}
+
+@end
+
+
