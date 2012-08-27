@@ -1,12 +1,17 @@
- - (1.3.2) disable iPad gestures during Zephyr gestures 
- - (1.3.2) switcher in landscape causes apps to freeze
- - (1.3.3) reorganize, clean up preferences
- - (1.3.5) Swipe down to close expanded Siri.
- - (1.3.5) Some gesture to go back to last app.
- - (1.4) Smoothly fade out icons when showing switcher.
- - (1.4) swipe down switcher w/ smooth finger tracking
- - (1.5) rotate gesture to switch to landscape
- - (1.5) remove slide to unlock, swipe up to close lockscreen
- - (X) bounce when pulling up switcher
- - (X) fix bug with auto-canceled swipe gestures
+
+# Bugs
+ - disable iPad gestures during Zephyr gestures 
+ - switcher in landscape causes apps to freeze
+ - fix bug with auto-canceled swipe gestures
+
+# Improvements
+ - reorganize, clean up preferences
+ - Smoothly fade out icons when showing switcher.
+ - swipe down switcher w/ smooth finger tracking
+
+# Features
+ - Swipe down to close expanded Siri.
+ - Some gesture to go back to last app.
+ - rotate gesture to switch to landscape
+ - remove slide to unlock, swipe up to close lockscreen
 
