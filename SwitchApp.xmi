@@ -43,11 +43,7 @@ BOOL SwitchAppGestureIsAnimatingCompletion() {
 }
 
 - (BOOL)currentOrientationIsSupported {
-    BOOL portrait = UIInterfaceOrientationIsPortrait(ZephyrCurrentInterfaceOrientation());
-    BOOL preference = [PreferencesGet(@"SideLandscape", [NSNumber numberWithBool:YES]) boolValue];
-    BOOL pad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
-
-    return portrait || (preference || pad);
+    return YES;
 }
 
 - (void)handleGestureCanceled {
