@@ -20,3 +20,7 @@ UIInterfaceOrientation ZephyrHomeInterfaceOrientation();
 UIInterfaceOrientation ZephyrDeviceInterfaceOrientation();
 UIInterfaceOrientation ZephyrCurrentInterfaceOrientation();
 
+// Compatibility
+BOOL ZephyrAssistantIsVisible();
+BOOL ZephyrMultitaskingSupported();
+

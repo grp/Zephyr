@@ -7,6 +7,11 @@
 
 %config(generator=internal);
 
+@interface UIApplication (Private)
+- (UIWindow *)statusBarWindow;
+- (UIInterfaceOrientation)activeInterfaceOrientation;
+@end
+
 @class SBApplication;
 @interface SpringBoard : UIApplication
 - (SBApplication *)_accessibilityFrontMostApplication;
@@ -18,8 +23,6 @@
 - (void)lockButtonUp:(GSEventRef)event;
 - (void)showSpringBoardStatusBar;
 - (void)hideSpringBoardStatusBar;
-- (UIWindow *)statusBarWindow;
-- (UIInterfaceOrientation)activeInterfaceOrientation;
 - (UIInterfaceOrientation)interfaceOrientationForCurrentDeviceOrientation;
 - (void)noteInterfaceOrientationChanged:(UIInterfaceOrientation)orientation;
 @end
@@ -36,11 +39,11 @@ static SpringBoard *SBApp = nil;
 
 extern CGFloat UIStatusBarHeight;
 
-@interface SBDisplay : NSObject
+@interface SBDisplay : NSObject // iOS 5
 - (BOOL)displayFlag:(unsigned)flag;
 @end
 
-@interface SBDisplayStack : NSObject
+@interface SBDisplayStack : NSObject // iOS 5
 - (void)pushDisplay:(SBDisplay *)display;
 - (void)popDisplay:(SBDisplay *)display;
 - (BOOL)containsDisplay:(SBDisplay *)display;
@@ -49,14 +52,15 @@ extern CGFloat UIStatusBarHeight;
 @interface SBAlert : SBDisplay
 @end
 
-@interface SBProcess : NSObject
+@interface SBProcess : NSObject // iOS 5
 - (void)killWithSignal:(int)signal;
 @end
 
-@interface SBApplication : SBDisplay
-+ (BOOL)multitaskingIsSupported;
+@interface SBApplication : SBDisplay // iOS 6: NSObject
++ (BOOL)multitaskingIsSupported; // iOS 5
+- (SBProcess *)process; // iOS 5
+- (int)suspensionType; // iOS 5
 - (NSString *)displayIdentifier;
-- (SBProcess *)process;
 - (void)enableContextHostingForRequester:(CFStringRef)requester orderFront:(BOOL)orderFront;
 - (void)disableContextHostingForRequester:(CFStringRef)requester;
 - (void)setActivationSetting:(unsigned)setting flag:(BOOL)flag;
@@ -65,7 +69,6 @@ extern CGFloat UIStatusBarHeight;
 - (void)setDeactivationSetting:(unsigned)setting value:(id)value;
 - (void)setDisplaySetting:(unsigned)setting flag:(BOOL)flag;
 - (void)setDisplaySetting:(unsigned)setting value:(id)value;
-- (int)suspensionType;
 - (UIInterfaceOrientation)statusBarOrientation;
 - (void)clearDeactivationSettings;
 @end
@@ -75,7 +78,14 @@ extern CGFloat UIStatusBarHeight;
 - (SBApplication *)applicationWithDisplayIdentifier:(NSString *)displayIdentifier;
 @end
 
+typedef enum {
+    SBShowcaseModeHidden,
+    SBShowcaseModeDefault,
+    SBShowcaseModeFull
+} SBShowcaseMode; // iOS 6
+
 @interface SBShowcaseViewController : NSObject
+- (CGFloat)revealAmountForMode:(SBShowcaseMode)mode; // iOS 6
 @end
 
 @interface SBAppSwitcherController : SBShowcaseViewController
@@ -87,7 +97,8 @@ extern CGFloat UIStatusBarHeight;
 
 @interface SBAssistantController : SBShowcaseViewController
 + (id)sharedInstance;
-- (BOOL)isAssistantVisible;
++ (BOOL)isAssistantVisible; // iOS 6
+- (BOOL)isAssistantVisible; // iOS 5
 @end
 
 @interface SBShowcaseContext : NSObject
@@ -103,16 +114,12 @@ extern CGFloat UIStatusBarHeight;
 @end
 
 @interface SBBulletinListView : UIView
-@property(readonly, assign) float currentY;
+@property(readonly, assign) CGFloat currentY;
 @property(readonly, retain) UIImageView *linenView;
 @property(readonly, retain) UIView *slidingView;
 @property(readonly, retain) UITableView *tableView;
-+ (id)_pathToLinenCache;
-+ (id)linen;
-+ (void)loadLinen;
-+ (void)removeCachedLinen;
-- (float)offscreenY;
-- (float)onscreenY;
+- (CGFloat)offscreenY;
+- (CGFloat)onscreenY;
 - (void)positionSlidingViewAtY:(float)y;
 - (void)setBottomCornersOffscreen:(BOOL)offscreen animated:(BOOL)animated;
 - (void)setBottomShadowAlpha:(float)alpha;
@@ -126,8 +133,6 @@ extern CGFloat UIStatusBarHeight;
 @property(readonly, assign) BOOL listViewIsActive;
 + (id)sharedInstance;
 + (id)sharedInstanceIfExists;
-- (void)_cleanupAfterHideListView;
-- (void)_cleanupAfterShowListView;
 - (void)_updateForTouchBeganOrMovedWithLocation:(CGPoint)location velocity:(CGPoint)velocity;
 - (void)_updateForTouchCanceled;
 - (void)_updateForTouchEndedWithVelocity:(CGPoint)velocity completion:(id)completion;
@@ -190,7 +195,11 @@ typedef enum {
 
 @interface SBUIController : NSObject
 + (id)sharedInstance;
-- (void)_revealShowcase:(SBShowcaseViewController *)showcase duration:(NSTimeInterval)duration from:(SBShowcaseContext *)from to:(SBShowcaseContext *)to;
+- (UIView *)rootView;
+
+- (void)_revealShowcase:(SBShowcaseViewController *)showcase duration:(NSTimeInterval)duration from:(SBShowcaseContext *)from to:(SBShowcaseContext *)to; // iOS 5
+- (BOOL)_revealShowcase:(SBShowcaseViewController *)showcase revealMode:(SBShowcaseMode)mode duration:(NSTimeInterval)duration fromSystemGesture:(BOOL)gesture revealSetupBlock:(id)setupBlock; // iOS 6
+- (void)_dismissShowcase:(double)unk unhost:(BOOL)unhost;
 
 - (id)_calculateSwitchAppList;
 - (void)_switchAppGestureBegan; // iOS 5.0
@@ -200,9 +209,10 @@ typedef enum {
 - (void)_switchAppGestureCancelled;
 - (void)_switchAppGestureViewAnimationComplete;
 
-- (void)_dismissShowcase:(double)unk unhost:(BOOL)unhost;
+- (BOOL)_activateSwitcherFrom:(SBShowcaseContext *)from to:(SBShowcaseContext *)to duration:(NSTimeInterval)duration; // iOS 5
+- (BOOL)_activateSwitcher:(double)switcher fromSystemGesture:(BOOL)systemGesture; // iOS 6
+
 - (int)_dismissSheetsAndDetermineAlertStateForMenuClickOrSystemGesture;
-- (BOOL)_activateSwitcherFrom:(SBShowcaseContext *)from to:(SBShowcaseContext *)to duration:(NSTimeInterval)duration;
 - (void)_resumeEventsIfNecessary;
 - (void)_lockOrientationForSystemGesture;
 - (void)_releaseSystemGestureOrientationLock;
@@ -215,27 +225,34 @@ typedef enum {
 - (void)setFakeSpringBoardStatusBarVisible:(BOOL)visible;
 - (void)clearFakeSpringBoardStatusBarAndCorners;
 
+- (void)setRootViewHiddenForScatter:(BOOL)scatter duration:(double)duration startTime:(double)time; // iOS 5
+- (void)setRootViewHiddenForScatter:(BOOL)scatter duration:(double)duration delay:(double)delay; // iOS 6
+
 - (void)restoreIconListAnimated:(BOOL)animated animateWallpaper:(BOOL)animateWallpaper keepSwitcher:(BOOL)keepSwitcher;
 - (void)stopRestoringIconList;
 - (void)tearDownIconListAndBar;
-- (CGFloat)bottomBarHeight;
-- (UIView *)rootView;
-- (void)clearPendingAppActivatedByGesture;
+
 - (BOOL)isSwitcherShowing;
-- (void)clearZoomLayer;
-- (void)setRootViewHiddenForScatter:(BOOL)scatter duration:(double)duration startTime:(double)time;
+
+- (void)clearZoomLayer; // iOS 5
+
+- (void)prepareSwitchAppGestureStatusBar;
+- (void)updateSwitchAppGestureStatusBar;
 - (void)cleanupSwitchAppGestureStatusBar;
 - (void)cleanupSwitchAppGestureViews;
+
 - (void)notifyAppResignActive:(SBApplication *)application;
 - (void)notifyAppResumeActive:(SBApplication *)application;
+
 - (void)showSystemGestureBackdrop;
 - (void)hideSystemGestureBackdrop;
-- (void)prepareSwitchAppGestureStatusBar;
+
 - (void)programmaticSwitchAppGestureApplyWithPercentage:(float)percentage;
 - (void)programmaticSwitchAppGestureMoveToLeft;
 - (void)programmaticSwitchAppGestureMoveToRight;
-- (void)updateSwitchAppGestureStatusBar;
+
 - (void)scheduleApplicationForLaunchByGesture:(SBApplication *)application;
+- (void)clearPendingAppActivatedByGesture;
 @end
 
 @interface SBFolder : NSObject
@@ -302,7 +319,6 @@ typedef enum {
 @property (nonatomic, copy) BOOL (^canBeginCondition)();
 @property (nonatomic, assign) int types;
 @property (nonatomic, assign) SBGestureRecognizerState state;
-@property (nonatomic, assign) int minTouches;
 @property (assign, nonatomic) BOOL sendsTouchesCancelledToApplication;
 - (void)reset;
 - (BOOL)shouldReceiveTouches;
@@ -314,6 +330,7 @@ typedef enum {
 @end
 
 @interface SBFluidSlideGestureRecognizer : SBGestureRecognizer
+@property (nonatomic, assign) int minTouches;
 @property(assign, nonatomic) int requiredDirectionality;
 @property(assign, nonatomic) float accelerationPower;
 @property(assign, nonatomic) float accelerationThreshold;
@@ -394,5 +411,4 @@ static NSMutableArray *displayStacks = nil;
     displayStacks = [[NSMutableArray alloc] init];
     %init(Shared);
 }
-
 

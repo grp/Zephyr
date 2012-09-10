@@ -32,25 +32,64 @@ static void OpenMusicControlsTaskSwitcherIfNecessaryWithDuration(double duration
     }
 }
 
+static BOOL activateSwitcherCustom = NO;
+static CGFloat activateSwitcherFrom = 0.0;
+static CGFloat activateSwitcherTo = 0.0;
+
+%group ActivateSwitcher
+
+%hook SBUIController
+
+- (SBShowcaseContext *)_showcaseContextForOffset:(CGFloat)offset {
+    if (activateSwitcherCustom) {
+        if (offset == 0.0) {
+            offset = activateSwitcherFrom;
+        } else {
+            offset = activateSwitcherTo;
+        }
+    }
+
+    return %orig;
+}
+
+%end
+
+%end
+
+%ctor {
+    %init(ActivateSwitcher);
+}
+
 static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat duration) {
     SBUIController *uic = [objc_getClass("SBUIController") sharedInstance];
-
-    SBShowcaseContext *zeroContext = [uic _showcaseContextForOffset:from];
-    SBShowcaseContext *barContext = [uic _showcaseContextForOffset:to];
-
-    [zeroContext setShowcaseOrientation:ZephyrCurrentInterfaceOrientation()];
-    [barContext setShowcaseOrientation:ZephyrCurrentInterfaceOrientation()];
-
     SBAppSwitcherController *switcher = [objc_getClass("SBAppSwitcherController") sharedInstance];
 
-    SBApplication *app = [SBApp _accessibilityFrontMostApplication];
-    [switcher setupForApp:app orientation:ZephyrCurrentInterfaceOrientation()];
-
-    if (![objc_getClass("SBApplication") multitaskingIsSupported]) return;
+    if (!ZephyrMultitaskingSupported()) return;
     if ([switcher printViewIsShowing]) return;
     if ([uic isSwitcherShowing]) return;
 
-    [uic _revealShowcase:switcher duration:duration from:zeroContext to:barContext];
+    activateSwitcherCustom = YES;
+    activateSwitcherFrom = from;
+    activateSwitcherTo = to;
+
+    if ([uic respondsToSelector:@selector(_revealShowcase:duration:from:to:)]) {
+        SBShowcaseContext *zeroContext = [uic _showcaseContextForOffset:from];
+        SBShowcaseContext *barContext = [uic _showcaseContextForOffset:to];
+
+        [zeroContext setShowcaseOrientation:ZephyrCurrentInterfaceOrientation()];
+        [barContext setShowcaseOrientation:ZephyrCurrentInterfaceOrientation()];
+
+        SBApplication *app = [SBApp _accessibilityFrontMostApplication];
+        [switcher setupForApp:app orientation:ZephyrCurrentInterfaceOrientation()];
+
+        [uic _revealShowcase:switcher duration:duration from:zeroContext to:barContext];
+    } else if ([uic respondsToSelector:@selector(_revealShowcase:revealMode:duration:fromSystemGesture:revealSetupBlock:)]) {
+        [uic _revealShowcase:switcher revealMode:SBShowcaseModeDefault duration:duration fromSystemGesture:YES revealSetupBlock:NULL];
+    }
+
+    activateSwitcherTo = 0.0;
+    activateSwitcherFrom = 0.0;
+    activateSwitcherCustom = NO;
 
     // Support Music Controls Pro, code by phoenixdev.
     OpenMusicControlsTaskSwitcherIfNecessaryWithDuration(duration);
@@ -88,7 +127,7 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
     return ![SBApp _accessibilityIsSystemGestureActive]
         && ![[objc_getClass("SBAwayController") sharedAwayController] isLocked]
         && ![[objc_getClass("SBUIController") sharedInstance] isSwitcherShowing]
-        && ![[objc_getClass("SBAssistantController") sharedInstance] isAssistantVisible]
+        && !ZephyrAssistantIsVisible()
         && ![[objc_getClass("SBBulletinWindowController") sharedInstance] isBusy]
         && ![[objc_getClass("SBBulletinListController") sharedInstanceIfExists] listViewIsActive]
         && ![[objc_getClass("SBIconController") sharedInstance] isEditing]

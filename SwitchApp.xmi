@@ -33,7 +33,7 @@ BOOL SwitchAppGestureIsAnimatingCompletion() {
         && ![SBApp _accessibilityIsSystemGestureActive]
         && ![[objc_getClass("SBUIController") sharedInstance] isSwitcherShowing]
         && ![[objc_getClass("SBBulletinWindowController") sharedInstance] isBusy]
-        && ![[objc_getClass("SBAssistantController") sharedInstance] isAssistantVisible]
+        && !ZephyrAssistantIsVisible()
         && ![[objc_getClass("SBBulletinListController") sharedInstanceIfExists] listViewIsActive]
         && [(NSNumber *) PreferencesGet(@"SwipeSideEnabled", [NSNumber numberWithBool:YES]) boolValue];
 }
@@ -130,6 +130,8 @@ static UIView *containerView = nil;
 
     if ([filteredList count] == 0 || topApplicationIndex == NSNotFound) return;
 
+    // FIXME: iOS 6 preloads something here, figure out what it does
+
     SBBulletinListController *bulletinListController = [objc_getClass("SBBulletinListController") sharedInstanceIfExists];
     if ([bulletinListController listViewIsActive]) {
         [bulletinListController hideListViewAnimated:YES];
@@ -143,11 +145,13 @@ static UIView *containerView = nil;
 
     if (topApplication != nil) {
         if (![topApplication displayFlag:0x22]) {
-            if (![topApplication displayFlag:0x1]) {
-                if ([topApplication suspensionType] == 0) {
-                    // call some C functions, that sorta do this (i'm too lazy to reverse these:)
-                    [topApplication setDeactivationSetting:0xC flag:YES];
-                    [[topApplication process] killWithSignal:9];
+            if ([topApplication respondsToSelector:@selector(suspensionType)] && [topApplication respondsToSelector:@selector(process)]) {
+                if (![topApplication displayFlag:0x1]) {
+                    if ([topApplication suspensionType] == 0) {
+                        // call some C functions, that sorta do this (i'm too lazy to reverse these:)
+                        [topApplication setDeactivationSetting:0xC flag:YES];
+                        [[topApplication process] killWithSignal:9];
+                    }
                 }
             }
         } else {
@@ -187,7 +191,11 @@ static UIView *containerView = nil;
     [MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView") beginPaging];
 
     [self prepareSwitchAppGestureStatusBar];
-    [self setRootViewHiddenForScatter:0 duration:0.0 startTime:0.0];
+    if ([self respondsToSelector:@selector(setRootViewHiddenForScatter:duration:startTime:)]) {
+        [self setRootViewHiddenForScatter:0 duration:0.0 startTime:0.0];
+    } else if ([self respondsToSelector:@selector(setRootViewHiddenForScatter:duration:delay:)]) {
+        [self setRootViewHiddenForScatter:0 duration:0.0 delay:0.0];
+    }
     [self updateSwitchAppGestureStatusBar];
 
 
@@ -253,7 +261,9 @@ static UIView *containerView = nil;
 
     BOOL endingAppHasLaunchedFrontmost = [endingApplication displayFlag:1];
 
-    [self clearZoomLayer];
+    if ([self respondsToSelector:@selector(clearZoomLayer)]) {
+        [self clearZoomLayer];
+    }
 
     if (startingApplication != endingApplication) {
         //UIInterfaceOrientation statusOrientation = [startingApplication statusBarOrientation];
@@ -316,15 +326,20 @@ static UIView *containerView = nil;
     if (shouldShowSwitcherAgain && MSHookIvar<BOOL>(self, "_switcherVisibleWhenSwitchAppGestureStarted")) {
         // show switcher again if it was hidden for the gesture to start
 
-        SBAppSwitcherController *appSwitcherController = [objc_getClass("SBAppSwitcherController") sharedInstance];
-        SBShowcaseContext *zeroContext = [self _showcaseContextForOffset:0];
-        SBShowcaseContext *barContext = [self _showcaseContextForOffset:[appSwitcherController bottomBarHeight]];
+        if ([self respondsToSelector:@selector(_activateSwitcherFrom:to:duration:)]) {
+            SBAppSwitcherController *appSwitcherController = [objc_getClass("SBAppSwitcherController") sharedInstance];
 
-        UIInterfaceOrientation currentOrientation = [SBApp activeInterfaceOrientation]; // also someting about "CAMediaTime", huh
-        [zeroContext setShowcaseOrientation:currentOrientation];
-        [barContext setShowcaseOrientation:currentOrientation];
+            SBShowcaseContext *zeroContext = [self _showcaseContextForOffset:0];
+            SBShowcaseContext *barContext = [self _showcaseContextForOffset:[appSwitcherController bottomBarHeight]];
 
-        [self _activateSwitcherFrom:zeroContext to:barContext duration:0];
+            UIInterfaceOrientation currentOrientation = [SBApp activeInterfaceOrientation]; // also someting about "CAMediaTime", huh
+            [zeroContext setShowcaseOrientation:currentOrientation];
+            [barContext setShowcaseOrientation:currentOrientation];
+
+            [self _activateSwitcherFrom:zeroContext to:barContext duration:0];
+        } else if ([self respondsToSelector:@selector(_activateSwitcher:fromSystemGesture:)]) {
+            [self _activateSwitcher:0.0 fromSystemGesture:YES];
+        }
     }
 
     MSHookIvar<BOOL>(self, "_switcherVisibleWhenSwitchAppGestureStarted") = NO;

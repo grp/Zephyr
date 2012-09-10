@@ -252,4 +252,25 @@ UIInterfaceOrientation ZephyrHomeInterfaceOrientation() {
     return [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? ZephyrCurrentInterfaceOrientation() : UIInterfaceOrientationPortrait;
 }
 
+BOOL ZephyrAssistantIsVisible() {
+    Class $SBAssistantController = objc_getClass("SBAssistantController");
+
+    if ([$SBAssistantController respondsToSelector:@selector(isAssistantVisible)]) {
+        return [$SBAssistantController isAssistantVisible];
+    } else if ([[$SBAssistantController sharedInstance] respondsToSelector:@selector(isAssistantVisible)]) {
+        return [[$SBAssistantController sharedInstance] isAssistantVisible];
+    } else {
+        return NO;
+    }
+}
+
+BOOL ZephyrMultitaskingSupported() {
+    Class $SBApplication = objc_getClass("SBApplication");
+
+    if ([$SBApplication respondsToSelector:@selector(multitaskingIsSupported)]) {
+        return [$SBApplication multitaskingIsSupported];
+    }
+
+    return YES;
+}
 
