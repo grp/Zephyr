@@ -155,7 +155,7 @@ UIView *ZephyrViewForApplication(SBApplication *app) {
 // the status bar removal in landscape on iPhone devices.
 static BOOL switchAppStatusBarFlag = NO;
 
-static BOOL ZephyrShouldForceSwitchAppStatusBar() {
+BOOL ZephyrShouldForceSwitchAppStatusBar() {
     BOOL phone = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone;
     BOOL landscape = UIInterfaceOrientationIsLandscape(ZephyrCurrentInterfaceOrientation());
 

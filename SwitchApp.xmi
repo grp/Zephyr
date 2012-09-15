@@ -73,12 +73,48 @@ BOOL SwitchAppGestureIsAnimatingCompletion() {
 @end
 
 @interface SBUIController (Zephyr)
-- (void)_switchAppGestureBeganInternal;
+- (void)_switchAppGestureBeganInternal:(CGFloat)location;
+- (void)internalPrefetchAdjacentAppsAndEvictRemotes:(SBApplication *)currentApplication;
 @end
 
 %group SwitchApp
 
 %hook SBUIController
+
+- (void)prefetchAdjacentAppsAndEvictRemotes:(SBApplication *)currentApplication {
+    [self internalPrefetchAdjacentAppsAndEvictRemotes:currentApplication];
+}
+
+- (void)_prefetchAdjacentAppsAndEvictRemotes:(SBApplication *)currentApplication {
+    [self internalPrefetchAdjacentAppsAndEvictRemotes:currentApplication];
+}
+
+%new(v@:@)
+- (void)internalPrefetchAdjacentAppsAndEvictRemotes:(SBApplication *)currentApplication {
+    if (MSHookIvar<NSMutableArray *>(self, "_switchAppFullyOrderedList") == nil) {
+        [self _calculateSwitchAppList];
+    }
+
+    SBApplicationController *applicationController = [objc_getClass("SBApplicationController") sharedInstance];
+
+    NSArray *validList = [self _makeSwitchAppValidList:MSHookIvar<NSMutableArray *>(self, "_switchAppFullyOrderedList")];
+
+    NSString *leftwardIdentifier = nil;
+    NSString *rightwardIdentifier = nil;
+    [self _getSwitchAppPrefetchApps:validList initialApp:currentApplication outLeftwardAppIdentifier:&leftwardIdentifier outRightwardAppIdentifier:&rightwardIdentifier];
+
+    [self _clearGestureViewVendorCacheForAppWithDisplayIdenitifier:leftwardIdentifier];
+    [self _clearGestureViewVendorCacheForAppWithDisplayIdenitifier:rightwardIdentifier];
+
+    NSArray *filteredList = [self _makeSwitchAppFilteredList:validList initialApp:currentApplication];
+    if (filteredList != nil) {
+        for (NSString *identifier in filteredList) {
+            SBApplication *application = [applicationController applicationWithDisplayIdentifier:identifier];
+
+            [[objc_getClass("SBGestureViewVendor") sharedInstance] viewForApp:application gestureType:kSBGestureTypeSwitchApp includeStatusBar:ZephyrForce decodeImage:YES];
+        }
+    }
+}
 
 static UIView *containerView = nil;
 
@@ -90,15 +126,15 @@ static UIView *containerView = nil;
 // hooks around them (as well as the C function setting the varaible). Ugh. :(
 
 - (void)_switchAppGestureBegan {
-    [self _switchAppGestureBeganInternal];
+    [self _switchAppGestureBeganInternal:0.0];
 }
 
 - (void)_switchAppGestureBegan:(CGFloat)location {
-    [self _switchAppGestureBeganInternal];
+    [self _switchAppGestureBeganInternal:location];
 }
 
-%new(v@:)
-- (void)_switchAppGestureBeganInternal {
+%new(v@:f)
+- (void)_switchAppGestureBeganInternal:(CGFloat)location {
     // Attempt to emulate the C function call here.
     if ([SBApp _accessibilityIsSystemGestureActive]) return;
 
@@ -126,11 +162,26 @@ static UIView *containerView = nil;
     }
 
     NSArray *filteredList = [self _makeSwitchAppFilteredList:unfilteredList initialApp:topApplication];
-    int topApplicationIndex = [filteredList indexOfObject:[topApplication displayIdentifier]];
+    NSInteger topApplicationIndex = [filteredList indexOfObject:[topApplication displayIdentifier]];
 
     if ([filteredList count] == 0 || topApplicationIndex == NSNotFound) return;
 
-    // FIXME: iOS 6 preloads something here, figure out what it does
+    if ([self respondsToSelector:@selector(_getSwitchAppPrefetchApps:initialApp:outLeftwardAppIdentifier:outRightwardAppIdentifier:)]) {
+        NSString *leftwardIdentifier = nil;
+        NSString *rightwardIdentifier = nil;
+        [self _getSwitchAppPrefetchApps:filteredList initialApp:topApplication outLeftwardAppIdentifier:&leftwardIdentifier outRightwardAppIdentifier:&rightwardIdentifier];
+
+        SBApplicationController *applicationController = [objc_getClass("SBApplicationController") sharedInstance];
+
+        SBApplication *application = nil;
+        if (location > 0) {
+            application = [applicationController applicationWithDisplayIdentifier:rightwardIdentifier];
+        } else {
+            application = [applicationController applicationWithDisplayIdentifier:leftwardIdentifier];
+        }
+
+        [[objc_getClass("SBGestureViewVendor") sharedInstance] viewForApp:application gestureType:kSBGestureTypeSwitchApp includeStatusBar:YES decodeImage:YES];
+    }
 
     SBBulletinListController *bulletinListController = [objc_getClass("SBBulletinListController") sharedInstanceIfExists];
     if ([bulletinListController listViewIsActive]) {

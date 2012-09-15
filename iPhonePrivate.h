@@ -194,6 +194,7 @@ typedef enum {
 @interface SBGestureViewVendor : NSObject
 + (id)sharedInstance;
 - (UIView *)viewForApp:(SBApplication *)app gestureType:(SBGestureType)type includeStatusBar:(BOOL)include;
+- (UIView *)viewForApp:(SBApplication *)app gestureType:(SBGestureType)type includeStatusBar:(BOOL)include decodeImage:(BOOL)decode; // iOS 5.1
 @end
 
 @interface SBUIController : NSObject
@@ -215,11 +216,16 @@ typedef enum {
 - (BOOL)_activateSwitcherFrom:(SBShowcaseContext *)from to:(SBShowcaseContext *)to duration:(NSTimeInterval)duration; // iOS 5
 - (BOOL)_activateSwitcher:(NSTimeInterval)duration fromSystemGesture:(BOOL)systemGesture; // iOS 6
 
+- (void)_prefetchAdjacentAppsAndEvictRemotes:(id)remotes; // iOS 5.1
+- (void)prefetchAdjacentAppsAndEvictRemotes:(id)remotes; // iOS 6
+
+- (id)_makeSwitchAppFilteredList:(id)list initialApp:(SBApplication *)app;
+- (void)_getSwitchAppPrefetchApps:(id)apps initialApp:(SBApplication *)app outLeftwardAppIdentifier:(NSString **)leftwardIdentifier outRightwardAppIdentifier:(NSString **)rightwardIdentifier; // iOS 6
+
 - (int)_dismissSheetsAndDetermineAlertStateForMenuClickOrSystemGesture;
 - (void)_resumeEventsIfNecessary;
 - (void)_lockOrientationForSystemGesture;
 - (void)_releaseSystemGestureOrientationLock;
-- (id)_makeSwitchAppFilteredList:(id)list initialApp:(SBApplication *)app;
 - (void)_releaseSystemGestureOrientationLock;
 - (void)_installSwitchAppGesturePlaceholderViewForEndingApp:(SBApplication *)endingApp;
 - (id)_showcaseContextForOffset:(CGFloat)offset;
