@@ -59,13 +59,13 @@ static NSMutableArray *allGestures = nil;
                 break;
             case 1:
                 if (![self isActive] && ![BaseGesture isAnyGestureActive]) {
-                    if (![self shouldUseGrabberAtEdge:edge] || [[GrabberController sharedInstance] visibleAtEdge:edge]) {
-                        [[GrabberController sharedInstance] hideAtEdge:edge animated:YES];
+                    if (![self shouldUseGrabberAtEdge:edge] || [[ZephyrGrabberController sharedInstance] visibleAtEdge:edge]) {
+                        [[ZephyrGrabberController sharedInstance] hideAtEdge:edge animated:YES];
 
                         [self handleGestureBeganWithLocation:distance];
                         isActive = YES;
                     } else {
-                        [[GrabberController sharedInstance] showAtEdge:edge animated:YES];
+                        [[ZephyrGrabberController sharedInstance] showAtEdge:edge animated:YES];
                     }
                 }
                 break;

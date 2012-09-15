@@ -40,6 +40,14 @@ static CGFloat activateSwitcherTo = 0.0;
 
 %hook SBUIController
 
+- (BOOL)_canActivateShowcaseIgnoringTouches:(BOOL)touches {
+    if (activateSwitcherCustom) {
+        return YES;
+    }
+
+    return %orig;
+}
+
 - (SBShowcaseContext *)_showcaseContextForOffset:(CGFloat)offset {
     if (activateSwitcherCustom) {
         if (offset == 0.0) {
@@ -72,20 +80,7 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
     activateSwitcherFrom = from;
     activateSwitcherTo = to;
 
-    if ([uic respondsToSelector:@selector(_revealShowcase:duration:from:to:)]) {
-        SBShowcaseContext *zeroContext = [uic _showcaseContextForOffset:from];
-        SBShowcaseContext *barContext = [uic _showcaseContextForOffset:to];
-
-        [zeroContext setShowcaseOrientation:ZephyrCurrentInterfaceOrientation()];
-        [barContext setShowcaseOrientation:ZephyrCurrentInterfaceOrientation()];
-
-        SBApplication *app = [SBApp _accessibilityFrontMostApplication];
-        [switcher setupForApp:app orientation:ZephyrCurrentInterfaceOrientation()];
-
-        [uic _revealShowcase:switcher duration:duration from:zeroContext to:barContext];
-    } else if ([uic respondsToSelector:@selector(_revealShowcase:revealMode:duration:fromSystemGesture:revealSetupBlock:)]) {
-        [uic _revealShowcase:switcher revealMode:SBShowcaseModeDefault duration:duration fromSystemGesture:YES revealSetupBlock:NULL];
-    }
+    [uic _activateSwitcher:duration];
 
     activateSwitcherTo = 0.0;
     activateSwitcherFrom = 0.0;
@@ -111,7 +106,7 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
 
     BOOL disableKeyboard = [(NSNumber *) PreferencesGet(@"BottomDisableKeyboard", PreferencesGet(@"DisableKeyboard", [NSNumber numberWithBool:YES])) boolValue];
     if (disableKeyboard) {
-        if (KeyboardIsActive()) return NO;
+        if (ZephyrKeyboardIsActive()) return NO;
     }
 
     NSString *topIdentifier = [topApplication displayIdentifier];
@@ -439,28 +434,45 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
                 [self positionAtLocation:-[wrapperView bounds].size.height];
             } completion:^(BOOL completed) {
                 [self cleanupViews];
-
-                // Stolen from SwitchApp.xmi; this is a bad decompliation of
-                // what a different function does than the one I am reversing.
-                [app setDeactivationSetting:24 flag:YES];
-                [app setDeactivationSetting:18 flag:YES];
+                   
+                // In this case, we definitely do not want to hide this.
+                [[[objc_getClass("SBUIController") sharedInstance] rootView] setAlpha:1.0f];
 
                 // XXX: the "disableIconUnscatter" display flag there does not work, so:
                 disableUnscatterFlag = YES;
 
-                /* sub_2C330 */ {
-                    if ([SBWActiveDisplayStack containsDisplay:app] || [SBWSuspendedEventOnlyDisplayStack containsDisplay:app]) {
+                if (objc_getClass("SBDisplayStack") != nil) {
+                    // Stolen from SwitchApp.xmi; this is a bad decompliation of
+                    // what a different function does than the one I am reversing.
+                    [app setDeactivationSetting:24 flag:YES];
+                    [app setDeactivationSetting:18 flag:YES];
 
-                        /* sub_2B9B8 */ {
-                            // this is a crude approximation of sorta kinda what this gigantic
-                            // function does, since I'm waaaaay too lazy to reverse the whole
-                            // thing: even just the graph in IDA is quite scary to look at! :(
-                            [SBWActiveDisplayStack popDisplay:app];
-                            [SBWSuspendingDisplayStack pushDisplay:app];
+                    /* sub_2C330 */ {
+                        if ([SBWActiveDisplayStack containsDisplay:app] || [SBWSuspendedEventOnlyDisplayStack containsDisplay:app]) {
+
+                            /* sub_2B9B8 */ {
+                                // this is a crude approximation of sorta kinda what this gigantic
+                                // function does, since I'm waaaaay too lazy to reverse the whole
+                                // thing: even just the graph in IDA is quite scary to look at! :(
+                                [SBWActiveDisplayStack popDisplay:app];
+                                [SBWSuspendingDisplayStack pushDisplay:app];
+                            }
+                        } else if (![SBWSuspendingDisplayStack containsDisplay:app]) {
+                            [app clearDeactivationSettings];
                         }
-                    } else if (![SBWSuspendingDisplayStack containsDisplay:app]) {
-                        [app clearDeactivationSettings];
                     }
+                } else {
+                    [app setDeactivationSetting:0x15 flag:YES];
+
+                    NSString *label = @"ActivateSpringBoard";
+                    SBWorkspaceEvent *event = [objc_getClass("SBWorkspaceEvent") eventWithLabel:label handler:^{
+                        BKSWorkspace *workspace = [SBWSharedWorkspace bksWorkspace];
+                        SBAppToAppWorkspaceTransaction *transaction = [[objc_getClass("SBAppToAppWorkspaceTransaction") alloc] initWithWorkspace:workspace alertManager:nil from:app to:nil];
+                        [SBWSharedWorkspace setCurrentTransaction:transaction];
+                        [transaction release];
+                    }];
+
+                    [[objc_getClass("SBWorkspaceEventQueue") sharedInstance] executeOrAppendEvent:event];
                 }
             }];
         } else {

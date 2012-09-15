@@ -1,7 +1,7 @@
 
 #import "iPhonePrivate.h"
 
-@interface GrabberController : NSObject {
+@interface ZephyrGrabberController : NSObject {
     NSMutableDictionary *_grabberViews;
     NSMutableDictionary *_grabberWindows;
 }

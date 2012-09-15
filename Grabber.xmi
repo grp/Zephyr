@@ -9,13 +9,13 @@ static NSNumber *SBOffscreenEdgeKey(SBOffscreenEdge edge) {
     return [NSNumber numberWithInt:edge];
 }
 
-@implementation GrabberController
+@implementation ZephyrGrabberController
 
 + (id)sharedInstance {
-    static GrabberController *controller = nil;
+    static ZephyrGrabberController *controller = nil;
 
     if (controller == nil) {
-        controller = [[GrabberController alloc] init];
+        controller = [[ZephyrGrabberController alloc] init];
     }
 
     return controller;

@@ -15,7 +15,7 @@ BOOL SwitchAppGestureIsAnimatingCompletion() {
 - (BOOL)shouldActivateAtEdge:(SBOffscreenEdge)edge {
     BOOL disableKeyboard = [(NSNumber *) PreferencesGet(@"SideDisableKeyboard", PreferencesGet(@"DisableKeyboard", [NSNumber numberWithBool:YES])) boolValue];
     if (disableKeyboard) {
-        if (KeyboardIsActive()) return NO;
+        if (ZephyrKeyboardIsActive()) return NO;
     }
 
     SBApplication *topApplication = [SBApp _accessibilityFrontMostApplication];
@@ -266,21 +266,46 @@ static UIView *containerView = nil;
     }
 
     if (startingApplication != endingApplication) {
-        //UIInterfaceOrientation statusOrientation = [startingApplication statusBarOrientation];
-        [startingApplication setDeactivationSetting:0x18 flag:YES];
+        if (objc_getClass("SBDisplayStack") != nil) {
+            //UIInterfaceOrientation statusOrientation = [startingApplication statusBarOrientation];
+            [startingApplication setDeactivationSetting:0x18 flag:YES];
 
-        /* sub_2C330 */ {
-            if ([SBWActiveDisplayStack containsDisplay:startingApplication] || [SBWSuspendedEventOnlyDisplayStack containsDisplay:startingApplication]) {
-                /* sub_2B9B8 */ {
-                    // this is a crude approximation of sorta kinda what this gigantic
-                    // function does, since I'm waaaaay too lazy to reverse the whole
-                    // thing: even just the graph in IDA is quite scary to look at! :(
-                    [SBWActiveDisplayStack popDisplay:startingApplication];
-                    [SBWSuspendingDisplayStack pushDisplay:startingApplication];
+            /* sub_2C330 */ {
+                if ([SBWActiveDisplayStack containsDisplay:startingApplication] || [SBWSuspendedEventOnlyDisplayStack containsDisplay:startingApplication]) {
+                    /* sub_2B9B8 */ {
+                        // this is a crude approximation of sorta kinda what this gigantic
+                        // function does, since I'm waaaaay too lazy to reverse the whole
+                        // thing: even just the graph in IDA is quite scary to look at! :(
+                        [SBWActiveDisplayStack popDisplay:startingApplication];
+                        [SBWSuspendingDisplayStack pushDisplay:startingApplication];
+                    }
+                } else if (![SBWSuspendingDisplayStack containsDisplay:startingApplication]) {
+                    [startingApplication clearDeactivationSettings];
                 }
-            } else if (![SBWSuspendingDisplayStack containsDisplay:startingApplication]) {
-                [startingApplication clearDeactivationSettings];
             }
+        } else {
+            // please don't make me do this again...
+            [startingApplication setDeactivationSetting:0x15 flag:YES];
+            [startingApplication setDeactivationSetting:0x16 flag:YES];
+            [startingApplication setDeactivationSetting:0x2 flag:NO];
+            [startingApplication setDeactivationSetting:0x1 flag:YES];
+            [startingApplication setDeactivationSetting:0x17 flag:YES];
+            [startingApplication setDisplaySetting:0x2 flag:YES];
+            [startingApplication setDeactivationSetting:0x1B flag:YES];
+            [endingApplication setActivationSetting:0x1B flag:YES];
+            [endingApplication setDisplaySetting:0x2 flag:NO];
+            [endingApplication setActivationSetting:0x4 value:nil];
+
+            NSString *label = [NSString stringWithFormat:@"ActivateApplication = %@", [endingApplication displayIdentifier]];
+            SBWorkspaceEvent *event = [objc_getClass("SBWorkspaceEvent") eventWithLabel:label handler:^{
+                BKSWorkspace *workspace = [SBWSharedWorkspace bksWorkspace];
+                SBAppToAppWorkspaceTransaction *transaction = [[objc_getClass("SBAppToAppWorkspaceTransaction") alloc] initWithWorkspace:workspace alertManager:nil from:startingApplication to:endingApplication];
+                [SBWSharedWorkspace setCurrentTransaction:transaction];
+                [SBWSharedWorkspace updateInterruptedByCallSettingsFrom:startingApplication to:endingApplication];
+                [transaction release];
+            }];
+
+            [[objc_getClass("SBWorkspaceEventQueue") sharedInstance] executeOrAppendEvent:event];
         }
     }
 

@@ -17,6 +17,7 @@ void SBGestureRecognizerUnregister(SBGestureRecognizer *recognizer) {
 }
 
 %group OffscreenSwipes
+
 %hook SBHandMotionExtractor
 
 - (void)extractHandMotionForActiveTouches:(SBTouchInfo *)activeTouches count:(unsigned int)count centroid:(CGPoint)centroid {
@@ -91,7 +92,7 @@ void SBGestureRecognizerUnregister(SBGestureRecognizer *recognizer) {
                 }
             } else {
                 // Unknown state.
-                NSLog(@"Unknown SBGestureRecognizerState %d.", state);
+                NSLog(@"[Zephyr] Unknown SBGestureRecognizerState %d.", state);
             }
 
             free(gestureContext);
@@ -102,6 +103,7 @@ void SBGestureRecognizerUnregister(SBGestureRecognizer *recognizer) {
 }
 
 %end
+
 %end
 
 %ctor {

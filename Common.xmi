@@ -155,23 +155,30 @@ UIView *ZephyrViewForApplication(SBApplication *app) {
 // the status bar removal in landscape on iPhone devices.
 static BOOL switchAppStatusBarFlag = NO;
 
+static BOOL ZephyrShouldForceSwitchAppStatusBar() {
+    BOOL phone = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone;
+    BOOL landscape = UIInterfaceOrientationIsLandscape(ZephyrCurrentInterfaceOrientation());
+
+    return (phone && landscape);
+}
+
 %hook SBGestureViewVendor
 
 - (id)viewForApp:(id)app gestureType:(int)type includeStatusBar:(BOOL)bar {
-    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone) switchAppStatusBarFlag = YES;
+    if (ZephyrShouldForceSwitchAppStatusBar()) switchAppStatusBarFlag = YES;
     UIView *view = %orig;
-    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone) switchAppStatusBarFlag = NO;
+    if (ZephyrShouldForceSwitchAppStatusBar()) switchAppStatusBarFlag = NO;
     return view;
 }
 
 - (id)viewForApp:(id)app gestureType:(int)type includeStatusBar:(BOOL)bar decodeImage:(BOOL)image {
-    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone) switchAppStatusBarFlag = YES;
+    if (ZephyrShouldForceSwitchAppStatusBar()) switchAppStatusBarFlag = YES;
     UIView *view = %orig;
-    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone) switchAppStatusBarFlag = NO;
+    if (ZephyrShouldForceSwitchAppStatusBar()) switchAppStatusBarFlag = NO;
     return view;
 }
 
-- (void)maskViewIfNeeded:(id)needed gestureType:(int)type viewType:(int)type3 contextHostViewRequester:(id)requester app:(id)app {
+- (void)maskViewIfNeeded:(id)needed gestureType:(int)type viewType:(int)viewType contextHostViewRequester:(id)requester app:(id)app {
     if (switchAppStatusBarFlag) {
         return;
     } else {

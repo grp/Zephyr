@@ -1,3 +1,5 @@
 
-BOOL KeyboardIsActive();
+extern "C" {
+    BOOL ZephyrKeyboardIsActive();
+}
 

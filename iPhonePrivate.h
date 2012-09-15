@@ -16,13 +16,16 @@
 @interface SpringBoard : UIApplication
 - (SBApplication *)_accessibilityFrontMostApplication;
 - (BOOL)_accessibilityIsSystemGestureActive;
-- (UIInterfaceOrientation)_frontMostAppOrientation;
+
 - (void)menuButtonDown:(GSEventRef)event;
 - (void)menuButtonUp:(GSEventRef)event;
 - (void)lockButtonDown:(GSEventRef)event;
 - (void)lockButtonUp:(GSEventRef)event;
+
 - (void)showSpringBoardStatusBar;
 - (void)hideSpringBoardStatusBar;
+
+- (UIInterfaceOrientation)_frontMostAppOrientation;
 - (UIInterfaceOrientation)interfaceOrientationForCurrentDeviceOrientation;
 - (void)noteInterfaceOrientationChanged:(UIInterfaceOrientation)orientation;
 @end
@@ -102,7 +105,7 @@ typedef enum {
 @end
 
 @interface SBShowcaseContext : NSObject
-@property(assign, nonatomic) int showcaseOrientation;
+@property(assign, nonatomic) UIInterfaceOrientation showcaseOrientation;
 @end
 
 @interface SBOrientationLockManager : NSObject
@@ -120,10 +123,10 @@ typedef enum {
 @property(readonly, retain) UITableView *tableView;
 - (CGFloat)offscreenY;
 - (CGFloat)onscreenY;
-- (void)positionSlidingViewAtY:(float)y;
+- (void)positionSlidingViewAtY:(CGFloat)y;
 - (void)setBottomCornersOffscreen:(BOOL)offscreen animated:(BOOL)animated;
-- (void)setBottomShadowAlpha:(float)alpha;
-- (void)setCornerAlpha:(float)alpha;
+- (void)setBottomShadowAlpha:(CGFloat)alpha;
+- (void)setCornerAlpha:(CGFloat)alpha;
 - (void)setShowsNoNotificationsLabel:(BOOL)label animated:(BOOL)animated;
 - (CGRect)slidingViewFrame;
 @end
@@ -141,14 +144,14 @@ typedef enum {
 - (void)handleShowNotificationsGestureChangedWithTouchLocation:(CGPoint)touchLocation velocity:(CGPoint)velocity;
 - (void)handleShowNotificationsGestureEndedWithVelocity:(CGPoint)velocity completion:(id)completion;
 - (void)hideListViewAnimated:(BOOL)animated;
-- (void)hideListViewWithInitialVelocity:(float)initialVelocity completion:(id)completion;
-- (void)hideListViewWithInitialVelocity:(float)initialVelocity hiddenY:(float)y extraPull:(BOOL)pull additionalValueApplier:(id)applier completion:(id)completion;
+- (void)hideListViewWithInitialVelocity:(CGFloat)initialVelocity completion:(id)completion;
+- (void)hideListViewWithInitialVelocity:(CGFloat)initialVelocity hiddenY:(CGFloat)y extraPull:(BOOL)pull additionalValueApplier:(id)applier completion:(id)completion;
 - (void)prepareToHideListViewAnimated:(BOOL)hideListViewAnimated;
 - (void)prepareToShowListViewAnimated:(BOOL)showListViewAnimated aboveBanner:(BOOL)banner;
-- (void)positionListViewAtY:(float)y;
+- (void)positionListViewAtY:(CGFloat)y;
 - (void)showListViewAnimated:(BOOL)animated;
-- (void)showListViewWithInitialVelocity:(float)initialVelocity additionalValueApplier:(id)applier completion:(id)completion;
-- (void)showListViewWithInitialVelocity:(float)initialVelocity completion:(id)completion;
+- (void)showListViewWithInitialVelocity:(CGFloat)initialVelocity additionalValueApplier:(id)applier completion:(id)completion;
+- (void)showListViewWithInitialVelocity:(CGFloat)initialVelocity completion:(id)completion;
 @end
 
 @interface SBBulletinWindowController : NSObject
@@ -170,7 +173,7 @@ typedef enum {
 @property(retain, nonatomic) SBApplication *leftwardApp;
 @property(retain, nonatomic) SBApplication *rightwardApp;
 @property(retain, nonatomic) SBApplication *startingApp;
-- (id)initWithInterfaceOrientation:(int)interfaceOrientation startingApp:(SBApplication *)app leftwardApp:(SBApplication *)app3 rightwardApp:(SBApplication *)app4;
+- (id)initWithInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation startingApp:(SBApplication *)app leftwardApp:(SBApplication *)app3 rightwardApp:(SBApplication *)app4;
 - (void)beginPaging;
 - (void)finishBackwardToStartWithCompletion:(id)completion;
 - (void)finishForwardToEndWithPercentage:(CGFloat)percentage completion:(id)completion;
@@ -197,20 +200,20 @@ typedef enum {
 + (id)sharedInstance;
 - (UIView *)rootView;
 
-- (void)_revealShowcase:(SBShowcaseViewController *)showcase duration:(NSTimeInterval)duration from:(SBShowcaseContext *)from to:(SBShowcaseContext *)to; // iOS 5
-- (BOOL)_revealShowcase:(SBShowcaseViewController *)showcase revealMode:(SBShowcaseMode)mode duration:(NSTimeInterval)duration fromSystemGesture:(BOOL)gesture revealSetupBlock:(id)setupBlock; // iOS 6
-- (void)_dismissShowcase:(double)unk unhost:(BOOL)unhost;
+- (BOOL)_canActivateShowcaseIgnoringTouches:(BOOL)touches;
+- (void)_activateSwitcher:(NSTimeInterval)duration;
+- (void)_dismissShowcase:(NSTimeInterval)duration unhost:(BOOL)unhost;
 
 - (id)_calculateSwitchAppList;
 - (void)_switchAppGestureBegan; // iOS 5.0
-- (void)_switchAppGestureBegan:(float)location; // iOS 5.1
-- (void)_switchAppGestureChanged:(float)location;
-- (void)_switchAppGestureEndedWithCompletionType:(int)type cumulativePercentage:(float)location;
+- (void)_switchAppGestureBegan:(CGFloat)location; // iOS 5.1
+- (void)_switchAppGestureChanged:(CGFloat)location;
+- (void)_switchAppGestureEndedWithCompletionType:(int)type cumulativePercentage:(CGFloat)location;
 - (void)_switchAppGestureCancelled;
 - (void)_switchAppGestureViewAnimationComplete;
 
 - (BOOL)_activateSwitcherFrom:(SBShowcaseContext *)from to:(SBShowcaseContext *)to duration:(NSTimeInterval)duration; // iOS 5
-- (BOOL)_activateSwitcher:(double)switcher fromSystemGesture:(BOOL)systemGesture; // iOS 6
+- (BOOL)_activateSwitcher:(NSTimeInterval)duration fromSystemGesture:(BOOL)systemGesture; // iOS 6
 
 - (int)_dismissSheetsAndDetermineAlertStateForMenuClickOrSystemGesture;
 - (void)_resumeEventsIfNecessary;
@@ -225,8 +228,8 @@ typedef enum {
 - (void)setFakeSpringBoardStatusBarVisible:(BOOL)visible;
 - (void)clearFakeSpringBoardStatusBarAndCorners;
 
-- (void)setRootViewHiddenForScatter:(BOOL)scatter duration:(double)duration startTime:(double)time; // iOS 5
-- (void)setRootViewHiddenForScatter:(BOOL)scatter duration:(double)duration delay:(double)delay; // iOS 6
+- (void)setRootViewHiddenForScatter:(BOOL)scatter duration:(NSTimeInterval)duration startTime:(NSTimeInterval)time; // iOS 5
+- (void)setRootViewHiddenForScatter:(BOOL)scatter duration:(NSTimeInterval)duration delay:(NSTimeInterval)delay; // iOS 6
 
 - (void)restoreIconListAnimated:(BOOL)animated animateWallpaper:(BOOL)animateWallpaper keepSwitcher:(BOOL)keepSwitcher;
 - (void)stopRestoringIconList;
@@ -247,7 +250,7 @@ typedef enum {
 - (void)showSystemGestureBackdrop;
 - (void)hideSystemGestureBackdrop;
 
-- (void)programmaticSwitchAppGestureApplyWithPercentage:(float)percentage;
+- (void)programmaticSwitchAppGestureApplyWithPercentage:(CGFloat)percentage;
 - (void)programmaticSwitchAppGestureMoveToLeft;
 - (void)programmaticSwitchAppGestureMoveToRight;
 
@@ -273,10 +276,10 @@ typedef enum { /* no fucking clue */ } SBTouchType;
 
 typedef struct {
     SBTouchType type;
-    unsigned pathIndex;
+    NSUInteger pathIndex;
     CGPoint location;
     CGPoint previousLocation;
-    float totalDistanceTraveled;
+    CGFloat totalDistanceTraveled;
     UIInterfaceOrientation interfaceOrientation;
     UIInterfaceOrientation previousInterfaceOrientation;
 } SBTouchInfo;
@@ -284,10 +287,10 @@ typedef struct {
 typedef struct {
     UIEdgeInsets pixelDeltas; // 0x00, 0x04, 0x08, 0x0C
     UIEdgeInsets averageVelocities; // 0x10, 0x14, 0x18, 0x1C
-    float averageTranslation; // 0x20
+    CGFloat averageTranslation; // 0x20
     CGPoint movementVelocityInPointsPerSecond; // 0x24, 0x28
-    float farthestFingerSeparation; // 0x2C
-    int activeTouchCount; // 0x30
+    CGFloat farthestFingerSeparation; // 0x2C
+    NSInteger activeTouchCount; // 0x30
 
     int unk1;
     int unk2;
@@ -330,19 +333,19 @@ typedef enum {
 @end
 
 @interface SBFluidSlideGestureRecognizer : SBGestureRecognizer
-@property (nonatomic, assign) int minTouches;
+@property (nonatomic, assign) NSInteger minTouches;
 @property(assign, nonatomic) int requiredDirectionality;
-@property(assign, nonatomic) float accelerationPower;
-@property(assign, nonatomic) float accelerationThreshold;
-@property(assign, nonatomic) float animationDistance;
+@property(assign, nonatomic) CGFloat accelerationPower;
+@property(assign, nonatomic) CGFloat accelerationThreshold;
+@property(assign, nonatomic) CGFloat animationDistance;
 @property(readonly, assign, nonatomic) int degreeOfFreedom;
-@property(readonly, assign, nonatomic) float cumulativeMotion;
-@property(readonly, assign, nonatomic) float cumulativePercentage;
-@property(readonly, assign, nonatomic) float incrementalMotion;
-@property(readonly, assign, nonatomic) float skippedCumulativePercentage;
+@property(readonly, assign, nonatomic) CGFloat cumulativeMotion;
+@property(readonly, assign, nonatomic) CGFloat cumulativePercentage;
+@property(readonly, assign, nonatomic) CGFloat incrementalMotion;
+@property(readonly, assign, nonatomic) CGFloat skippedCumulativePercentage;
 @property(readonly, assign, nonatomic) CGPoint centroidPoint;
 @property(readonly, assign, nonatomic) CGPoint movementVelocityInPointsPerSecond;
-- (int)completionTypeProjectingMomentumForInterval:(double)interval;
+- (int)completionTypeProjectingMomentumForInterval:(NSTimeInterval)interval;
 - (CGPoint)centroidPoint;
 @end
 
@@ -350,10 +353,10 @@ typedef enum {
 @end
 
 @interface SBOffscreenSwipeGestureRecognizer : SBPanGestureRecognizer
-@property(assign, nonatomic) float allowableDistanceFromEdgeCenter;
-@property(assign, nonatomic) float edgeCenter;
-@property(assign, nonatomic) float edgeMargin;
-@property(assign, nonatomic) float falseEdge;
+@property(assign, nonatomic) CGFloat allowableDistanceFromEdgeCenter;
+@property(assign, nonatomic) CGFloat edgeCenter;
+@property(assign, nonatomic) CGFloat edgeMargin;
+@property(assign, nonatomic) CGFloat falseEdge;
 @property(assign, nonatomic) BOOL requiresSecondTouchInRange;
 - (id)initForOffscreenEdge:(SBOffscreenEdge)edge;
 - (void)_updateAnimationDistanceAndEdgeCenter;
@@ -362,14 +365,52 @@ typedef enum {
 @end
 
 @interface SBHandMotionExtractor : NSObject
-@property(readonly, assign, nonatomic) UIEdgeInsets allPixelDeltas;
-@property(readonly, assign, nonatomic) float averageTranslation;
-@property(readonly, assign, nonatomic) UIEdgeInsets averageVelocities;
-@property(readonly, assign, nonatomic) float farthestFingerSeparation;
-@property(readonly, assign, nonatomic) CGPoint movementVelocityInPointsPerSecond;
-@property(readonly, assign, nonatomic) UIEdgeInsets pixelDeltas;
+@property (readonly, assign, nonatomic) UIEdgeInsets allPixelDeltas;
+@property (readonly, assign, nonatomic) CGFloat averageTranslation;
+@property (readonly, assign, nonatomic) UIEdgeInsets averageVelocities;
+@property (readonly, assign, nonatomic) CGFloat farthestFingerSeparation;
+@property (readonly, assign, nonatomic) CGPoint movementVelocityInPointsPerSecond;
+@property (readonly, assign, nonatomic) UIEdgeInsets pixelDeltas;
 - (void)clear;
-- (void)extractHandMotionForActiveTouches:(SBTouchInfo *)activeTouches count:(unsigned)count centroid:(CGPoint)centroid;
+- (void)extractHandMotionForActiveTouches:(SBTouchInfo *)activeTouches count:(NSUInteger)count centroid:(CGPoint)centroid;
+@end
+
+@interface BKSWorkspace : NSObject // iOS 6
+@end
+
+@interface SBWorkspaceTransaction : NSObject // iOS 6
+@property (readonly, assign) BOOL completed;
+@property (readonly, assign, nonatomic) BKSWorkspace *workspace;
+- (id)initWithWorkspace:(BKSWorkspace *)workspace alertManager:(id)manager;
+- (void)commit;
+- (void)interrupt;
+@end
+
+@interface SBToAppWorkspaceTransaction : SBWorkspaceTransaction // iOS 6
+@property (retain, nonatomic) SBApplication *toApplication;
+- (id)initWithWorkspace:(BKSWorkspace *)workspace alertManager:(id)manager toApplication:(SBApplication *)application;
+@end
+
+@interface SBAppToAppWorkspaceTransaction : SBToAppWorkspaceTransaction // iOS 6
+@property (retain, nonatomic) SBApplication *fromApp;
+- (id)initWithWorkspace:(BKSWorkspace *)workspace alertManager:(id)manager exitedApp:(SBApplication *)app;
+- (id)initWithWorkspace:(BKSWorkspace *)workspace alertManager:(id)manager from:(SBApplication *)from to:(SBApplication *)to;
+@end
+
+@interface SBWorkspace : NSObject // iOS 6
+@property (nonatomic, assign, readonly) BKSWorkspace *bksWorkspace;
+@property (nonatomic, retain) SBWorkspaceTransaction *currentTransaction;
+- (void)updateInterruptedByCallSettingsFrom:(SBApplication *)from to:(SBApplication *)to;
+@end
+
+@interface SBWorkspaceEvent : NSObject // iOS 6
++ (id)eventWithLabel:(NSString *)label handler:(void (^)())handler;
+@end
+
+@interface SBWorkspaceEventQueue : NSObject // iOS 6
++ (id)sharedInstance;
+- (void)executeOrPrependEvent:(SBWorkspaceEvent *)event;
+- (void)executeOrAppendEvent:(SBWorkspaceEvent *)event;
 @end
 
 static NSMutableArray *displayStacks = nil;
@@ -379,19 +420,33 @@ static NSMutableArray *displayStacks = nil;
 #define SBWSuspendingDisplayStack         [displayStacks objectAtIndex:2]
 #define SBWSuspendedEventOnlyDisplayStack [displayStacks objectAtIndex:3]
 
+static SBWorkspace *sharedWorkspace = nil;
+
+#define SBWSharedWorkspace sharedWorkspace
+
 %group Shared
 
 %hook SBDisplayStack
 
 - (id)init {
-    id stack = %orig;
-    [displayStacks addObject:stack];
-    return stack;
+    self = %orig;
+    [displayStacks addObject:self];
+    return self;
 }
 
 - (void)dealloc {
     [displayStacks removeObject:self];
     %orig;
+}
+
+%end
+
+%hook SBWorkspace
+
+- (id)init {
+    self = %orig;
+    sharedWorkspace = self;
+    return self;
 }
 
 %end

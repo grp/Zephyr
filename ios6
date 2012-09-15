@@ -1,5 +1,4 @@
 issues:
- - SBDisplayStack gone; crashes closing or switching apps.
+ - can't go left in switchapp
  - two taps needed to close switcher.
- - status bar visible when switching apps.
 
