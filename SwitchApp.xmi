@@ -111,7 +111,7 @@ BOOL SwitchAppGestureIsAnimatingCompletion() {
         for (NSString *identifier in filteredList) {
             SBApplication *application = [applicationController applicationWithDisplayIdentifier:identifier];
 
-            [[objc_getClass("SBGestureViewVendor") sharedInstance] viewForApp:application gestureType:kSBGestureTypeSwitchApp includeStatusBar:ZephyrForce decodeImage:YES];
+            [[objc_getClass("SBGestureViewVendor") sharedInstance] viewForApp:application gestureType:kSBGestureTypeSwitchApp includeStatusBar:NO decodeImage:YES];
         }
     }
 }
@@ -338,21 +338,12 @@ static UIView *containerView = nil;
             // please don't make me do this again...
             [startingApplication setDeactivationSetting:0x15 flag:YES];
             [startingApplication setDeactivationSetting:0x16 flag:YES];
-            [startingApplication setDeactivationSetting:0x2 flag:NO];
-            [startingApplication setDeactivationSetting:0x1 flag:YES];
-            [startingApplication setDeactivationSetting:0x17 flag:YES];
-            [startingApplication setDisplaySetting:0x2 flag:YES];
-            [startingApplication setDeactivationSetting:0x1B flag:YES];
-            [endingApplication setActivationSetting:0x1B flag:YES];
-            [endingApplication setDisplaySetting:0x2 flag:NO];
-            [endingApplication setActivationSetting:0x4 value:nil];
 
-            NSString *label = [NSString stringWithFormat:@"ActivateApplication = %@", [endingApplication displayIdentifier]];
+            NSString *label = @"ActivateSpringBoard";
             SBWorkspaceEvent *event = [objc_getClass("SBWorkspaceEvent") eventWithLabel:label handler:^{
                 BKSWorkspace *workspace = [SBWSharedWorkspace bksWorkspace];
-                SBAppToAppWorkspaceTransaction *transaction = [[objc_getClass("SBAppToAppWorkspaceTransaction") alloc] initWithWorkspace:workspace alertManager:nil from:startingApplication to:endingApplication];
+                SBAppToAppWorkspaceTransaction *transaction = [[objc_getClass("SBAppToAppWorkspaceTransaction") alloc] initWithWorkspace:workspace alertManager:nil from:startingApplication to:nil];
                 [SBWSharedWorkspace setCurrentTransaction:transaction];
-                [SBWSharedWorkspace updateInterruptedByCallSettingsFrom:startingApplication to:endingApplication];
                 [transaction release];
             }];
 
