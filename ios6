@@ -1,5 +1,4 @@
 issues:
- - crash pressing home button when waiting for app to launch.
  - two taps needed to close switcher.
  - touches aren't cancelling right
  - status bar disappearing.

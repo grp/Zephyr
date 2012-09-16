@@ -17,6 +17,7 @@
 - (SBApplication *)_accessibilityFrontMostApplication;
 - (BOOL)_accessibilityIsSystemGestureActive;
 
+- (void)_handleMenuButtonEvent;
 - (void)menuButtonDown:(GSEventRef)event;
 - (void)menuButtonUp:(GSEventRef)event;
 - (void)lockButtonDown:(GSEventRef)event;
@@ -251,7 +252,9 @@ typedef enum {
 - (void)prepareSwitchAppGestureStatusBar;
 - (void)updateSwitchAppGestureStatusBar;
 - (void)cleanupSwitchAppGestureStatusBar;
+
 - (void)cleanupSwitchAppGestureViews;
+- (void)cleanupRunningGestureIfNeeded;
 
 - (void)notifyAppResignActive:(SBApplication *)application;
 - (void)notifyAppResumeActive:(SBApplication *)application;
@@ -392,6 +395,7 @@ typedef enum {
 @property (readonly, assign, nonatomic) BKSWorkspace *workspace;
 - (id)initWithWorkspace:(BKSWorkspace *)workspace alertManager:(id)manager;
 - (void)commit;
+- (BOOL)canBeInterrupted;
 - (void)interrupt;
 @end
 

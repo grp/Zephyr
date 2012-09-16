@@ -6,10 +6,6 @@
 
 static BOOL isAnimatingCompletion = NO;
 
-BOOL SwitchAppGestureIsAnimatingCompletion() {
-    return isAnimatingCompletion;
-}
-
 @implementation SwitchAppGesture
 
 - (BOOL)shouldActivateAtEdge:(SBOffscreenEdge)edge {
@@ -227,6 +223,8 @@ static UIView *containerView = nil;
     if (rightApplication == topApplication) rightApplication = nil;
 
     [containerView removeFromSuperview];
+    [containerView release];
+
     [MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView") removeFromSuperview];
     [MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView") release];
 
@@ -237,7 +235,6 @@ static UIView *containerView = nil;
     [containerView addSubview:MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView")];
     [MSHookIvar<UIView *>(self, "_contentView") addSubview:containerView];
     ZephyrRotateViewFromOrientationToOrientation(containerView, ZephyrHomeInterfaceOrientation(), ZephyrCurrentInterfaceOrientation(), YES);
-    [containerView release];
 
     [MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView") beginPaging];
 
@@ -261,23 +258,21 @@ static UIView *containerView = nil;
 }
 
 - (void)_switchAppGestureEndedWithCompletionType:(int)type cumulativePercentage:(float)percentage {
-    SBSwitchAppGestureView *gestureView = MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView");
-
     void (^completion)() = ^{
         isAnimatingCompletion = NO; // chpwn addition
 
         [self _switchAppGestureViewAnimationComplete];
     };
 
-    if (gestureView != nil) {
+    if (MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView") != nil) {
         if (type == 1) {
             isAnimatingCompletion = YES; // chpwn addition
 
-            [gestureView finishForwardToEndWithPercentage:percentage completion:completion];
+            [MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView") finishForwardToEndWithPercentage:percentage completion:completion];
         } else if (type == -1) {
             isAnimatingCompletion = YES; // chpwn addition
 
-            [gestureView finishBackwardToStartWithCompletion:completion];
+            [MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView") finishBackwardToStartWithCompletion:completion];
         }
     }
 
@@ -285,29 +280,28 @@ static UIView *containerView = nil;
 }
 
 - (void)_switchAppGestureCancelled {
-    SBSwitchAppGestureView *gestureView = MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView");
-
     [self _switchAppGestureEndedWithCompletionType:-1 cumulativePercentage:0.0f];
 
-    if (gestureView != nil) {
+    if (MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView") != nil) {
         [self _switchAppGestureViewAnimationComplete];
         [self cleanupSwitchAppGestureViews];
     }
 }
 
 - (void)_switchAppGestureViewAnimationComplete {
-    SBSwitchAppGestureView *gestureView = MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView");
-    if (gestureView == nil) return;
+    if (MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView") == nil) return;
 
     [self hideSystemGestureBackdrop];
 
-    SBApplication *startingApplication = [gestureView startingApp];
-    SBApplication *endingApplication = [gestureView endingApp];
+    SBApplication *startingApplication = [MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView") startingApp];
+    SBApplication *endingApplication = [MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView") endingApp];
 
     [containerView removeFromSuperview];
+    [containerView release];
     containerView = nil;
-    [gestureView removeFromSuperview];
-    [gestureView release];
+
+    [MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView") removeFromSuperview];
+    [MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView") release];
     MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView") = nil;
 
     BOOL endingAppHasLaunchedFrontmost = [endingApplication displayFlag:1];
@@ -335,6 +329,9 @@ static UIView *containerView = nil;
                 }
             }
         } else {
+            [startingApplication setDeactivationSetting:0x15 flag:YES];
+            [startingApplication setDeactivationSetting:0x16 flag:YES];
+
             NSString *label = @"ActivateSpringBoard";
             SBWorkspaceEvent *event = [objc_getClass("SBWorkspaceEvent") eventWithLabel:label handler:^{
                 BKSWorkspace *workspace = [SBWSharedWorkspace bksWorkspace];
@@ -343,7 +340,14 @@ static UIView *containerView = nil;
                 [transaction release];
             }];
 
-            [[objc_getClass("SBWorkspaceEventQueue") sharedInstance] executeOrAppendEvent:event];
+            SBWorkspaceEventQueue *queue = [objc_getClass("SBWorkspaceEventQueue") sharedInstance];
+            SBWorkspaceTransaction *currentTransaction = [SBWSharedWorkspace currentTransaction];
+            if (currentTransaction != nil && [currentTransaction canBeInterrupted]) {
+                [queue executeOrPrependEvent:event];
+                [currentTransaction interrupt];
+            } else {
+                [queue executeOrAppendEvent:event];
+            }
         }
     }
 
@@ -417,7 +421,18 @@ static UIView *containerView = nil;
     }
 }
 
+- (void)cleanupRunningGestureIfNeeded {
+    if (SwitchAppGestureIsActive() || SwitchAppGestureIsAnimatingCompletion()) {
+        [self _switchAppGestureViewAnimationComplete];
+    }
+
+    %orig;
+}
+
 - (void)cleanupSwitchAppGestureViews {
+    // XXX: find out why this is necessary. how does Apple do this?
+    [[SBApp _accessibilityFrontMostApplication] disableContextHostingForRequester:CFSTR("SwitchApp")];
+
     [containerView removeFromSuperview];
     [containerView release];
     containerView = nil;
@@ -426,6 +441,14 @@ static UIView *containerView = nil;
 }
 
 static SwitchAppGesture *gesture = nil;
+
+BOOL SwitchAppGestureIsAnimatingCompletion() {
+    return isAnimatingCompletion;
+}
+
+BOOL SwitchAppGestureIsActive() {
+    return [gesture isActive];
+}
 
 - (void)finishLaunching {
     %orig;
