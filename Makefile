@@ -1,6 +1,8 @@
 include theos/makefiles/common.mk
 
-TWEAK_NAME = Zephyr ZephyrKeyboardProxy 
+TWEAK_NAME = Zephyr ZephyrKeyboardProxy
+
+export TARGET_IPHONEOS_DEPLOYMENT_VERSION = 5.0
 
 Zephyr_FILES = Preferences.xmi Switcher.xmi SwitchApp.xmi BaseGesture.xmi OffscreenGesture.xmi Keyboard.xmi NSTimer+Blocks.m Common.xmi Notification.xmi Grabber.xmi
 Zephyr_FRAMEWORKS = UIKit QuartzCore CoreGraphics

@@ -193,6 +193,7 @@ typedef enum {
 
 @interface SBGestureViewVendor : NSObject
 + (id)sharedInstance;
+- (void)clearCacheForApp:(SBApplication *)app reason:(id)reason;
 - (UIView *)viewForApp:(SBApplication *)app gestureType:(SBGestureType)type includeStatusBar:(BOOL)include;
 - (UIView *)viewForApp:(SBApplication *)app gestureType:(SBGestureType)type includeStatusBar:(BOOL)include decodeImage:(BOOL)decode; // iOS 5.1
 @end
@@ -216,9 +217,11 @@ typedef enum {
 - (BOOL)_activateSwitcherFrom:(SBShowcaseContext *)from to:(SBShowcaseContext *)to duration:(NSTimeInterval)duration; // iOS 5
 - (BOOL)_activateSwitcher:(NSTimeInterval)duration fromSystemGesture:(BOOL)systemGesture; // iOS 6
 
-- (void)_prefetchAdjacentAppsAndEvictRemotes:(id)remotes; // iOS 5.1
-- (void)prefetchAdjacentAppsAndEvictRemotes:(id)remotes; // iOS 6
+- (void)_clearGestureViewVendorCacheForAppWithDisplayIdenitifier:(NSString *)displayIdenitifier;
+- (void)_prefetchAdjacentAppsAndEvictRemotes:(SBApplication *)currentApplication; // iOS 5.1
+- (void)prefetchAdjacentAppsAndEvictRemotes:(SBApplication *)currentApplication; // iOS 6
 
+- (id)_makeSwitchAppValidList:(id)list;
 - (id)_makeSwitchAppFilteredList:(id)list initialApp:(SBApplication *)app;
 - (void)_getSwitchAppPrefetchApps:(id)apps initialApp:(SBApplication *)app outLeftwardAppIdentifier:(NSString **)leftwardIdentifier outRightwardAppIdentifier:(NSString **)rightwardIdentifier; // iOS 6
 
