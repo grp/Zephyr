@@ -1,5 +1,5 @@
 issues:
  - two taps needed to close switcher.
- - landscape switcher broken
- - closing in landscape makes springboard landscape
+ - touches aren't cancelling right
+ - status bar disappearing (ugh!)
 

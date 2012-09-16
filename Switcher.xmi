@@ -57,7 +57,13 @@ static CGFloat activateSwitcherTo = 0.0;
         }
     }
 
-    return %orig;
+    SBShowcaseContext *context = %orig;
+
+    if (activateSwitcherCustom) {
+        [context setShowcaseOrientation:ZephyrCurrentInterfaceOrientation()];
+    }
+
+    return context;
 }
 
 %end
@@ -462,6 +468,14 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
                         }
                     }
                 } else {
+                    // Force iPhone devices to portrait for the home screen.
+                    // Should be generalized; the iPhone might be hacked for more orientations.
+                    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone) {
+                        UIInterfaceOrientation currentOrientation = ZephyrHomeInterfaceOrientation();
+                        [[UIDevice currentDevice] setOrientation:currentOrientation animated:NO];
+                        [SBApp noteInterfaceOrientationChanged:currentOrientation];
+                    }
+
                     [app setDeactivationSetting:0x15 flag:YES];
                     [app setDeactivationSetting:0x16 flag:YES];
 
