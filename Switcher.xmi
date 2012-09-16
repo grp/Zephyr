@@ -463,6 +463,7 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
                     }
                 } else {
                     [app setDeactivationSetting:0x15 flag:YES];
+                    [app setDeactivationSetting:0x16 flag:YES];
 
                     NSString *label = @"ActivateSpringBoard";
                     SBWorkspaceEvent *event = [objc_getClass("SBWorkspaceEvent") eventWithLabel:label handler:^{

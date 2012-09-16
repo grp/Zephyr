@@ -180,7 +180,7 @@ static UIView *containerView = nil;
             application = [applicationController applicationWithDisplayIdentifier:leftwardIdentifier];
         }
 
-        [[objc_getClass("SBGestureViewVendor") sharedInstance] viewForApp:application gestureType:kSBGestureTypeSwitchApp includeStatusBar:YES decodeImage:YES];
+        [[objc_getClass("SBGestureViewVendor") sharedInstance] viewForApp:application gestureType:kSBGestureTypeSwitchApp includeStatusBar:NO decodeImage:YES];
     }
 
     SBBulletinListController *bulletinListController = [objc_getClass("SBBulletinListController") sharedInstanceIfExists];
@@ -335,10 +335,6 @@ static UIView *containerView = nil;
                 }
             }
         } else {
-            // please don't make me do this again...
-            [startingApplication setDeactivationSetting:0x15 flag:YES];
-            [startingApplication setDeactivationSetting:0x16 flag:YES];
-
             NSString *label = @"ActivateSpringBoard";
             SBWorkspaceEvent *event = [objc_getClass("SBWorkspaceEvent") eventWithLabel:label handler:^{
                 BKSWorkspace *workspace = [SBWSharedWorkspace bksWorkspace];
@@ -419,6 +415,14 @@ static UIView *containerView = nil;
     if (endingAppHasLaunchedFrontmost) {
         [self _releaseSystemGestureOrientationLock];
     }
+}
+
+- (void)cleanupSwitchAppGestureViews {
+    [containerView removeFromSuperview];
+    [containerView release];
+    containerView = nil;
+
+    %orig;
 }
 
 static SwitchAppGesture *gesture = nil;

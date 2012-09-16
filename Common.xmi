@@ -144,46 +144,46 @@ void ZephyrRotateViewFromOrientationToOrientation(UIView *view, UIInterfaceOrien
 }
 
 UIView *ZephyrViewForApplication(SBApplication *app) {
-    UIView *gestureView = [[objc_getClass("SBGestureViewVendor") sharedInstance] viewForApp:app gestureType:kSBGestureTypeSwitchApp includeStatusBar:YES];
-    return gestureView;
+    SBGestureViewVendor *vendor = [objc_getClass("SBGestureViewVendor") sharedInstance];
+
+    [vendor clearCacheForApp:app reason:@"SwitchApp"];
+    return [vendor viewForApp:app gestureType:kSBGestureTypeSwitchApp includeStatusBar:YES];
 }
 
 %group GestureViewStatusBar
 
-// Fix bug with status bar removal causing one edge of the view
-// in landscape to lose 20 pixels. Basically, just completely disable
-// the status bar removal in landscape on iPhone devices.
-static BOOL switchAppStatusBarFlag = NO;
+// Switch app orientation depends on gestures flag, so hook it and apply it ourselves.
+static BOOL switchAppOrientationFlag = NO;
 
-BOOL ZephyrShouldForceSwitchAppStatusBar() {
-    BOOL phone = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone;
-    BOOL landscape = UIInterfaceOrientationIsLandscape(ZephyrCurrentInterfaceOrientation());
+%hook SBApplication
 
-    return (phone && landscape);
-}
-
-%hook SBGestureViewVendor
-
-- (id)viewForApp:(id)app gestureType:(int)type includeStatusBar:(BOOL)bar {
-    if (ZephyrShouldForceSwitchAppStatusBar()) switchAppStatusBarFlag = YES;
-    UIView *view = %orig;
-    if (ZephyrShouldForceSwitchAppStatusBar()) switchAppStatusBarFlag = NO;
-    return view;
-}
-
-- (id)viewForApp:(id)app gestureType:(int)type includeStatusBar:(BOOL)bar decodeImage:(BOOL)image {
-    if (ZephyrShouldForceSwitchAppStatusBar()) switchAppStatusBarFlag = YES;
-    UIView *view = %orig;
-    if (ZephyrShouldForceSwitchAppStatusBar()) switchAppStatusBarFlag = NO;
-    return view;
-}
-
-- (void)maskViewIfNeeded:(id)needed gestureType:(int)type viewType:(int)viewType contextHostViewRequester:(id)requester app:(id)app {
-    if (switchAppStatusBarFlag) {
-        return;
+- (UIInterfaceOrientation)launchingInterfaceOrientationForCurrentOrientation {
+    if (switchAppOrientationFlag) {
+        return ZephyrCurrentInterfaceOrientation();
     } else {
         return %orig;
     }
+}
+
+%end
+
+%hook SBUIController
+
+- (id)systemGestureSnapshotForApp:(SBApplication *)app includeStatusBar:(BOOL)include decodeImage:(BOOL)decode {
+    switchAppOrientationFlag = YES;
+    id result = %orig;
+    switchAppOrientationFlag = NO;
+    return result;
+}
+
+%end
+
+%hook SBGestureViewVendor
+
+- (void)maskViewIfNeeded:(UIView *)view gestureType:(SBGestureType)type viewType:(int)viewType contextHostViewRequester:(NSString *)requester app:(SBApplication *)app {
+    switchAppOrientationFlag = YES;
+    %orig;
+    switchAppOrientationFlag = NO;
 }
 
 %end
