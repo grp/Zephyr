@@ -4,7 +4,9 @@
 #import "Preferences.h"
 #import "Keyboard.h"
 
+// XXX: these are necessary since we don't have access to Apple's gesture recognizer state methods.
 static BOOL isAnimatingCompletion = NO;
+static BOOL isAwatingScheduledLaunch = NO;
 
 @implementation SwitchAppGesture
 
@@ -369,6 +371,7 @@ static UIView *containerView = nil;
         [self showSystemGestureBackdrop];
         [self scheduleApplicationForLaunchByGesture:endingApplication];
         [self _installSwitchAppGesturePlaceholderViewForEndingApp:endingApplication];
+        isAwatingScheduledLaunch = YES;
 
         if (startingApplication == endingApplication) {
             shouldShowSwitcherAgain = YES;
@@ -387,6 +390,7 @@ static UIView *containerView = nil;
             [self showSystemGestureBackdrop];
             [self scheduleApplicationForLaunchByGesture:endingApplication];
             [self _installSwitchAppGesturePlaceholderViewForEndingApp:endingApplication];
+            isAwatingScheduledLaunch = YES;
         }
     }
 
@@ -430,14 +434,63 @@ static UIView *containerView = nil;
 }
 
 - (void)cleanupSwitchAppGestureViews {
-    // XXX: find out why this is necessary. how does Apple do this?
-    [[SBApp _accessibilityFrontMostApplication] disableContextHostingForRequester:CFSTR("SwitchApp")];
-
     [containerView removeFromSuperview];
     [containerView release];
     containerView = nil;
 
     %orig;
+}
+
+- (void)_noteAppDidActivate:(SBApplication *)app {
+    if (app == nil) return;
+
+    BOOL toggledSwitcher = NO;
+    SBApplication *toggleSwitcherAfterLaunchApp = MSHookIvar<SBApplication *>(self, "_toggleSwitcherAfterLaunchApp");
+    if (app == toggleSwitcherAfterLaunchApp) {
+        if ([self _ignoringEvents]) {
+            BOOL toggleAfter = MSHookIvar<BOOL>(self, "_toggleSwitcherAfterLaunchAppUsesSystemGestureOrientation");
+            [self _setToggleSwitcherAfterLaunchApp:nil];
+            MSHookIvar<BOOL>(self, "_toggleSwitcherAfterLaunchAppUsesSystemGestureOrientation") = toggleAfter;
+
+            [self _toggleSwitcher];
+            toggledSwitcher = YES;
+
+            if (toggleSwitcherAfterLaunchApp == nil) {
+                MSHookIvar<BOOL>(self, "_toggleSwitcherAfterLaunchAppUsesSystemGestureOrientation") = NO;
+            }
+        }
+    } else {
+        [self _setToggleSwitcherAfterLaunchApp:nil];
+    }
+
+    BOOL viaGesture = [app displayFlag:0xE]; // launchedViaSystemGesture
+
+    if (app == [SBApp _accessibilityFrontMostApplication]) {
+        if ([SBApp _accessibilityIsSystemGestureActive] || SwitchAppGestureIsActive() || SwitchAppGestureIsAnimatingCompletion() || isAwatingScheduledLaunch) {
+            [self _clearAllInstalledSystemGestureViews];
+            isAwatingScheduledLaunch = NO;
+
+            if (viaGesture) {
+                [self clearFakeSpringBoardStatusBarAndCorners];
+                [self _releaseSystemGestureOrientationLock];
+                [app didAnimateActivation];
+                [app setDisplaySetting:0x2 flag:NO]; // animate
+            }
+
+            [app disableContextHostingForRequester:CFSTR("SwitchApp")];
+        }
+    }
+
+    [[objc_getClass("SBGestureViewVendor") sharedInstance] clearCacheForApp:app reason:@"DisplayDidLaunch"];
+
+    if (app == [SBApp _accessibilityFrontMostApplication]) {
+        if (!toggledSwitcher && !viaGesture) {
+            [self _clearSwitchAppList];
+        }
+    }
+
+    [MSHookIvar<SBApplication *>(self, "_appCurrentlyActivatingByGesture") release];
+    MSHookIvar<SBApplication *>(self, "_appCurrentlyActivatingByGesture") = nil;
 }
 
 static SwitchAppGesture *gesture = nil;

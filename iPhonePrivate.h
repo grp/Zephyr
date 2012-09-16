@@ -75,6 +75,8 @@ extern CGFloat UIStatusBarHeight;
 - (void)setDisplaySetting:(unsigned)setting value:(id)value;
 - (UIInterfaceOrientation)statusBarOrientation;
 - (void)clearDeactivationSettings;
+- (void)willAnimateActivation; // iOS 6
+- (void)didAnimateActivation; // iOS 6
 @end
 
 @interface SBApplicationController : NSObject
@@ -203,11 +205,21 @@ typedef enum {
 + (id)sharedInstance;
 - (UIView *)rootView;
 
+- (BOOL)_ignoringEvents;
+
+- (void)_noteAppDidAcitvate:(SBApplication *)app; // iOS 6
+- (void)_noteAppDidFailToAcitvate:(SBApplication *)app; // iOS 6
+
+- (void)_setToggleSwitcherAfterLaunchApp:(SBApplication *)app; // iOS 6
+- (SBApplication *)_toggleSwitcherAfterLaunchApp; // iOS 6
+
 - (BOOL)_canActivateShowcaseIgnoringTouches:(BOOL)touches;
 - (void)_activateSwitcher:(NSTimeInterval)duration;
 - (void)_dismissShowcase:(NSTimeInterval)duration unhost:(BOOL)unhost;
 
+- (void)_clearSwitchAppList;
 - (id)_calculateSwitchAppList;
+
 - (void)_switchAppGestureBegan; // iOS 5.0
 - (void)_switchAppGestureBegan:(CGFloat)location; // iOS 5.1
 - (void)_switchAppGestureChanged:(CGFloat)location;
@@ -215,6 +227,8 @@ typedef enum {
 - (void)_switchAppGestureCancelled;
 - (void)_switchAppGestureViewAnimationComplete;
 
+- (SBShowcaseContext *)_showcaseContextForOffset:(CGFloat)offset;
+- (void)_toggleSwitcher;
 - (BOOL)_activateSwitcherFrom:(SBShowcaseContext *)from to:(SBShowcaseContext *)to duration:(NSTimeInterval)duration; // iOS 5
 - (BOOL)_activateSwitcher:(NSTimeInterval)duration fromSystemGesture:(BOOL)systemGesture; // iOS 6
 
@@ -231,8 +245,9 @@ typedef enum {
 - (void)_lockOrientationForSystemGesture;
 - (void)_releaseSystemGestureOrientationLock;
 - (void)_releaseSystemGestureOrientationLock;
+
+- (void)_clearAllInstalledSystemGestureViews;
 - (void)_installSwitchAppGesturePlaceholderViewForEndingApp:(SBApplication *)endingApp;
-- (id)_showcaseContextForOffset:(CGFloat)offset;
 
 - (void)createFakeSpringBoardStatusBar;
 - (void)setFakeSpringBoardStatusBarVisible:(BOOL)visible;
