@@ -1,10 +1,8 @@
 
-#define kPreferencesBundleIdentifier @"com.chpwn.zephyr"
+#define kZephyrPreferencesBundleIdentifier @"com.chpwn.zephyr"
+typedef void (^ZephyrPreferencesApplyAction)();
 
-typedef void (^PreferencesApplyAction)();
-
-void PreferencesApplyActionRegister(PreferencesApplyAction block);
-id PreferencesGet(NSString *key, id defaultValue);
-void PreferencesSet(NSString *key, id value);
-
+extern "C" void ZephyrPreferencesApplyActionRegister(ZephyrPreferencesApplyAction block);
+extern "C" id ZephyrPreferencesGet(NSString *key, id defaultValue);
+extern "C" void ZephyrPreferencesSet(NSString *key, id value);
 

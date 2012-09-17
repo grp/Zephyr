@@ -18,7 +18,7 @@
 
 static BOOL ZephyrNotificationShouldActivate() {
     BOOL locked = [[objc_getClass("SBAwayController") sharedAwayController] isLocked];
-    BOOL preference = [PreferencesGet(@"NotificationEnabled", [NSNumber numberWithBool:YES]) boolValue];
+    BOOL preference = [ZephyrPreferencesGet(@"NotificationEnabled", [NSNumber numberWithBool:YES]) boolValue];
     BOOL pad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
 
     return preference && !pad && !locked;

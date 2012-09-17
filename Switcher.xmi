@@ -110,16 +110,16 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
         if (![topApplication displayFlag:0x1]) displayFlagsAllowed = NO;
     }
 
-    BOOL disableKeyboard = [(NSNumber *) PreferencesGet(@"BottomDisableKeyboard", PreferencesGet(@"DisableKeyboard", [NSNumber numberWithBool:YES])) boolValue];
+    BOOL disableKeyboard = [(NSNumber *) ZephyrPreferencesGet(@"BottomDisableKeyboard", ZephyrPreferencesGet(@"DisableKeyboard", [NSNumber numberWithBool:YES])) boolValue];
     if (disableKeyboard) {
         if (ZephyrKeyboardIsActive()) return NO;
     }
 
     NSString *topIdentifier = [topApplication displayIdentifier];
-    BOOL disableIdentifier = [(NSNumber *) PreferencesGet([NSString stringWithFormat:@"BottomDisable-%@", topIdentifier], (id)kCFBooleanFalse) boolValue];
+    BOOL disableIdentifier = [(NSNumber *) ZephyrPreferencesGet([NSString stringWithFormat:@"BottomDisable-%@", topIdentifier], (id)kCFBooleanFalse) boolValue];
     if (disableIdentifier) return NO;
 
-    SwipeUpAction action = (SwipeUpAction) [(NSNumber *) PreferencesGet(@"SwipeUpAction", [NSNumber numberWithInt:kSwipeUpActionCloseApp]) intValue];
+    SwipeUpAction action = (SwipeUpAction) [(NSNumber *) ZephyrPreferencesGet(@"SwipeUpAction", [NSNumber numberWithInt:kSwipeUpActionCloseApp]) intValue];
 
     // This is needed to prevent re-activation before the animation completes, crashing.
     BOOL currentlyPendingSwitcherActivationsExist = (pendingSwitcherActivations != nil);
@@ -140,7 +140,7 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
 }
 
 - (BOOL)shouldUseGrabberAtEdge:(SBOffscreenEdge)edge {
-    return [(NSNumber *) PreferencesGet(@"BottomGrabberEnabled", NO) boolValue];
+    return [(NSNumber *) ZephyrPreferencesGet(@"BottomGrabberEnabled", NO) boolValue];
 }
 
 - (BOOL)currentOrientationIsSupported {
@@ -148,7 +148,7 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
 }
 
 - (SwipeUpAction)effectiveSwipeUpAction {
-    SwipeUpAction action = (SwipeUpAction) [(NSNumber *) PreferencesGet(@"SwipeUpAction", [NSNumber numberWithInt:kSwipeUpActionCloseApp]) intValue];
+    SwipeUpAction action = (SwipeUpAction) [(NSNumber *) ZephyrPreferencesGet(@"SwipeUpAction", [NSNumber numberWithInt:kSwipeUpActionCloseApp]) intValue];
     SBApplication *topApplication = [SBApp _accessibilityFrontMostApplication];
 
     if (action == kSwipeUpActionCloseApp && topApplication == nil) {
@@ -325,7 +325,7 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
     }
 
     if ([self effectiveSwipeUpAction] == kSwipeUpActionCloseApp) {
-        CGFloat delay = [PreferencesGet(@"BottomSwitcherActivationDelay", [NSNumber numberWithFloat:0.8f]) floatValue];
+        CGFloat delay = [ZephyrPreferencesGet(@"BottomSwitcherActivationDelay", [NSNumber numberWithFloat:0.8f]) floatValue];
 
         if (delay > 0.0) {
             // No need to clear this from the timer list when done because the pendingSwitcherActiavtions is cleared when it fires.
@@ -554,15 +554,15 @@ static SwitcherGesture *gesture = nil;
 - (void)finishLaunching {
     %orig;
 
-    int touches = [(NSNumber *) PreferencesGet(@"BottomMinimumTouchCount", PreferencesGet(@"MinimumTouchCount", [NSNumber numberWithInt:1])) intValue];
-    CGFloat edgeMargin = [(NSNumber *) PreferencesGet(@"BottomSensitivityDistance", [NSNumber numberWithFloat:30.0f]) floatValue];
+    int touches = [(NSNumber *) ZephyrPreferencesGet(@"BottomMinimumTouchCount", ZephyrPreferencesGet(@"MinimumTouchCount", [NSNumber numberWithInt:1])) intValue];
+    CGFloat edgeMargin = [(NSNumber *) ZephyrPreferencesGet(@"BottomSensitivityDistance", [NSNumber numberWithFloat:30.0f]) floatValue];
 
     gesture = [[SwitcherGesture alloc] init];
     [gesture addOffscreenEdge:kSBOffscreenEdgeBottom minimumTouchCount:touches edgeMargin:edgeMargin];
 
-    PreferencesApplyActionRegister(^{
-        int touches = [(NSNumber *) PreferencesGet(@"BottomMinimumTouchCount", PreferencesGet(@"MinimumTouchCount", [NSNumber numberWithInt:1])) intValue];
-        CGFloat edgeMargin = [(NSNumber *) PreferencesGet(@"BottomSensitivityDistance", [NSNumber numberWithFloat:30.0f]) floatValue];
+    ZephyrPreferencesApplyActionRegister(^{
+        int touches = [(NSNumber *) ZephyrPreferencesGet(@"BottomMinimumTouchCount", ZephyrPreferencesGet(@"MinimumTouchCount", [NSNumber numberWithInt:1])) intValue];
+        CGFloat edgeMargin = [(NSNumber *) ZephyrPreferencesGet(@"BottomSensitivityDistance", [NSNumber numberWithFloat:30.0f]) floatValue];
 
         for (SBOffscreenSwipeGestureRecognizer *recognizer in [gesture gestureRecognizers]) {
             [recognizer setMinTouches:touches];

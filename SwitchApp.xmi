@@ -11,7 +11,7 @@ static BOOL isAwaitingScheduledLaunch = NO;
 @implementation SwitchAppGesture
 
 - (BOOL)shouldActivateAtEdge:(SBOffscreenEdge)edge {
-    BOOL disableKeyboard = [(NSNumber *) PreferencesGet(@"SideDisableKeyboard", PreferencesGet(@"DisableKeyboard", [NSNumber numberWithBool:YES])) boolValue];
+    BOOL disableKeyboard = [(NSNumber *) ZephyrPreferencesGet(@"SideDisableKeyboard", ZephyrPreferencesGet(@"DisableKeyboard", [NSNumber numberWithBool:YES])) boolValue];
     if (disableKeyboard) {
         if (ZephyrKeyboardIsActive()) return NO;
     }
@@ -19,7 +19,7 @@ static BOOL isAwaitingScheduledLaunch = NO;
     SBApplication *topApplication = [SBApp _accessibilityFrontMostApplication];
 
     if (topApplication != nil) {
-        BOOL disableIdentifier = [(NSNumber *) PreferencesGet([NSString stringWithFormat:@"SideDisable-%@", [topApplication displayIdentifier]], (NSNumber *) kCFBooleanFalse) boolValue];
+        BOOL disableIdentifier = [(NSNumber *) ZephyrPreferencesGet([NSString stringWithFormat:@"SideDisable-%@", [topApplication displayIdentifier]], (NSNumber *) kCFBooleanFalse) boolValue];
         if (disableIdentifier) return NO;
     }
 
@@ -33,11 +33,11 @@ static BOOL isAwaitingScheduledLaunch = NO;
         && ![[objc_getClass("SBBulletinWindowController") sharedInstance] isBusy]
         && !ZephyrAssistantIsVisible()
         && ![[objc_getClass("SBBulletinListController") sharedInstanceIfExists] listViewIsActive]
-        && [(NSNumber *) PreferencesGet(@"SwipeSideEnabled", [NSNumber numberWithBool:YES]) boolValue];
+        && [(NSNumber *) ZephyrPreferencesGet(@"SwipeSideEnabled", [NSNumber numberWithBool:YES]) boolValue];
 }
 
 - (BOOL)shouldUseGrabberAtEdge:(SBOffscreenEdge)edge {
-    return [(NSNumber *) PreferencesGet(@"SideGrabberEnabled", NO) boolValue];
+    return [(NSNumber *) ZephyrPreferencesGet(@"SideGrabberEnabled", NO) boolValue];
 }
 
 - (BOOL)currentOrientationIsSupported {
@@ -510,16 +510,16 @@ BOOL SwitchAppGestureIsActive() {
 - (void)finishLaunching {
     %orig;
 
-    int touches = [(NSNumber *) PreferencesGet(@"SideMinimumTouchCount", PreferencesGet(@"MinimumTouchCount", [NSNumber numberWithInt:1])) intValue];
-    CGFloat edgeMargin = [(NSNumber *) PreferencesGet(@"SideSensitivityDistance", [NSNumber numberWithFloat:30.0f]) floatValue];
+    int touches = [(NSNumber *) ZephyrPreferencesGet(@"SideMinimumTouchCount", ZephyrPreferencesGet(@"MinimumTouchCount", [NSNumber numberWithInt:1])) intValue];
+    CGFloat edgeMargin = [(NSNumber *) ZephyrPreferencesGet(@"SideSensitivityDistance", [NSNumber numberWithFloat:30.0f]) floatValue];
 
     gesture = [[SwitchAppGesture alloc] init];
     [gesture addOffscreenEdge:kSBOffscreenEdgeRight minimumTouchCount:touches edgeMargin:edgeMargin];
     [gesture addOffscreenEdge:kSBOffscreenEdgeLeft minimumTouchCount:touches edgeMargin:edgeMargin];
 
-    PreferencesApplyActionRegister(^{
-        int touches = [(NSNumber *) PreferencesGet(@"SideMinimumTouchCount", PreferencesGet(@"MinimumTouchCount", [NSNumber numberWithInt:1])) intValue];
-        CGFloat edgeMargin = [(NSNumber *) PreferencesGet(@"SideSensitivityDistance", [NSNumber numberWithFloat:30.0f]) floatValue];
+    ZephyrPreferencesApplyActionRegister(^{
+        int touches = [(NSNumber *) ZephyrPreferencesGet(@"SideMinimumTouchCount", ZephyrPreferencesGet(@"MinimumTouchCount", [NSNumber numberWithInt:1])) intValue];
+        CGFloat edgeMargin = [(NSNumber *) ZephyrPreferencesGet(@"SideSensitivityDistance", [NSNumber numberWithFloat:30.0f]) floatValue];
 
         for (SBOffscreenSwipeGestureRecognizer *recognizer in [gesture gestureRecognizers]) {
             [recognizer setMinTouches:touches];

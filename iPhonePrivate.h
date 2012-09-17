@@ -18,6 +18,7 @@
 - (BOOL)_accessibilityIsSystemGestureActive;
 
 - (void)_handleMenuButtonEvent;
+- (void)clearMenuButtonTimer;
 - (void)menuButtonDown:(GSEventRef)event;
 - (void)menuButtonUp:(GSEventRef)event;
 - (void)lockButtonDown:(GSEventRef)event;

@@ -2,52 +2,52 @@
 #import "Preferences.h"
 #import "iPhonePrivate.h"
 
-#define kPreferencesFileName [NSString stringWithFormat:@"/var/mobile/Library/Preferences/%@.plist", kPreferencesBundleIdentifier]
+#define kZephyrPreferencesFileName [NSString stringWithFormat:@"/var/mobile/Library/Preferences/%@.plist", kZephyrPreferencesBundleIdentifier]
 static NSDictionary *preferences = nil;
 static NSMutableSet *applyActions = nil;
 
-static void PreferencesApply() {
-    for (PreferencesApplyAction action in applyActions) {
+static void ZephyrPreferencesApply() {
+    for (ZephyrPreferencesApplyAction action in applyActions) {
         action();
     }
 }
 
-void PreferencesApplyActionRegister(PreferencesApplyAction block) {
+void ZephyrPreferencesApplyActionRegister(ZephyrPreferencesApplyAction block) {
     [applyActions addObject:[block copy]];
 }
 
-static void PreferencesLoad() {
+static void ZephyrPreferencesLoad() {
     [preferences release];
-    preferences = [[NSDictionary dictionaryWithContentsOfFile:kPreferencesFileName] retain];
+    preferences = [[NSDictionary dictionaryWithContentsOfFile:kZephyrPreferencesFileName] retain];
 }
 
-id PreferencesGet(NSString *key, id defaultValue) {
+id ZephyrPreferencesGet(NSString *key, id defaultValue) {
     id value = [preferences objectForKey:key];
     if (value == nil) value = defaultValue;
     return value;
 }
 
-void PreferencesSet(NSString *key, id value) {
+void ZephyrPreferencesSet(NSString *key, id value) {
     NSMutableDictionary *mutablePreferences = [preferences mutableCopy];
     [mutablePreferences setObject:value forKey:key];
-    [mutablePreferences writeToFile:kPreferencesFileName atomically:NO];
+    [mutablePreferences writeToFile:kZephyrPreferencesFileName atomically:NO];
     [mutablePreferences release];
 
-    PreferencesLoad();
-    PreferencesApply();
+    ZephyrPreferencesLoad();
+    ZephyrPreferencesApply();
 }
 
-static void PreferencesChangedCallback(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef userInfo) {
-    PreferencesLoad();
-    PreferencesApply();
+static void ZephyrPreferencesChangedCallback(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef userInfo) {
+    ZephyrPreferencesLoad();
+    ZephyrPreferencesApply();
 }
 
 %ctor {
     applyActions = [[NSMutableSet alloc] init];
 
-    PreferencesLoad();
+    ZephyrPreferencesLoad();
 
-    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, PreferencesChangedCallback, (CFStringRef) [NSString stringWithFormat:@"%@.preferences-changed", kPreferencesBundleIdentifier], NULL, CFNotificationSuspensionBehaviorCoalesce);
+    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, ZephyrPreferencesChangedCallback, (CFStringRef) [NSString stringWithFormat:@"%@.preferences-changed", kZephyrPreferencesBundleIdentifier], NULL, CFNotificationSuspensionBehaviorCoalesce);
 }
 
 
