@@ -542,6 +542,7 @@ BOOL SwitchAppGestureIsActive() {
 - (void)_handleMenuButtonEvent {
     if (objc_getClass("SBWorkspace") != nil && SwitchAppGestureIsAnimatingCompletion()) {
         // Disable home button during animation completion on iOS 6.
+        [self clearMenuButtonTimer];
         return;
     }
 
