@@ -112,7 +112,7 @@ static BOOL isAwaitingScheduledLaunch = NO;
             SBApplication *application = [applicationController applicationWithDisplayIdentifier:identifier];
 
             [[objc_getClass("SBGestureViewVendor") sharedInstance] viewForApp:application gestureType:kSBGestureTypeSwitchApp includeStatusBar:NO decodeImage:YES];
-            [application disableContextHostingForRequester:CFSTR("SwitchApp")];
+            [application disableContextHostingForRequester:CFSTR("SwitchApp")]; // XXX: Is this necessary? Apple doesn't seem to do this.
         }
     }
 }
