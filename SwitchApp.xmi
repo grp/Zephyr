@@ -6,7 +6,7 @@
 
 // XXX: these are necessary since we don't have access to Apple's gesture recognizer state methods.
 static BOOL isAnimatingCompletion = NO;
-static BOOL isAwatingScheduledLaunch = NO;
+static BOOL isAwaitingScheduledLaunch = NO;
 
 @implementation SwitchAppGesture
 
@@ -89,6 +89,8 @@ static BOOL isAwatingScheduledLaunch = NO;
 
 %new(v@:@)
 - (void)internalPrefetchAdjacentAppsAndEvictRemotes:(SBApplication *)currentApplication {
+    if ([SBApp _accessibilityIsSystemGestureActive] || SwitchAppGestureIsActive() || SwitchAppGestureIsAnimatingCompletion() || isAwaitingScheduledLaunch) return;
+
     if (MSHookIvar<NSMutableArray *>(self, "_switchAppFullyOrderedList") == nil) {
         [self _calculateSwitchAppList];
     }
@@ -110,6 +112,7 @@ static BOOL isAwatingScheduledLaunch = NO;
             SBApplication *application = [applicationController applicationWithDisplayIdentifier:identifier];
 
             [[objc_getClass("SBGestureViewVendor") sharedInstance] viewForApp:application gestureType:kSBGestureTypeSwitchApp includeStatusBar:NO decodeImage:YES];
+            [application disableContextHostingForRequester:CFSTR("SwitchApp")];
         }
     }
 }
@@ -371,7 +374,7 @@ static UIView *containerView = nil;
         [self showSystemGestureBackdrop];
         [self scheduleApplicationForLaunchByGesture:endingApplication];
         [self _installSwitchAppGesturePlaceholderViewForEndingApp:endingApplication];
-        isAwatingScheduledLaunch = YES;
+        isAwaitingScheduledLaunch = YES;
 
         if (startingApplication == endingApplication) {
             shouldShowSwitcherAgain = YES;
@@ -390,7 +393,7 @@ static UIView *containerView = nil;
             [self showSystemGestureBackdrop];
             [self scheduleApplicationForLaunchByGesture:endingApplication];
             [self _installSwitchAppGesturePlaceholderViewForEndingApp:endingApplication];
-            isAwatingScheduledLaunch = YES;
+            isAwaitingScheduledLaunch = YES;
         }
     }
 
@@ -466,9 +469,9 @@ static UIView *containerView = nil;
     BOOL viaGesture = [app displayFlag:0xE]; // launchedViaSystemGesture
 
     if (app == [SBApp _accessibilityFrontMostApplication]) {
-        if ([SBApp _accessibilityIsSystemGestureActive] || SwitchAppGestureIsActive() || SwitchAppGestureIsAnimatingCompletion() || isAwatingScheduledLaunch) {
+        if ([SBApp _accessibilityIsSystemGestureActive] || SwitchAppGestureIsActive() || SwitchAppGestureIsAnimatingCompletion() || isAwaitingScheduledLaunch) {
             [self _clearAllInstalledSystemGestureViews];
-            isAwatingScheduledLaunch = NO;
+            isAwaitingScheduledLaunch = NO;
 
             if (viaGesture) {
                 [self clearFakeSpringBoardStatusBarAndCorners];
@@ -481,6 +484,7 @@ static UIView *containerView = nil;
         }
     }
 
+    [app setDisplaySetting:0xE flag:NO]; // animate
     [[objc_getClass("SBGestureViewVendor") sharedInstance] clearCacheForApp:app reason:@"DisplayDidLaunch"];
 
     if (app == [SBApp _accessibilityFrontMostApplication]) {
@@ -527,6 +531,19 @@ BOOL SwitchAppGestureIsActive() {
 // avoid conflict between native gesture and custom gesture on the iPad
 - (void)handleFluidHorizontalSystemGesture:(SBGestureRecognizer *)recognizer {
     if ([gesture isActive] || SwitchAppGestureIsAnimatingCompletion()) return;
+
+    %orig;
+}
+
+%end
+
+%hook SpringBoard
+
+- (void)_handleMenuButtonEvent {
+    if (objc_getClass("SBWorkspace") != nil && SwitchAppGestureIsAnimatingCompletion()) {
+        // Disable home button during animation completion on iOS 6.
+        return;
+    }
 
     %orig;
 }
