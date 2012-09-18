@@ -8,7 +8,7 @@ typedef enum {
     kSwipeUpActionSwitcher
 } SwipeUpAction;
 
-@interface SwitcherGesture : BaseGesture {
+@interface ZephyrSwitcherGesture : ZephyrBaseGesture {
     UIView *wrapperView;
 
     UIView *appView;

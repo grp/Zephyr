@@ -2,9 +2,9 @@
 #import "BaseGesture.h"
 #import "OffscreenGesture.h"
 
-BOOL SwitchAppGestureIsActive();
-BOOL SwitchAppGestureIsAnimatingCompletion();
+extern "C" BOOL ZephyrSwitchAppGestureIsActive();
+extern "C" BOOL ZephyrSwitchAppGestureIsAnimatingCompletion();
 
-@interface SwitchAppGesture : BaseGesture
+@interface ZephyrSwitchAppGesture : ZephyrBaseGesture
 @end
 

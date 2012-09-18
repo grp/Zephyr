@@ -1,7 +1,7 @@
 
 #import "iPhonePrivate.h"
 
-@interface BaseGesture : NSObject {
+@interface ZephyrBaseGesture : NSObject {
     NSMutableArray *gestureRecognizers;
     BOOL isActive;
 }

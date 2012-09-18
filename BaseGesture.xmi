@@ -12,13 +12,13 @@ static NSMutableArray *allGestures = nil;
     allGestures = [[NSMutableArray alloc] init];
 }
 
-@implementation BaseGesture
+@implementation ZephyrBaseGesture
 @synthesize isActive, gestureRecognizers;
 
 + (BOOL)isAnyGestureActive {
     BOOL isActive = NO;
 
-    for (BaseGesture *gesture in allGestures) {
+    for (ZephyrBaseGesture *gesture in allGestures) {
         if ([gesture isActive]) {
             isActive = YES;
         }
@@ -58,7 +58,7 @@ static NSMutableArray *allGestures = nil;
             case 0:
                 break;
             case 1:
-                if (![self isActive] && ![BaseGesture isAnyGestureActive]) {
+                if (![self isActive] && ![ZephyrBaseGesture isAnyGestureActive]) {
                     if (![self shouldUseGrabberAtEdge:edge] || [[ZephyrGrabberController sharedInstance] visibleAtEdge:edge]) {
                         [[ZephyrGrabberController sharedInstance] hideAtEdge:edge animated:YES];
 
@@ -156,31 +156,31 @@ static NSMutableArray *allGestures = nil;
 %hook SpringBoard
 
 - (void)lockButtonDown:(GSEventRef)event {
-    if ([BaseGesture isAnyGestureActive]) return;
+    if ([ZephyrBaseGesture isAnyGestureActive]) return;
 
     %orig;
 }
 
 - (void)lockButtonUp:(GSEventRef)event {
-    if ([BaseGesture isAnyGestureActive]) return;
+    if ([ZephyrBaseGesture isAnyGestureActive]) return;
 
     %orig;
 }
 
 - (void)menuButtonDown:(GSEventRef)event {
-    if ([BaseGesture isAnyGestureActive]) return;
+    if ([ZephyrBaseGesture isAnyGestureActive]) return;
 
     %orig;
 }
 
 - (void)menuButtonUp:(GSEventRef)event {
-    if ([BaseGesture isAnyGestureActive]) return;
+    if ([ZephyrBaseGesture isAnyGestureActive]) return;
 
     %orig;
 }
 
 - (void)_handleMenuButtonEvent {
-    if ([BaseGesture isAnyGestureActive]) return;
+    if ([ZephyrBaseGesture isAnyGestureActive]) return;
 
     %orig;
 }

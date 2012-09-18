@@ -96,7 +96,7 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
     OpenMusicControlsTaskSwitcherIfNecessaryWithDuration(duration);
 }
 
-@implementation SwitcherGesture
+@implementation ZephyrSwitcherGesture
 
 - (BOOL)shouldActivateAtEdge:(SBOffscreenEdge)edge {
     SBApplication *topApplication = [SBApp _accessibilityFrontMostApplication];
@@ -123,7 +123,7 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
 
     // This is needed to prevent re-activation before the animation completes, crashing.
     BOOL currentlyPendingSwitcherActivationsExist = (pendingSwitcherActivations != nil);
-    BOOL switchAppGestureIsAnimating = SwitchAppGestureIsAnimatingCompletion();
+    BOOL switchAppGestureIsAnimating = ZephyrSwitchAppGestureIsAnimatingCompletion();
 
     return ![SBApp _accessibilityIsSystemGestureActive]
         && ![[objc_getClass("SBAwayController") sharedAwayController] isLocked]
@@ -549,7 +549,7 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
 
 %hook SBUIController
 
-static SwitcherGesture *gesture = nil;
+static ZephyrSwitcherGesture *gesture = nil;
 
 - (void)finishLaunching {
     %orig;
@@ -557,7 +557,7 @@ static SwitcherGesture *gesture = nil;
     int touches = [(NSNumber *) ZephyrPreferencesGet(@"BottomMinimumTouchCount", ZephyrPreferencesGet(@"MinimumTouchCount", [NSNumber numberWithInt:1])) intValue];
     CGFloat edgeMargin = [(NSNumber *) ZephyrPreferencesGet(@"BottomSensitivityDistance", [NSNumber numberWithFloat:30.0f]) floatValue];
 
-    gesture = [[SwitcherGesture alloc] init];
+    gesture = [[ZephyrSwitcherGesture alloc] init];
     [gesture addOffscreenEdge:kSBOffscreenEdgeBottom minimumTouchCount:touches edgeMargin:edgeMargin];
 
     ZephyrPreferencesApplyActionRegister(^{

@@ -2,13 +2,10 @@
 #import <UIKit/UIKit.h>
 #import "CPDistributedMessagingCenter.h"
 
-@interface _KeyboardProxy : NSObject {
-
-}
-
+@interface _ZephyrKeyboardProxy : NSObject
 @end
 
-@implementation _KeyboardProxy
+@implementation _ZephyrKeyboardProxy
 
 - (void)sendKeyboardMessage:(NSString *)message {
     CPDistributedMessagingCenter *messagingCenter = [CPDistributedMessagingCenter centerNamed:@"com.chpwn.zephyr.keyboard"];
@@ -36,8 +33,7 @@
 @end
 
 %ctor {
-    // XXX: is this a memory leak?
-    static _KeyboardProxy *proxy = [[_KeyboardProxy alloc] init];
+    static _ZephyrKeyboardProxy *proxy = [[_ZephyrKeyboardProxy alloc] init];
     [[NSNotificationCenter defaultCenter] addObserver:proxy selector:@selector(keyboardActivated) name:UIKeyboardWillShowNotification object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:proxy selector:@selector(keyboardDeactivated) name:UIKeyboardWillHideNotification object:nil];
 }

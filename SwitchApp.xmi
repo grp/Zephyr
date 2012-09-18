@@ -8,7 +8,7 @@
 static BOOL isAnimatingCompletion = NO;
 static BOOL isAwaitingScheduledLaunch = NO;
 
-@implementation SwitchAppGesture
+@implementation ZephyrSwitchAppGesture
 
 - (BOOL)shouldActivateAtEdge:(SBOffscreenEdge)edge {
     BOOL disableKeyboard = [(NSNumber *) ZephyrPreferencesGet(@"SideDisableKeyboard", ZephyrPreferencesGet(@"DisableKeyboard", [NSNumber numberWithBool:YES])) boolValue];
@@ -89,7 +89,7 @@ static BOOL isAwaitingScheduledLaunch = NO;
 
 %new(v@:@)
 - (void)internalPrefetchAdjacentAppsAndEvictRemotes:(SBApplication *)currentApplication {
-    if ([SBApp _accessibilityIsSystemGestureActive] || SwitchAppGestureIsActive() || SwitchAppGestureIsAnimatingCompletion() || isAwaitingScheduledLaunch) return;
+    if ([SBApp _accessibilityIsSystemGestureActive] || ZephyrSwitchAppGestureIsActive() || ZephyrSwitchAppGestureIsAnimatingCompletion() || isAwaitingScheduledLaunch) return;
 
     if (MSHookIvar<NSMutableArray *>(self, "_switchAppFullyOrderedList") == nil) {
         [self _calculateSwitchAppList];
@@ -429,7 +429,7 @@ static UIView *containerView = nil;
 }
 
 - (void)cleanupRunningGestureIfNeeded {
-    if (SwitchAppGestureIsActive() || SwitchAppGestureIsAnimatingCompletion()) {
+    if (ZephyrSwitchAppGestureIsActive() || ZephyrSwitchAppGestureIsAnimatingCompletion()) {
         [self _switchAppGestureViewAnimationComplete];
     }
 
@@ -469,7 +469,7 @@ static UIView *containerView = nil;
     BOOL viaGesture = [app displayFlag:0xE]; // launchedViaSystemGesture
 
     if (app == [SBApp _accessibilityFrontMostApplication]) {
-        if ([SBApp _accessibilityIsSystemGestureActive] || SwitchAppGestureIsActive() || SwitchAppGestureIsAnimatingCompletion() || isAwaitingScheduledLaunch) {
+        if ([SBApp _accessibilityIsSystemGestureActive] || ZephyrSwitchAppGestureIsActive() || ZephyrSwitchAppGestureIsAnimatingCompletion() || isAwaitingScheduledLaunch) {
             [self _clearAllInstalledSystemGestureViews];
             isAwaitingScheduledLaunch = NO;
 
@@ -497,13 +497,13 @@ static UIView *containerView = nil;
     MSHookIvar<SBApplication *>(self, "_appCurrentlyActivatingByGesture") = nil;
 }
 
-static SwitchAppGesture *gesture = nil;
+static ZephyrSwitchAppGesture *gesture = nil;
 
-BOOL SwitchAppGestureIsAnimatingCompletion() {
+BOOL ZephyrSwitchAppGestureIsAnimatingCompletion() {
     return isAnimatingCompletion;
 }
 
-BOOL SwitchAppGestureIsActive() {
+BOOL ZephyrSwitchAppGestureIsActive() {
     return [gesture isActive];
 }
 
@@ -513,7 +513,7 @@ BOOL SwitchAppGestureIsActive() {
     int touches = [(NSNumber *) ZephyrPreferencesGet(@"SideMinimumTouchCount", ZephyrPreferencesGet(@"MinimumTouchCount", [NSNumber numberWithInt:1])) intValue];
     CGFloat edgeMargin = [(NSNumber *) ZephyrPreferencesGet(@"SideSensitivityDistance", [NSNumber numberWithFloat:30.0f]) floatValue];
 
-    gesture = [[SwitchAppGesture alloc] init];
+    gesture = [[ZephyrSwitchAppGesture alloc] init];
     [gesture addOffscreenEdge:kSBOffscreenEdgeRight minimumTouchCount:touches edgeMargin:edgeMargin];
     [gesture addOffscreenEdge:kSBOffscreenEdgeLeft minimumTouchCount:touches edgeMargin:edgeMargin];
 
@@ -530,7 +530,7 @@ BOOL SwitchAppGestureIsActive() {
 
 // avoid conflict between native gesture and custom gesture on the iPad
 - (void)handleFluidHorizontalSystemGesture:(SBGestureRecognizer *)recognizer {
-    if ([gesture isActive] || SwitchAppGestureIsAnimatingCompletion()) return;
+    if ([gesture isActive] || ZephyrSwitchAppGestureIsAnimatingCompletion()) return;
 
     %orig;
 }
@@ -540,7 +540,7 @@ BOOL SwitchAppGestureIsActive() {
 %hook SpringBoard
 
 - (void)_handleMenuButtonEvent {
-    if (objc_getClass("SBWorkspace") != nil && SwitchAppGestureIsAnimatingCompletion()) {
+    if (objc_getClass("SBWorkspace") != nil && ZephyrSwitchAppGestureIsAnimatingCompletion()) {
         // Disable home button during animation completion on iOS 6.
         [self clearMenuButtonTimer];
         return;
