@@ -18,6 +18,9 @@ void SBGestureRecognizerUnregister(SBGestureRecognizer *recognizer) {
 
 %group OffscreenSwipes
 
+static void (*BKSHIDServicesSystemGestureIsPossible)(BOOL) = NULL;
+static void (*BKSHIDServicesSystemGestureIsStealingEvents)(BOOL) = NULL;
+
 %hook SBHandMotionExtractor
 
 - (void)extractHandMotionForActiveTouches:(SBTouchInfo *)activeTouches count:(unsigned int)count centroid:(CGPoint)centroid {
@@ -104,9 +107,42 @@ void SBGestureRecognizerUnregister(SBGestureRecognizer *recognizer) {
 
 %end
 
+%hook SBGestureRecognizer
+
+- (void)setState:(SBGestureRecognizerState)state {
+    if (![allGestureRecognizers containsObject:self]) {
+        %orig;
+        return;
+    }
+
+    // iOS 6. On iOS 6, we need to tell BackBoard when a gesture is taking over touch events,
+    // or it will believe the touch never ends while the gesture is running (causing all sorts
+    // of issues). This may really belong above, but for simplicity, it's inserted here.
+
+    if (state == SBGestureRecognizerStateBegan) {
+        if (BKSHIDServicesSystemGestureIsStealingEvents != NULL) {
+            BKSHIDServicesSystemGestureIsStealingEvents(YES);
+        }
+    }
+
+    %orig;
+
+    if (state == SBGestureRecognizerStateEnded || state == SBGestureRecognizerStateCancelled) {
+        if (BKSHIDServicesSystemGestureIsStealingEvents != NULL) {
+            BKSHIDServicesSystemGestureIsStealingEvents(NO);
+        }
+    }
+}
+
+%end
+
 %end
 
 %ctor {
     %init(OffscreenSwipes);
+
+    void *handle = dlopen("/System/Library/PrivateFrameworks/BackBoardServices.framework/BackBoardServices", RTLD_LAZY);
+    BKSHIDServicesSystemGestureIsPossible = (void (*)(BOOL)) dlsym(handle, "BKSHIDServicesSystemGestureIsPossible");
+    BKSHIDServicesSystemGestureIsStealingEvents = (void (*)(BOOL)) dlsym(handle, "BKSHIDServicesSystemGestureIsStealingEvents");
 }
 

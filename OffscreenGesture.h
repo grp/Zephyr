@@ -1,6 +1,6 @@
 
 #import "iPhonePrivate.h"
 
-void SBGestureRecognizerRegister(SBGestureRecognizer *recognizer);
-void SBGestureRecognizerUnregister(SBGestureRecognizer *recognizer);
+extern "C" void SBGestureRecognizerRegister(SBGestureRecognizer *recognizer);
+extern "C" void SBGestureRecognizerUnregister(SBGestureRecognizer *recognizer);
 
