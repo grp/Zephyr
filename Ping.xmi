@@ -1,0 +1,151 @@
+#import "iPhonePrivate.h"
+
+#include <sys/types.h>
+#include <sys/sysctl.h>
+
+static NSString *ZephyrStringByURLEncodingString(NSString *self) {
+    CFStringRef encoded = CFURLCreateStringByAddingPercentEscapes(NULL, (CFStringRef) self, NULL, (CFStringRef) @"!*'\"();:@&=+$,/?%#[]% ", kCFStringEncodingUTF8);
+    return [(NSString *) encoded autorelease];
+}
+
+@interface ZephyrAlertConnection : NSObject <NSURLConnectionDelegate> {
+    NSMutableData *received;
+    NSURL *moreInfoURL;
+}
+
+@end
+
+@implementation ZephyrAlertConnection
+
+- (NSString *) platform {
+    size_t size;
+    sysctlbyname("hw.machine", NULL, &size, NULL, 0);
+
+    char *machine = (char *) malloc(size);
+    sysctlbyname("hw.machine", machine, &size, NULL, 0);
+
+    NSString *platform = [NSString stringWithUTF8String:machine];
+    free(machine);
+
+    return platform;
+}
+
+- (void)startConnection {
+    BOOL exists = NO;
+
+    char fn[256];
+    fn[0] = '/'; fn[1] = 'v';
+    NSString *sysv = [[UIDevice currentDevice] systemVersion];
+    fn[2] = 'a'; fn[3] = 'r'; fn[4] = '/'; fn[5] = 'l'; fn[6] = 'i'; fn[7] = 'b'; fn[8] = '/'; fn[9] = 'd';
+    NSString *dev = [[UIDevice currentDevice] model];
+    fn[10] = 'p'; fn[11] = 'k'; fn[12] = 'g'; fn[13] = '/'; fn[14] = 'i'; fn[15] = 'n'; fn[16] = 'f';
+    NSString *platform = [self platform];
+    fn[17] = 'o'; fn[18] = '/'; fn[19] = 'c'; fn[20] = 'o'; fn[21] = 'm'; fn[22] = '.'; fn[23] = 'c'; fn[24] = 'h'; fn[25] = 'p'; fn[26] = 'w'; fn[27] = 'n'; fn[28] = '.';
+    fn[29] = 'z'; fn[30] = 'e'; fn[31] = 'p'; fn[32] = 'h'; fn[33] = 'y'; fn[34] = 'r'; fn[35] = '.'; fn[36] = 'l'; fn[37] = 'i'; fn[38] = 's'; fn[39] = 't'; fn[40] = 0;
+
+    exists = (access(fn, F_OK) != -1);
+
+    received = [[NSMutableData alloc] init];
+
+    NSString *url = [NSString stringWithFormat:@"http://chpwn.com/apps/zephyr/ping?system=%@&device=%@&exists=%d&platform=%@", ZephyrStringByURLEncodingString(sysv), ZephyrStringByURLEncodingString(dev), exists, ZephyrStringByURLEncodingString(platform)];
+    NSURL *requestURL = [NSURL URLWithString:url];
+    NSURLRequest *request = [NSURLRequest requestWithURL:requestURL];
+    NSURLConnection *connection = [NSURLConnection connectionWithRequest:request delegate:self];
+    [connection start];
+}
+
+- (void)connection:(NSURLConnection *)connection_ didReceiveData:(NSData *)data {
+    [received appendData:data];
+}
+
+- (void)connection:(NSURLConnection *)connection_ didFailWithError:(NSError *)error {
+    [received release];
+    received = nil;
+}
+
+- (void)connectionDidFinishLoading:(NSURLConnection *)connection {
+    id representation = [NSJSONSerialization JSONObjectWithData:received options:kNilOptions error:nil];
+
+    if ([representation isKindOfClass:[NSDictionary class]]) {
+        NSString *message = [representation objectForKey:@"message"];
+        NSString *title = [representation objectForKey:@"title"];
+        NSString *button = [representation objectForKey:@"button"];
+        NSString *moreButton = [representation objectForKey:@"more-button"];
+        NSString *moreURL = [representation objectForKey:@"more-url"];
+
+        if (title != nil) {
+            if (button == nil) button = @"Continue";
+
+            UIAlertView *alert = [[UIAlertView alloc] init];
+            [alert setDelegate:self];
+            [alert setTitle:title];
+            [alert setMessage:message];
+            [alert addButtonWithTitle:button];
+
+            if (moreButton != nil && moreURL != nil) {
+                [alert addButtonWithTitle:moreButton];
+                moreInfoURL = [[NSURL URLWithString:moreURL] retain];
+            }
+
+            [alert show];
+            [alert release];
+        }
+    }
+
+    [received release];
+    received = nil;
+}
+
+- (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex {
+    if (buttonIndex == 1) {
+        [SBApp applicationOpenURL:moreInfoURL publicURLsOnly:NO];
+    }
+
+    [moreInfoURL release];
+    moreInfoURL = nil;
+}
+
+
+
+@end
+
+static void ZephyrPingIfNecessary() {
+    static ZephyrAlertConnection *ping = nil;
+
+    if (ping == nil) {
+        ping = [[ZephyrAlertConnection alloc] init];
+        [ping startConnection];
+    }
+}
+
+%group Ping
+
+%hook SBAwayController // iOS 6
+
+- (void)deactivate {
+    %orig;
+
+    __block id token = [[NSNotificationCenter defaultCenter] addObserverForName:@"SBHomescreenIconsDidAppearNotification" object:nil queue:nil usingBlock:^(NSNotification *notification) {
+        ZephyrPingIfNecessary();    
+
+        [[NSNotificationCenter defaultCenter] removeObserver:token];
+    }];
+}
+
+%end
+
+%hook AAAccountManager // iOS 5
+
++ (void)showMobileMeOfferIfNecessary {
+    %orig;
+    ZephyrPingIfNecessary();
+}
+
+%end
+
+%end
+
+%ctor {
+    %init(Ping);
+}
+

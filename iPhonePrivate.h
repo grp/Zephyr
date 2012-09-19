@@ -17,6 +17,8 @@
 - (SBApplication *)_accessibilityFrontMostApplication;
 - (BOOL)_accessibilityIsSystemGestureActive;
 
+- (void)applicationOpenURL:(NSURL *)url publicURLsOnly:(BOOL)publicOnly;
+
 - (void)_handleMenuButtonEvent;
 - (void)clearMenuButtonTimer;
 - (void)menuButtonDown:(GSEventRef)event;
