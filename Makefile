@@ -1,13 +1,15 @@
+export TARGET_CXX = xcrun -sdk iphoneos clang++
+export TARGET_LD = xcrun -sdk iphoneos clang++
+export TARGET = iphone:6.0:5.0
+export ARCHS = armv7 # pending theos bug: armv7s
+
 include theos/makefiles/common.mk
 
 TWEAK_NAME = Zephyr ZephyrKeyboardProxy
 
-export TARGET_IPHONEOS_DEPLOYMENT_VERSION = 5.0
-
 Zephyr_FILES = Preferences.xmi Switcher.xmi SwitchApp.xmi BaseGesture.xmi OffscreenGesture.xmi Keyboard.xmi NSTimer+Blocks.m Common.xmi Notification.xmi Grabber.xmi
 Zephyr_FRAMEWORKS = UIKit QuartzCore CoreGraphics
 Zephyr_PRIVATE_FRAMEWORKS = AppSupport
-export ARCHS = armv7
 
 ZephyrKeyboardProxy_FILES = KeyboardProxy.xmi
 ZephyrKeyboardProxy_FRAMEWORKS = UIKit
