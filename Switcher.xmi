@@ -329,7 +329,7 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
 
         if (delay > 0.0) {
             // No need to clear this from the timer list when done because the pendingSwitcherActiavtions is cleared when it fires.
-            [pendingSwitcherActivations addObject:[NSArray arrayWithObjects:[NSNumber numberWithFloat:location], [NSTimer scheduledTimerWithTimeInterval:delay block:^(NSTimer *timer) {
+            [pendingSwitcherActivations addObject:[NSArray arrayWithObjects:[NSNumber numberWithFloat:location], [NSTimer zephyrScheduledTimerWithTimeInterval:delay block:^(NSTimer *timer) {
                 // prevent double activations
                 if (![self isActive]) return;
 
