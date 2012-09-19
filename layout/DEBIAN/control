@@ -1,13 +1,13 @@
 Package: com.chpwn.zephyr
 Name: Zephyr
 Section: Tweaks
-Version: 1.3.5
+Version: 1.4.0
 Pre-Depends: firmware (>= 5.0)
 Depends: mobilesubstrate, preferenceloader, applist, com.rpetrich.layersnapshotter
 Conflicts: com.dapetcu21.MultiCleaner (<= 2.9.4), com.xsellize.multicleaner, com.xsellize.zephyr
 Icon: file:///Library/PreferenceLoader/Preferences/Zephyr@2x.png
 Architecture: iphoneos-arm
-Description: Awesome, useful swipe multitasking!
+Description: Awesome swipe multitasking and gestures!
 Depiction: http://chpwn.com/cydia/zephyr.html
 Homepage: http://chpwn.com/cydia/zephyr.html
 Author: chpwn <support@chpwn.com>
