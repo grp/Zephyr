@@ -158,6 +158,9 @@ typedef enum {
 - (void)showListViewAnimated:(BOOL)animated;
 - (void)showListViewWithInitialVelocity:(CGFloat)initialVelocity additionalValueApplier:(id)applier completion:(id)completion;
 - (void)showListViewWithInitialVelocity:(CGFloat)initialVelocity completion:(id)completion;
+- (void)_cleanupAfterShowListView;
+- (void)_cleanupAfterHideListView; // iOS 5
+- (void)_cleanupAfterHideListViewKeepingWindow:(BOOL)window; // iOS 6
 @end
 
 @interface SBBulletinWindowController : NSObject
@@ -229,6 +232,8 @@ typedef enum {
 - (void)_switchAppGestureEndedWithCompletionType:(int)type cumulativePercentage:(CGFloat)location;
 - (void)_switchAppGestureCancelled;
 - (void)_switchAppGestureViewAnimationComplete;
+
+- (void)handleHideNotificationsSystemGesture:(id)gesture;
 
 - (SBShowcaseContext *)_showcaseContextForOffset:(CGFloat)offset;
 - (void)_toggleSwitcher;

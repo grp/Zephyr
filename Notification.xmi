@@ -11,9 +11,8 @@
 %group Notification
 
 @interface SBBulletinListController (Zephyr)
-- (BOOL)shouldActivate;
-- (void)cleanupViews;
-- (void)prepareAtLocation:(CGFloat)location;
+- (void)zephyrCleanupViews;
+- (void)zephyrPrepareAtLocation:(CGFloat)location;
 @end
 
 static BOOL ZephyrNotificationShouldActivate() {
@@ -32,11 +31,12 @@ static UIImageView *shadowView = nil;
 static CGFloat grabLocation = NAN;
 
 %new(v@:)
-- (void)cleanupViews {
+- (void)zephyrCleanupViews {
     SBApplication *app = [SBApp _accessibilityFrontMostApplication];
 
     if (app != nil) {
-        [app disableContextHostingForRequester:(CFStringRef) @"SwitchApp"];
+        NSLog(@"disabling context hosting");
+        [app disableContextHostingForRequester:CFSTR("SwitchApp")];
     }
 
     centerView = nil;
@@ -55,7 +55,15 @@ static CGFloat grabLocation = NAN;
 
     %orig;
     grabLocation = NAN;
-    [self cleanupViews];
+    [self zephyrCleanupViews];
+}
+
+- (void)_cleanupAfterHideListViewKeepingWindow:(BOOL)window {
+    if (!ZephyrNotificationShouldActivate()) return %orig;
+
+    %orig;
+    grabLocation = NAN;
+    [self zephyrCleanupViews];
 }
 
 - (void)_cleanupAfterHideListView {
@@ -63,14 +71,14 @@ static CGFloat grabLocation = NAN;
 
     %orig;
     grabLocation = NAN;
-    [self cleanupViews];
+    [self zephyrCleanupViews];
 }
 
 - (void)prepareToShowListViewAnimated:(BOOL)showListViewAnimated aboveBanner:(BOOL)banner {
     if (!ZephyrNotificationShouldActivate()) return %orig;
 
     %orig;
-    [self prepareAtLocation:0.0f];
+    [self zephyrPrepareAtLocation:0.0f];
 }
 
 - (void)prepareToHideListViewAnimated:(BOOL)animated {
@@ -79,15 +87,15 @@ static CGFloat grabLocation = NAN;
     %orig;
 
     if (!isnan(grabLocation)) {
-        [self prepareAtLocation:grabLocation];
+        [self zephyrPrepareAtLocation:grabLocation];
     } else {
-        [self prepareAtLocation:ZephyrHeightForOrientation(ZephyrCurrentInterfaceOrientation())];
+        [self zephyrPrepareAtLocation:ZephyrHeightForOrientation(ZephyrCurrentInterfaceOrientation())];
     }
 }
 
 %new(v@:f)
-- (void)prepareAtLocation:(CGFloat)location {
-    [self cleanupViews];
+- (void)zephyrPrepareAtLocation:(CGFloat)location {
+    [self zephyrCleanupViews];
     grabLocation = location;
 
     centerView = [self listView];
@@ -154,6 +162,8 @@ static CGFloat grabLocation = NAN;
 // we fake the location in order to show the notification UI
 // while we are sliding down, so re-fake back the current Y
 - (CGFloat)currentY {
+    if (!ZephyrNotificationShouldActivate()) return %orig;
+
     if (!isnan(grabLocation)) {
         return grabLocation;
     } else {
