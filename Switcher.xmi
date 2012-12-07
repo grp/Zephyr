@@ -32,6 +32,53 @@ static void OpenMusicControlsTaskSwitcherIfNecessaryWithDuration(double duration
     }
 }
 
+static void DeactivateFrontmostApplication() {
+    SBApplication *app = [SBApp _accessibilityFrontMostApplication];
+
+    if (objc_getClass("SBDisplayStack") != nil) {
+        // Stolen from SwitchApp.xmi; this is a bad decompliation of
+        // what a different function does than the one I am reversing.
+        [app setDeactivationSetting:24 flag:YES];
+        [app setDeactivationSetting:18 flag:YES];
+
+        /* sub_2C330 */ {
+            if ([SBWActiveDisplayStack containsDisplay:app] || [SBWSuspendedEventOnlyDisplayStack containsDisplay:app]) {
+
+                /* sub_2B9B8 */ {
+                    // this is a crude approximation of sorta kinda what this gigantic
+                    // function does, since I'm waaaaay too lazy to reverse the whole
+                    // thing: even just the graph in IDA is quite scary to look at! :(
+                    [SBWActiveDisplayStack popDisplay:app];
+                    [SBWSuspendingDisplayStack pushDisplay:app];
+                }
+            } else if (![SBWSuspendingDisplayStack containsDisplay:app]) {
+                [app clearDeactivationSettings];
+            }
+        }
+    } else {
+        // Force iPhone devices to portrait for the home screen.
+        // Should be generalized; the iPhone might be hacked for more orientations.
+        if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone) {
+            UIInterfaceOrientation currentOrientation = ZephyrHomeInterfaceOrientation();
+            [[UIDevice currentDevice] setOrientation:currentOrientation animated:NO];
+            [SBApp noteInterfaceOrientationChanged:currentOrientation];
+        }
+
+        [app setDeactivationSetting:0x15 flag:YES];
+        [app setDeactivationSetting:0x16 flag:YES];
+
+        NSString *label = @"ActivateSpringBoard";
+        SBWorkspaceEvent *event = [objc_getClass("SBWorkspaceEvent") eventWithLabel:label handler:^{
+            BKSWorkspace *workspace = [SBWSharedWorkspace bksWorkspace];
+            SBAppToAppWorkspaceTransaction *transaction = [[objc_getClass("SBAppToAppWorkspaceTransaction") alloc] initWithWorkspace:workspace alertManager:nil from:app to:nil];
+            [SBWSharedWorkspace setCurrentTransaction:transaction];
+            [transaction release];
+        }];
+
+        [[objc_getClass("SBWorkspaceEventQueue") sharedInstance] executeOrAppendEvent:event];
+    }
+}
+
 static BOOL activateSwitcherCustom = NO;
 static CGFloat activateSwitcherFrom = 0.0;
 static CGFloat activateSwitcherTo = 0.0;
@@ -291,103 +338,48 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
 
 - (void)handleGestureChangedWithLocation:(CGFloat)location velocity:(CGPoint)velocity {
     location = ZephyrHeightFromScreenPercentage(location, ZephyrCurrentInterfaceOrientation());
-    CGFloat bottomBarHeight = [[objc_getClass("SBAppSwitcherController") sharedInstance] bottomBarHeight];
 
     // constrain to not going way off the screen
     if (location > 20.0f) location = 20.0f;
 
+    // constrain to top of switcher
     if ([self effectiveSwipeUpAction] == kSwipeUpActionSwitcher) {
-        // constrain to top of switcher
+        CGFloat bottomBarHeight = [[objc_getClass("SBAppSwitcherController") sharedInstance] bottomBarHeight];
+
         if (-location > bottomBarHeight) {
             location = ZephyrScreenRounded((location + bottomBarHeight) * 0.2f - bottomBarHeight);
         }
     }
 
-
     [self positionAtLocation:location];
 
 
-    // Remove pending switcher activations outside range.
-    NSMutableSet *pendingSwitcherActivationsToRemove = [NSMutableSet set];
+    // If we are closing the app, support switcher activation.
+    CGFloat delay = [ZephyrPreferencesGet(@"BottomSwitcherActivationDelay", [NSNumber numberWithFloat:0.8f]) floatValue];
+    if ([self effectiveSwipeUpAction] == kSwipeUpActionCloseApp && delay != 0.0) {
+        // Remove pending switcher activations outside range.
+        NSMutableSet *pendingSwitcherActivationsToRemove = [NSMutableSet set];
 
-    for (NSArray *locationAndTimer in pendingSwitcherActivations) {
-        CGFloat originalLocation = [[locationAndTimer objectAtIndex:0] floatValue];
-        NSTimer *timer = [locationAndTimer objectAtIndex:1];
+        for (NSArray *locationAndTimer in pendingSwitcherActivations) {
+            CGFloat originalLocation = [[locationAndTimer objectAtIndex:0] floatValue];
+            NSTimer *timer = [locationAndTimer objectAtIndex:1];
 
-        if (fabs(originalLocation - location) > 5.0f) {
-            [timer invalidate];
-            [pendingSwitcherActivationsToRemove addObject:locationAndTimer];
+            CGFloat allowableMovementDistance = 5.0f;
+            if (fabs(originalLocation - location) > allowableMovementDistance) {
+                [timer invalidate];
+                [pendingSwitcherActivationsToRemove addObject:locationAndTimer];
+            }
         }
-    }
 
-    for (NSArray *locationAndTimer in pendingSwitcherActivationsToRemove) {
-        [pendingSwitcherActivations removeObject:locationAndTimer];
-    }
+        [pendingSwitcherActivations minusSet:pendingSwitcherActivationsToRemove];
 
-    if ([self effectiveSwipeUpAction] == kSwipeUpActionCloseApp) {
-        CGFloat delay = [ZephyrPreferencesGet(@"BottomSwitcherActivationDelay", [NSNumber numberWithFloat:0.8f]) floatValue];
+        // No need to clear this from the timer list when done because the pendingSwitcherActiavtions is cleared when it fires.
+        [pendingSwitcherActivations addObject:[NSArray arrayWithObjects:[NSNumber numberWithFloat:location], [NSTimer zephyrScheduledTimerWithTimeInterval:delay block:^(NSTimer *timer) {
+            if (![self isActive]) return; // prevent double activations
 
-        if (delay > 0.0) {
-            // No need to clear this from the timer list when done because the pendingSwitcherActiavtions is cleared when it fires.
-            [pendingSwitcherActivations addObject:[NSArray arrayWithObjects:[NSNumber numberWithFloat:location], [NSTimer zephyrScheduledTimerWithTimeInterval:delay block:^(NSTimer *timer) {
-                // prevent double activations
-                if (![self isActive]) return;
-
-                CGFloat bottomBarHeight = [[objc_getClass("SBAppSwitcherController") sharedInstance] bottomBarHeight];
-
-                UIView *homeView = ZephyrViewWithScreenshotOfHomeScreen();
-                [homeView setFrame:[wrapperView bounds]];
-
-                if ([[UIDevice currentDevice] userInterfaceIdiom] != UIUserInterfaceIdiomPad) {
-                    // Disable rotation on the iPad as the view behind is already rotated, so rotating it again is unnecessary.
-                    if (UIInterfaceOrientationIsLandscape(ZephyrCurrentInterfaceOrientation())) {
-                        ZephyrRotateViewFromOrientationToOrientation(homeView, UIInterfaceOrientationPortrait, ZephyrOrientationFlip(ZephyrCurrentInterfaceOrientation()), YES);
-                    } else if (ZephyrCurrentInterfaceOrientation() == UIInterfaceOrientationPortraitUpsideDown) { ZephyrRotateViewFromOrientationToOrientation(homeView, UIInterfaceOrientationPortrait, ZephyrCurrentInterfaceOrientation(), YES);
-                    }
-                }
-
-                // XXX: this is a horrible hack
-                UIImageView *switcherShadowView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"SwitcherShadowTop.png"]];
-                CGRect shadowFrame = [switcherShadowView frame];
-                shadowFrame.size = [[switcherShadowView image] size];
-                shadowFrame.size.width = [wrapperView bounds].size.width;
-                shadowFrame.origin.y = [wrapperView bounds].size.height;
-                [switcherShadowView setFrame:shadowFrame];
-                [switcherShadowView autorelease];
-
-                CGRect switcherFrame = [switcherView frame];
-                switcherFrame.origin.y = [wrapperView bounds].size.height - bottomBarHeight;
-                [switcherView setFrame:switcherFrame];
-
-                [wrapperView addSubview:switcherView];
-                [wrapperView addSubview:switcherShadowView];
-                [wrapperView addSubview:homeView];
-                [wrapperView addSubview:shadowView];
-                [wrapperView addSubview:appView];
-
-                [UIView animateWithDuration:0.4f animations:^{
-                    [self positionAtLocation:-bottomBarHeight];
-
-                    [shadowView setAlpha:0.0f];
-
-                    CGRect switcherShadowFrame = [switcherShadowView frame];
-                    CGRect homeFrame = [homeView frame];
-                    switcherShadowFrame.origin.y = [wrapperView bounds].size.height + -bottomBarHeight;
-                    homeFrame.origin.y = -bottomBarHeight;
-                    [switcherShadowView setFrame:switcherShadowFrame];
-                    [homeView setFrame:homeFrame];
-                } completion:^(BOOL finished) {
-                    [self cleanupViews];
-
-                    [homeView removeFromSuperview];
-                    [switcherShadowView removeFromSuperview];
-
-                    ActivateSwitcherFromToDuration(bottomBarHeight, bottomBarHeight, 0.0f);
-                }];
-
-                [self cancelGesture];
-            } repeats:NO], nil]];
-        }
+            [self showSwitcherFromCurrentPosition];
+            [self cancelGesture];
+        } repeats:NO], nil]];
     }
 }
 
@@ -397,10 +389,10 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
     SBApplication *app = [SBApp _accessibilityFrontMostApplication];
 
     if ([self effectiveSwipeUpAction] == kSwipeUpActionSwitcher) {
-        // XXX: maybe use the completionType here
-        CGFloat bottomBarHeight = [[objc_getClass("SBAppSwitcherController") sharedInstance] bottomBarHeight];
+        if (velocity.y < 0) {
+            CGFloat bottomBarHeight = [[objc_getClass("SBAppSwitcherController") sharedInstance] bottomBarHeight];
 
-        if (-location >= bottomBarHeight * (2.0f / 3.0f)) {
+            // compensate for stretching, find real visual position
             if (-location > bottomBarHeight) {
                 location = ZephyrScreenRounded((location + bottomBarHeight) * 0.2f - bottomBarHeight);
             }
@@ -437,58 +429,18 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
 
             UIViewAnimationOptions options = (UIViewAnimationOptionCurveEaseOut | UIViewAnimationOptionBeginFromCurrentState);
             [UIView animateWithDuration:0.3f delay:0.0f options:options animations:^{
-                [self positionAtLocation:-[wrapperView bounds].size.height];
+                CGFloat completedLocation = -[wrapperView bounds].size.height;
+                [self positionAtLocation:completedLocation];
             } completion:^(BOOL completed) {
                 [self cleanupViews];
-                   
+
                 // In this case, we definitely do not want to hide this.
                 [[[objc_getClass("SBUIController") sharedInstance] rootView] setAlpha:1.0f];
 
                 // XXX: the "disableIconUnscatter" display flag there does not work, so:
                 disableUnscatterFlag = YES;
 
-                if (objc_getClass("SBDisplayStack") != nil) {
-                    // Stolen from SwitchApp.xmi; this is a bad decompliation of
-                    // what a different function does than the one I am reversing.
-                    [app setDeactivationSetting:24 flag:YES];
-                    [app setDeactivationSetting:18 flag:YES];
-
-                    /* sub_2C330 */ {
-                        if ([SBWActiveDisplayStack containsDisplay:app] || [SBWSuspendedEventOnlyDisplayStack containsDisplay:app]) {
-
-                            /* sub_2B9B8 */ {
-                                // this is a crude approximation of sorta kinda what this gigantic
-                                // function does, since I'm waaaaay too lazy to reverse the whole
-                                // thing: even just the graph in IDA is quite scary to look at! :(
-                                [SBWActiveDisplayStack popDisplay:app];
-                                [SBWSuspendingDisplayStack pushDisplay:app];
-                            }
-                        } else if (![SBWSuspendingDisplayStack containsDisplay:app]) {
-                            [app clearDeactivationSettings];
-                        }
-                    }
-                } else {
-                    // Force iPhone devices to portrait for the home screen.
-                    // Should be generalized; the iPhone might be hacked for more orientations.
-                    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone) {
-                        UIInterfaceOrientation currentOrientation = ZephyrHomeInterfaceOrientation();
-                        [[UIDevice currentDevice] setOrientation:currentOrientation animated:NO];
-                        [SBApp noteInterfaceOrientationChanged:currentOrientation];
-                    }
-
-                    [app setDeactivationSetting:0x15 flag:YES];
-                    [app setDeactivationSetting:0x16 flag:YES];
-
-                    NSString *label = @"ActivateSpringBoard";
-                    SBWorkspaceEvent *event = [objc_getClass("SBWorkspaceEvent") eventWithLabel:label handler:^{
-                        BKSWorkspace *workspace = [SBWSharedWorkspace bksWorkspace];
-                        SBAppToAppWorkspaceTransaction *transaction = [[objc_getClass("SBAppToAppWorkspaceTransaction") alloc] initWithWorkspace:workspace alertManager:nil from:app to:nil];
-                        [SBWSharedWorkspace setCurrentTransaction:transaction];
-                        [transaction release];
-                    }];
-
-                    [[objc_getClass("SBWorkspaceEventQueue") sharedInstance] executeOrAppendEvent:event];
-                }
+                DeactivateFrontmostApplication();
             }];
         } else {
             [UIView animateWithDuration:0.3f animations:^{
@@ -502,6 +454,60 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
             }];
         }
     }
+}
+
+- (void)showSwitcherFromCurrentPosition {
+    CGFloat bottomBarHeight = [[objc_getClass("SBAppSwitcherController") sharedInstance] bottomBarHeight];
+
+    UIView *homeView = ZephyrViewWithScreenshotOfHomeScreen();
+    [homeView setFrame:[wrapperView bounds]];
+
+    if ([[UIDevice currentDevice] userInterfaceIdiom] != UIUserInterfaceIdiomPad) {
+        // Disable rotation on the iPad as the view behind is already rotated, so rotating it again is unnecessary.
+        if (UIInterfaceOrientationIsLandscape(ZephyrCurrentInterfaceOrientation())) {
+            ZephyrRotateViewFromOrientationToOrientation(homeView, UIInterfaceOrientationPortrait, ZephyrOrientationFlip(ZephyrCurrentInterfaceOrientation()), YES);
+        } else if (ZephyrCurrentInterfaceOrientation() == UIInterfaceOrientationPortraitUpsideDown) { ZephyrRotateViewFromOrientationToOrientation(homeView, UIInterfaceOrientationPortrait, ZephyrCurrentInterfaceOrientation(), YES);
+        }
+    }
+
+    // XXX: this is a horrible hack
+    UIImageView *switcherShadowView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"SwitcherShadowTop.png"]];
+    CGRect shadowFrame = [switcherShadowView frame];
+    shadowFrame.size = [[switcherShadowView image] size];
+    shadowFrame.size.width = [wrapperView bounds].size.width;
+    shadowFrame.origin.y = [wrapperView bounds].size.height;
+    [switcherShadowView setFrame:shadowFrame];
+    [switcherShadowView autorelease];
+
+    CGRect switcherFrame = [switcherView frame];
+    switcherFrame.origin.y = [wrapperView bounds].size.height - bottomBarHeight;
+    [switcherView setFrame:switcherFrame];
+
+    [wrapperView addSubview:switcherView];
+    [wrapperView addSubview:switcherShadowView];
+    [wrapperView addSubview:homeView];
+    [wrapperView addSubview:shadowView];
+    [wrapperView addSubview:appView];
+
+    [UIView animateWithDuration:0.4f animations:^{
+        [self positionAtLocation:-bottomBarHeight];
+
+        [shadowView setAlpha:0.0f];
+
+        CGRect switcherShadowFrame = [switcherShadowView frame];
+        CGRect homeFrame = [homeView frame];
+        switcherShadowFrame.origin.y = [wrapperView bounds].size.height + -bottomBarHeight;
+        homeFrame.origin.y = -bottomBarHeight;
+        [switcherShadowView setFrame:switcherShadowFrame];
+        [homeView setFrame:homeFrame];
+    } completion:^(BOOL finished) {
+        [self cleanupViews];
+
+        [homeView removeFromSuperview];
+        [switcherShadowView removeFromSuperview];
+
+        ActivateSwitcherFromToDuration(bottomBarHeight, bottomBarHeight, 0.0f);
+    }];
 }
 
 @end

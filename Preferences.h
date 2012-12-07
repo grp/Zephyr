@@ -5,4 +5,5 @@ typedef void (^ZephyrPreferencesApplyAction)();
 extern "C" void ZephyrPreferencesApplyActionRegister(ZephyrPreferencesApplyAction block);
 extern "C" id ZephyrPreferencesGet(NSString *key, id defaultValue);
 extern "C" void ZephyrPreferencesSet(NSString *key, id value);
+extern "C" NSDictionary *ZephyrPreferences();
 

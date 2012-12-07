@@ -37,6 +37,10 @@ void ZephyrPreferencesSet(NSString *key, id value) {
     ZephyrPreferencesApply();
 }
 
+NSDictionary *ZephyrPreferences() {
+    return [[preferences copy] autorelease];
+}
+
 static void ZephyrPreferencesChangedCallback(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef userInfo) {
     ZephyrPreferencesLoad();
     ZephyrPreferencesApply();

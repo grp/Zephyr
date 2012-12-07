@@ -356,6 +356,9 @@
 			<string>PSGroupCell</string>
 			<key>label</key>
 			<string>Notification Center (iPhone)</string>
+            <key>footerText</key>
+            <string>Zephyr © 2012 Xuzz Productions, LLC.
+Support is available in Cydia.</string>
 		</dict>
 		<dict>
 			<key>cell</key>
@@ -371,14 +374,6 @@
 			<key>defaults</key>
 			<string>com.chpwn.zephyr</string>
 		</dict>
-
-        <dict>
-            <key>cell</key>
-            <string>PSGroupCell</string>
-            <key>footerText</key>
-            <string>Zephyr © 2012 Xuzz Productions, LLC.
-Support is available in Cydia.</string>
-        </dict>
 	</array>
 </dict>
 </plist>
