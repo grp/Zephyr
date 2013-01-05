@@ -1,5 +1,6 @@
 #import "Common.h"
 #import "Switcher.h"
+#import "ActivateSwitcher.h"
 #import "Preferences.h"
 #import "Keyboard.h"
 #import "NSTimer+Blocks.h"
@@ -9,28 +10,6 @@
 #include <dlfcn.h>
 
 static BOOL disableUnscatterFlag = NO;
-
-@interface SBMusicController : NSObject
-- (void) switcherDidShow:(double)duration orientation:(UIInterfaceOrientation)orientation;
-@end
-
-static void OpenMusicControlsTaskSwitcherIfNecessaryWithDuration(double duration) {
-    Class $SBMusicController = objc_getClass("SBMusicController");
-    if ($SBMusicController) {
-        bool defaultValue = YES;
-        CFPreferencesSynchronize((CFStringRef)@"com.phoenix.musiccontrols.task", kCFPreferencesCurrentUser, kCFPreferencesCurrentHost);
-        CFBooleanRef val = (CFBooleanRef) CFPreferencesCopyAppValue((CFStringRef) @"Controls", (CFStringRef) @"com.phoenix.musiccontrols.task");
-
-        if (val) {
-            defaultValue = [(NSNumber*) val boolValue];
-            CFRelease(val);
-        }
-
-        if (defaultValue) {
-            [[$SBMusicController sharedInstance] switcherDidShow:duration orientation:ZephyrCurrentInterfaceOrientation()];
-        }
-    }
-}
 
 static void DeactivateFrontmostApplication() {
     SBApplication *app = [SBApp _accessibilityFrontMostApplication];
@@ -79,68 +58,9 @@ static void DeactivateFrontmostApplication() {
     }
 }
 
-static BOOL activateSwitcherCustom = NO;
-static CGFloat activateSwitcherFrom = 0.0;
-static CGFloat activateSwitcherTo = 0.0;
-
-%group ActivateSwitcher
-
-%hook SBUIController
-
-- (BOOL)_canActivateShowcaseIgnoringTouches:(BOOL)touches {
-    if (activateSwitcherCustom) {
-        return YES;
-    }
-
-    return %orig;
-}
-
-- (SBShowcaseContext *)_showcaseContextForOffset:(CGFloat)offset {
-    if (activateSwitcherCustom) {
-        if (offset == 0.0) {
-            offset = activateSwitcherFrom;
-        } else {
-            offset = activateSwitcherTo;
-        }
-    }
-
-    SBShowcaseContext *context = %orig;
-
-    if (activateSwitcherCustom) {
-        [context setShowcaseOrientation:ZephyrCurrentInterfaceOrientation()];
-    }
-
-    return context;
-}
-
-%end
-
-%end
-
-%ctor {
-    %init(ActivateSwitcher);
-}
-
-static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat duration) {
-    SBUIController *uic = [objc_getClass("SBUIController") sharedInstance];
-    SBAppSwitcherController *switcher = [objc_getClass("SBAppSwitcherController") sharedInstance];
-
-    if (!ZephyrMultitaskingSupported()) return;
-    if ([switcher printViewIsShowing]) return;
-    if ([uic isSwitcherShowing]) return;
-
-    activateSwitcherCustom = YES;
-    activateSwitcherFrom = from;
-    activateSwitcherTo = to;
-
-    [uic _activateSwitcher:duration];
-
-    activateSwitcherTo = 0.0;
-    activateSwitcherFrom = 0.0;
-    activateSwitcherCustom = NO;
-
-    // Support Music Controls Pro, code by phoenixdev.
-    OpenMusicControlsTaskSwitcherIfNecessaryWithDuration(duration);
+static CGFloat BottomBarHeight() {
+    CGFloat bottomBarHeight = [[objc_getClass("SBAppSwitcherController") sharedInstance] bottomBarHeight];
+    return bottomBarHeight;
 }
 
 @implementation ZephyrSwitcherGesture
@@ -172,18 +92,22 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
     BOOL currentlyPendingSwitcherActivationsExist = (pendingSwitcherActivations != nil);
     BOOL switchAppGestureIsAnimating = ZephyrSwitchAppGestureIsAnimatingCompletion();
 
-    return ![SBApp _accessibilityIsSystemGestureActive]
+    return YES
+        // Our configuration allows this.
+        && (action == kSwipeUpActionSwitcher || action == kSwipeUpActionCloseApp)
+        && [self currentOrientationIsSupported]
+        // No other gesture is in the way.
+        && ![SBApp _accessibilityIsSystemGestureActive]
+        && !switchAppGestureIsAnimating
+        && !currentlyPendingSwitcherActivationsExist
+        // We aren't in some disallowed state.
+        && !ZephyrAssistantIsVisible()
+        && (topApplication == nil || displayFlagsAllowed)
+        && ![[objc_getClass("SBIconController") sharedInstance] isEditing]
         && ![[objc_getClass("SBAwayController") sharedAwayController] isLocked]
         && ![[objc_getClass("SBUIController") sharedInstance] isSwitcherShowing]
-        && !ZephyrAssistantIsVisible()
         && ![[objc_getClass("SBBulletinWindowController") sharedInstance] isBusy]
-        && ![[objc_getClass("SBBulletinListController") sharedInstanceIfExists] listViewIsActive]
-        && ![[objc_getClass("SBIconController") sharedInstance] isEditing]
-        && !currentlyPendingSwitcherActivationsExist
-        && !switchAppGestureIsAnimating
-        && [self currentOrientationIsSupported]
-        && (topApplication == nil || displayFlagsAllowed)
-        && (action == kSwipeUpActionSwitcher || action == kSwipeUpActionCloseApp);
+        && ![[objc_getClass("SBBulletinListController") sharedInstanceIfExists] listViewIsActive];
 }
 
 - (BOOL)shouldUseGrabberAtEdge:(SBOffscreenEdge)edge {
@@ -316,7 +240,7 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
 
     [[objc_getClass("SBAppSwitcherController") sharedInstance] setupForApp:app orientation:ZephyrCurrentInterfaceOrientation()];
     switcherView = [[objc_getClass("SBAppSwitcherController") sharedInstance] view];
-    CGFloat bottomBarHeight = [[objc_getClass("SBAppSwitcherController") sharedInstance] bottomBarHeight];
+    CGFloat bottomBarHeight = BottomBarHeight();
     CGRect switcherFrame = [switcherView frame];
     switcherFrame.origin.y = [appView bounds].size.height - bottomBarHeight;
     [switcherView setFrame:switcherFrame];
@@ -344,7 +268,7 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
 
     // constrain to top of switcher
     if ([self effectiveSwipeUpAction] == kSwipeUpActionSwitcher) {
-        CGFloat bottomBarHeight = [[objc_getClass("SBAppSwitcherController") sharedInstance] bottomBarHeight];
+        CGFloat bottomBarHeight = BottomBarHeight();
 
         if (-location > bottomBarHeight) {
             location = ZephyrScreenRounded((location + bottomBarHeight) * 0.2f - bottomBarHeight);
@@ -365,7 +289,7 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
             NSTimer *timer = [locationAndTimer objectAtIndex:1];
 
             CGFloat allowableMovementDistance = 5.0f;
-            if (fabs(originalLocation - location) > allowableMovementDistance) {
+            if (fabsf(originalLocation - location) > allowableMovementDistance) {
                 [timer invalidate];
                 [pendingSwitcherActivationsToRemove addObject:locationAndTimer];
             }
@@ -390,7 +314,7 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
 
     if ([self effectiveSwipeUpAction] == kSwipeUpActionSwitcher) {
         if (velocity.y < 0) {
-            CGFloat bottomBarHeight = [[objc_getClass("SBAppSwitcherController") sharedInstance] bottomBarHeight];
+            CGFloat bottomBarHeight = BottomBarHeight();
 
             // compensate for stretching, find real visual position
             if (-location > bottomBarHeight) {
@@ -407,13 +331,13 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
                 } completion:^(BOOL completed) {
                     [self cleanupViews];
 
-                    ActivateSwitcherFromToDuration(to, to, duration);
+                    ZephyrActivateSwitcherFromToDuration(to, to, duration);
                 }];
             } else {
                 dispatch_async(dispatch_get_main_queue(), ^{
                     [self cleanupViews];
 
-                    ActivateSwitcherFromToDuration(from, to, duration);
+                    ZephyrActivateSwitcherFromToDuration(from, to, duration);
                 });
             }
         } else {
@@ -457,7 +381,7 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
 }
 
 - (void)showSwitcherFromCurrentPosition {
-    CGFloat bottomBarHeight = [[objc_getClass("SBAppSwitcherController") sharedInstance] bottomBarHeight];
+    CGFloat bottomBarHeight = BottomBarHeight();
 
     UIView *homeView = ZephyrViewWithScreenshotOfHomeScreen();
     [homeView setFrame:[wrapperView bounds]];
@@ -506,7 +430,7 @@ static void ActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat dur
         [homeView removeFromSuperview];
         [switcherShadowView removeFromSuperview];
 
-        ActivateSwitcherFromToDuration(bottomBarHeight, bottomBarHeight, 0.0f);
+        ZephyrActivateSwitcherFromToDuration(bottomBarHeight, bottomBarHeight, 0.0f);
     }];
 }
 

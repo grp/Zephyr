@@ -1,0 +1,90 @@
+
+#import "Common.h"
+#import "iPhonePrivate.h"
+#import "ActivateSwitcher.h"
+
+static BOOL activateSwitcherCustom = NO;
+static CGFloat activateSwitcherFrom = 0.0;
+static CGFloat activateSwitcherTo = 0.0;
+
+%group ActivateSwitcher
+
+%hook SBUIController
+
+- (BOOL)_canActivateShowcaseIgnoringTouches:(BOOL)touches {
+    if (activateSwitcherCustom) {
+        return YES;
+    }
+
+    return %orig;
+}
+
+- (SBShowcaseContext *)_showcaseContextForOffset:(CGFloat)offset {
+    if (activateSwitcherCustom) {
+        if (offset == 0.0) {
+            offset = activateSwitcherFrom;
+        } else {
+            offset = activateSwitcherTo;
+        }
+    }
+
+    SBShowcaseContext *context = %orig;
+
+    if (activateSwitcherCustom) {
+        [context setShowcaseOrientation:ZephyrCurrentInterfaceOrientation()];
+    }
+
+    return context;
+}
+
+%end
+
+%end
+
+%ctor {
+    %init(ActivateSwitcher);
+}
+
+@interface SBMusicController : NSObject
+- (void) switcherDidShow:(double)duration orientation:(UIInterfaceOrientation)orientation;
+@end
+
+static void OpenMusicControlsTaskSwitcherIfNecessaryWithDuration(double duration) {
+    Class $SBMusicController = objc_getClass("SBMusicController");
+    if ($SBMusicController) {
+        bool defaultValue = YES;
+        CFPreferencesSynchronize((CFStringRef)@"com.phoenix.musiccontrols.task", kCFPreferencesCurrentUser, kCFPreferencesCurrentHost);
+        CFBooleanRef val = (CFBooleanRef) CFPreferencesCopyAppValue((CFStringRef) @"Controls", (CFStringRef) @"com.phoenix.musiccontrols.task");
+
+        if (val) {
+            defaultValue = [(NSNumber*) val boolValue];
+            CFRelease(val);
+        }
+
+        if (defaultValue) {
+            [[$SBMusicController sharedInstance] switcherDidShow:duration orientation:ZephyrCurrentInterfaceOrientation()];
+        }
+    }
+}
+
+void ZephyrActivateSwitcherFromToDuration(CGFloat from, CGFloat to, CGFloat duration) {
+    SBUIController *uic = [objc_getClass("SBUIController") sharedInstance];
+    SBAppSwitcherController *switcher = [objc_getClass("SBAppSwitcherController") sharedInstance];
+
+    if (!ZephyrMultitaskingSupported()) return;
+    if ([switcher printViewIsShowing]) return;
+    if ([uic isSwitcherShowing]) return;
+
+    activateSwitcherCustom = YES;
+    activateSwitcherFrom = from;
+    activateSwitcherTo = to;
+
+    [uic _activateSwitcher:duration];
+
+    activateSwitcherTo = 0.0;
+    activateSwitcherFrom = 0.0;
+    activateSwitcherCustom = NO;
+
+    // Support Music Controls Pro, code by phoenixdev.
+    OpenMusicControlsTaskSwitcherIfNecessaryWithDuration(duration);
+}
