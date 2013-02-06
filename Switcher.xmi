@@ -206,6 +206,51 @@
     }];
 }
 
+- (void)handleGestureChangedWithLocation:(CGFloat)location velocity:(CGPoint)velocity {
+    location = [self screenLocationFromLocation:location];
+
+    [self positionAtLocation:location];
+
+    // If we are closing the app, support switcher activation.
+    CGFloat delay = [ZephyrPreferencesGet(@"BottomSwitcherActivationDelay", [NSNumber numberWithFloat:0.8f]) floatValue];
+    if ([self effectiveSwipeUpAction] == kSwipeUpActionCloseApp && delay != 0.0) {
+        [self cancelTimersForMovementToLocation:location];
+
+        // No need to clear this from the timer list when done because the pendingSwitcherActiavtions is cleared when it fires.
+        [pendingSwitcherActivations addObject:[NSArray arrayWithObjects:[NSNumber numberWithFloat:location], [NSTimer zephyrScheduledTimerWithTimeInterval:delay block:^(NSTimer *timer) {
+            if (![self isActive]) return; // prevent double activations
+
+            [self showSwitcherFromCurrentPosition];
+            [self cancelGesture];
+        } repeats:NO], nil]];
+    }
+}
+
+- (void)handleGestureEndedWithLocation:(CGFloat)location velocity:(CGPoint)velocity completionType:(int)type {
+    location = [self screenLocationFromLocation:location];
+
+    SBApplication *app = [SBApp _accessibilityFrontMostApplication];
+
+    if ([self effectiveSwipeUpAction] == kSwipeUpActionSwitcher) {
+        if (velocity.y < 0) {
+            [self showSwitcherAtLocation:location];
+        } else {
+            [self animateResetWithCompletion:NULL];
+        }
+    } else {
+        if (type == 1) {
+            [self animateDismissFrontmostAppFromLocation:location];
+        } else {
+            [self animateResetWithCompletion:^{
+                SBUIController *controller = [objc_getClass("SBUIController") sharedInstance];
+                [controller notifyAppResumeActive:app];
+                [controller stopRestoringIconList];
+                [controller tearDownIconListAndBar];
+            }];
+        }
+    }
+}
+
 - (void)cancelTimersForMovementToLocation:(CGFloat)location {
     // Remove pending switcher activations outside range.
     NSMutableSet *pendingSwitcherActivationsToRemove = [NSMutableSet set];
@@ -224,7 +269,7 @@
     [pendingSwitcherActivations minusSet:pendingSwitcherActivationsToRemove];
 }
 
-- (void)handleGestureChangedWithLocation:(CGFloat)location velocity:(CGPoint)velocity {
+- (CGFloat)screenLocationFromLocation:(CGFloat)location {
     location = ZephyrHeightFromScreenPercentage(location, ZephyrCurrentInterfaceOrientation());
 
     // constrain to not going way off the screen
@@ -239,91 +284,59 @@
         }
     }
 
-    [self positionAtLocation:location];
-
-
-    // If we are closing the app, support switcher activation.
-    CGFloat delay = [ZephyrPreferencesGet(@"BottomSwitcherActivationDelay", [NSNumber numberWithFloat:0.8f]) floatValue];
-    if ([self effectiveSwipeUpAction] == kSwipeUpActionCloseApp && delay != 0.0) {
-        [self cancelTimersForMovementToLocation:location];
-
-        // No need to clear this from the timer list when done because the pendingSwitcherActiavtions is cleared when it fires.
-        [pendingSwitcherActivations addObject:[NSArray arrayWithObjects:[NSNumber numberWithFloat:location], [NSTimer zephyrScheduledTimerWithTimeInterval:delay block:^(NSTimer *timer) {
-            if (![self isActive]) return; // prevent double activations
-
-            [self showSwitcherFromCurrentPosition];
-            [self cancelGesture];
-        } repeats:NO], nil]];
-    }
+    return location;
 }
 
-- (void)handleGestureEndedWithLocation:(CGFloat)location velocity:(CGPoint)velocity completionType:(int)type {
-    location = ZephyrHeightFromScreenPercentage(location, ZephyrCurrentInterfaceOrientation());
+- (void)animateResetWithCompletion:(void (^)())completion {
+    [UIView animateWithDuration:0.3f animations:^{
+        [self positionAtLocation:0];
+    } completion:^(BOOL completed) {
+        [self cleanupViews];
 
-    SBApplication *app = [SBApp _accessibilityFrontMostApplication];
-
-    if ([self effectiveSwipeUpAction] == kSwipeUpActionSwitcher) {
-        if (velocity.y < 0) {
-            CGFloat bottomBarHeight = ZephyrAppSwitcherHeight();
-
-            // compensate for stretching, find real visual position
-            if (-location > bottomBarHeight) {
-                location = ZephyrScreenRounded((location + bottomBarHeight) * 0.2f - bottomBarHeight);
-            }
-
-            CGFloat from = -location;
-            CGFloat to = bottomBarHeight;
-            CGFloat duration = 0.3f;
-
-            if ([[objc_getClass("SBIconController") sharedInstance] openFolder] != nil) {
-                [UIView animateWithDuration:duration animations:^{
-                    [self positionAtLocation:-to];
-                } completion:^(BOOL completed) {
-                    [self cleanupViews];
-
-                    ZephyrActivateSwitcherFromToDuration(to, to, duration);
-                }];
-            } else {
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    [self cleanupViews];
-
-                    ZephyrActivateSwitcherFromToDuration(from, to, duration);
-                });
-            }
-        } else {
-            [UIView animateWithDuration:0.3f animations:^{
-                [self positionAtLocation:0];
-            } completion:^(BOOL completed) {
-                [self cleanupViews];
-            }];
+        if (completion != NULL) {
+            completion();
         }
+    }];
+}
+
+- (void)animateDismissFrontmostAppFromLocation:(CGFloat)location {
+    [SBApp showSpringBoardStatusBar];
+
+    UIViewAnimationOptions options = (UIViewAnimationOptionCurveEaseOut | UIViewAnimationOptionBeginFromCurrentState);
+    [UIView animateWithDuration:0.3f delay:0.0f options:options animations:^{
+        CGFloat completedLocation = -[wrapperView bounds].size.height;
+        [self positionAtLocation:completedLocation];
+    } completion:^(BOOL completed) {
+        [self cleanupViews];
+
+        // In this case, we definitely do not want to hide this.
+        [[[objc_getClass("SBUIController") sharedInstance] rootView] setAlpha:1.0f];
+
+        ZephyrDeactivateFrontmostApplication();
+    }];
+}
+
+- (void)showSwitcherAtLocation:(CGFloat)location {
+    CGFloat bottomBarHeight = ZephyrAppSwitcherHeight();
+
+    CGFloat from = -location;
+    CGFloat to = bottomBarHeight;
+    CGFloat duration = 0.3f;
+
+    if ([[objc_getClass("SBIconController") sharedInstance] openFolder] != nil) {
+        [UIView animateWithDuration:duration animations:^{
+            [self positionAtLocation:-to];
+        } completion:^(BOOL completed) {
+            [self cleanupViews];
+
+            ZephyrActivateSwitcherFromToDuration(to, to, duration);
+        }];
     } else {
-        if (type == 1) {
-            [SBApp showSpringBoardStatusBar];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self cleanupViews];
 
-            UIViewAnimationOptions options = (UIViewAnimationOptionCurveEaseOut | UIViewAnimationOptionBeginFromCurrentState);
-            [UIView animateWithDuration:0.3f delay:0.0f options:options animations:^{
-                CGFloat completedLocation = -[wrapperView bounds].size.height;
-                [self positionAtLocation:completedLocation];
-            } completion:^(BOOL completed) {
-                [self cleanupViews];
-
-                // In this case, we definitely do not want to hide this.
-                [[[objc_getClass("SBUIController") sharedInstance] rootView] setAlpha:1.0f];
-
-                ZephyrDeactivateFrontmostApplication();
-            }];
-        } else {
-            [UIView animateWithDuration:0.3f animations:^{
-                [self positionAtLocation:0];
-            } completion:^(BOOL completed) {
-                [self cleanupViews];
-
-                [[objc_getClass("SBUIController") sharedInstance] notifyAppResumeActive:app];
-                [[objc_getClass("SBUIController") sharedInstance] stopRestoringIconList];
-                [[objc_getClass("SBUIController") sharedInstance] tearDownIconListAndBar];
-            }];
-        }
+            ZephyrActivateSwitcherFromToDuration(from, to, duration);
+        });
     }
 }
 
