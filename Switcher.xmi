@@ -233,7 +233,7 @@
 
     if ([self effectiveSwipeUpAction] == kSwipeUpActionSwitcher) {
         if (velocity.y < 0) {
-            [self showSwitcherAtLocation:location];
+            [self showSwitcherFromLocation:location];
         } else {
             [self animateResetWithCompletion:NULL];
         }
@@ -316,7 +316,7 @@
     }];
 }
 
-- (void)showSwitcherAtLocation:(CGFloat)location {
+- (void)showSwitcherFromLocation:(CGFloat)location {
     CGFloat bottomBarHeight = ZephyrAppSwitcherHeight();
 
     CGFloat from = -location;
