@@ -37,7 +37,7 @@ static BOOL isAwaitingScheduledLaunch = NO;
 }
 
 - (BOOL)shouldUseGrabberAtEdge:(SBOffscreenEdge)edge {
-    return [(NSNumber *) ZephyrPreferencesGet(@"SideGrabberEnabled", NO) boolValue];
+    return [(NSNumber *) ZephyrPreferencesGet(@"SideGrabberEnabled", [NSNumber numberWithBool:NO]) boolValue];
 }
 
 - (BOOL)currentOrientationIsSupported {

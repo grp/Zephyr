@@ -9,63 +9,6 @@
 
 #include <dlfcn.h>
 
-static BOOL disableUnscatterFlag = NO;
-
-static void DeactivateFrontmostApplication() {
-    SBApplication *app = [SBApp _accessibilityFrontMostApplication];
-
-    if (objc_getClass("SBDisplayStack") != nil) {
-        // XXX: the "disableIconUnscatter" display flag there does not work, so:
-        disableUnscatterFlag = YES;
-
-        // Stolen from SwitchApp.xmi; this is a bad decompliation of
-        // what a different function does than the one I am reversing.
-        [app setDeactivationSetting:24 flag:YES];
-        [app setDeactivationSetting:18 flag:YES];
-
-        /* sub_2C330 */ {
-            if ([SBWActiveDisplayStack containsDisplay:app] || [SBWSuspendedEventOnlyDisplayStack containsDisplay:app]) {
-
-                /* sub_2B9B8 */ {
-                    // this is a crude approximation of sorta kinda what this gigantic
-                    // function does, since I'm waaaaay too lazy to reverse the whole
-                    // thing: even just the graph in IDA is quite scary to look at! :(
-                    [SBWActiveDisplayStack popDisplay:app];
-                    [SBWSuspendingDisplayStack pushDisplay:app];
-                }
-            } else if (![SBWSuspendingDisplayStack containsDisplay:app]) {
-                [app clearDeactivationSettings];
-            }
-        }
-    } else {
-        // Force iPhone devices to portrait for the home screen.
-        // Should be generalized; the iPhone might be hacked for more orientations.
-        if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone) {
-            UIInterfaceOrientation currentOrientation = ZephyrHomeInterfaceOrientation();
-            [[UIDevice currentDevice] setOrientation:currentOrientation animated:NO];
-            [SBApp noteInterfaceOrientationChanged:currentOrientation];
-        }
-
-        [app setDeactivationSetting:0x15 flag:YES];
-        [app setDeactivationSetting:0x16 flag:YES];
-
-        NSString *label = @"ActivateSpringBoard";
-        SBWorkspaceEvent *event = [objc_getClass("SBWorkspaceEvent") eventWithLabel:label handler:^{
-            BKSWorkspace *workspace = [SBWSharedWorkspace bksWorkspace];
-            SBAppToAppWorkspaceTransaction *transaction = [[objc_getClass("SBAppToAppWorkspaceTransaction") alloc] initWithWorkspace:workspace alertManager:nil from:app to:nil];
-            [SBWSharedWorkspace setCurrentTransaction:transaction];
-            [transaction release];
-        }];
-
-        [[objc_getClass("SBWorkspaceEventQueue") sharedInstance] executeOrAppendEvent:event];
-    }
-}
-
-static CGFloat BottomBarHeight() {
-    CGFloat bottomBarHeight = [[objc_getClass("SBAppSwitcherController") sharedInstance] bottomBarHeight];
-    return bottomBarHeight;
-}
-
 @implementation ZephyrSwitcherGesture
 
 - (BOOL)shouldActivateAtEdge:(SBOffscreenEdge)edge {
@@ -243,7 +186,7 @@ static CGFloat BottomBarHeight() {
 
     [[objc_getClass("SBAppSwitcherController") sharedInstance] setupForApp:app orientation:ZephyrCurrentInterfaceOrientation()];
     switcherView = [[objc_getClass("SBAppSwitcherController") sharedInstance] view];
-    CGFloat bottomBarHeight = BottomBarHeight();
+    CGFloat bottomBarHeight = ZephyrAppSwitcherHeight();
     CGRect switcherFrame = [switcherView frame];
     switcherFrame.origin.y = [appView bounds].size.height - bottomBarHeight;
     [switcherView setFrame:switcherFrame];
@@ -271,7 +214,7 @@ static CGFloat BottomBarHeight() {
 
     // constrain to top of switcher
     if ([self effectiveSwipeUpAction] == kSwipeUpActionSwitcher) {
-        CGFloat bottomBarHeight = BottomBarHeight();
+        CGFloat bottomBarHeight = ZephyrAppSwitcherHeight();
 
         if (-location > bottomBarHeight) {
             location = ZephyrScreenRounded((location + bottomBarHeight) * 0.2f - bottomBarHeight);
@@ -317,7 +260,7 @@ static CGFloat BottomBarHeight() {
 
     if ([self effectiveSwipeUpAction] == kSwipeUpActionSwitcher) {
         if (velocity.y < 0) {
-            CGFloat bottomBarHeight = BottomBarHeight();
+            CGFloat bottomBarHeight = ZephyrAppSwitcherHeight();
 
             // compensate for stretching, find real visual position
             if (-location > bottomBarHeight) {
@@ -364,7 +307,7 @@ static CGFloat BottomBarHeight() {
                 // In this case, we definitely do not want to hide this.
                 [[[objc_getClass("SBUIController") sharedInstance] rootView] setAlpha:1.0f];
 
-                DeactivateFrontmostApplication();
+                ZephyrDeactivateFrontmostApplication();
             }];
         } else {
             [UIView animateWithDuration:0.3f animations:^{
@@ -381,7 +324,7 @@ static CGFloat BottomBarHeight() {
 }
 
 - (void)showSwitcherFromCurrentPosition {
-    CGFloat bottomBarHeight = BottomBarHeight();
+    CGFloat bottomBarHeight = ZephyrAppSwitcherHeight();
 
     UIView *homeView = ZephyrViewWithScreenshotOfHomeScreen();
     [homeView setFrame:[wrapperView bounds]];
@@ -390,7 +333,8 @@ static CGFloat BottomBarHeight() {
         // Disable rotation on the iPad as the view behind is already rotated, so rotating it again is unnecessary.
         if (UIInterfaceOrientationIsLandscape(ZephyrCurrentInterfaceOrientation())) {
             ZephyrRotateViewFromOrientationToOrientation(homeView, UIInterfaceOrientationPortrait, ZephyrOrientationFlip(ZephyrCurrentInterfaceOrientation()), YES);
-        } else if (ZephyrCurrentInterfaceOrientation() == UIInterfaceOrientationPortraitUpsideDown) { ZephyrRotateViewFromOrientationToOrientation(homeView, UIInterfaceOrientationPortrait, ZephyrCurrentInterfaceOrientation(), YES);
+        } else if (ZephyrCurrentInterfaceOrientation() == UIInterfaceOrientationPortraitUpsideDown) {
+            ZephyrRotateViewFromOrientationToOrientation(homeView, UIInterfaceOrientationPortrait, ZephyrCurrentInterfaceOrientation(), YES);
         }
     }
 
@@ -499,15 +443,6 @@ static ZephyrSwitcherGesture *gesture = nil;
             [recognizer setEdgeMargin:edgeMargin];
         }
     });
-}
-
-- (void)restoreIconListAnimated:(BOOL)animated animateWallpaper:(BOOL)wallpaper keepSwitcher:(BOOL)switcher {
-    if (disableUnscatterFlag) {
-        disableUnscatterFlag = NO;
-        animated = NO;
-    }
-
-    %orig(animated, wallpaper, switcher);
 }
 
 %end
