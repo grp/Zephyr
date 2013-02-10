@@ -461,6 +461,16 @@ static ZephyrSwitcherGesture *gesture = nil;
     });
 }
 
+- (void)handleFluidVerticalSystemGesture:(SBFluidSlideGestureRecognizer *)recognizer {
+    if ([gesture isActive]) return;
+
+    %orig;
+}
+
+- (void)handleFluidScaleSystemGesture:(SBFluidSlideGestureRecognizer *)recognizer {
+    %orig;
+}
+
 %end
 
 %end

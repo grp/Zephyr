@@ -16,7 +16,7 @@ static void EnsureGesturesEnabled() {
 
     // This function calls through to the gesture setup function. Since we can't get the address of that function,
     // we have to call through to it though something we do have access to. This is a rarely-used method that works.
-    [SBApp _accessibilitySetSystemGesturesDisabledByAccessibility:NO];
+    [[objc_getClass("SBLockdownManager") sharedInstance] _developerDeviceStateChanged];
 
     disableNextCheck -= 1;
 }
@@ -76,12 +76,17 @@ static void EnsureGesturesEnabled() {
 static id (*orig_NSLogv)(NSString *, va_list);
 static void my_NSLogv(NSString *what, va_list args) {
     if ([what hasPrefix:@"SBSystemGesturesChangeGestureAndRecognitionState"]) {
-        // See above for the reasoning behind this.
-        fakeNextScrollingCheck++;
+        // Only iOS 6 checks for home screen scrolling (see above). But rather
+        // than hardcoding a set of versions to do this on, check dynamically:
+        if ([what rangeOfString:@"home-screen scrolling"].location != NSNotFound) {
+            fakeNextScrollingCheck++;
+        }
 
         // This is called in the middle of the method, but we need to force it
         // re-enabled after a later portion. To do that, just async the call.
-        dispatch_async(dispatch_get_main_queue(), ^{ EnsureGesturesEnabled(); });
+        dispatch_async(dispatch_get_main_queue(), ^{
+            EnsureGesturesEnabled();
+        });
 
         return;
     }
@@ -89,7 +94,7 @@ static void my_NSLogv(NSString *what, va_list args) {
     orig_NSLogv(what, args);
 }
 
-Boolean (*orig_CFPreferencesGetAppBooleanValue)(CFStringRef, CFStringRef, Boolean);
+Boolean (*orig_CFPreferencesGetAppBooleanValue)(CFStringRef, CFStringRef, Boolean *);
 Boolean my_CFPreferencesGetAppBooleanValue(CFStringRef key, CFStringRef applicationID, Boolean *keyExistsAndHasValidFormat) {
     if ([(NSString *)key isEqual:@"SBSystemGesturesLogging"]) {
         // The above logging message that we depend on to get notified when
@@ -124,7 +129,7 @@ CFPropertyListRef my_CFPreferencesCopyAppValue(CFStringRef key, CFStringRef appl
 
 %hook SBUIController
 
-- (void)_reloadDemoAndDebuggingDefaultsAndCapabilities {
+- (void)_reloadDemoAndDebuggingDefaultsAndCapabilities { // iOS 6
     %orig;
     EnsureGesturesEnabled();
 }
@@ -144,16 +149,12 @@ CFPropertyListRef my_CFPreferencesCopyAppValue(CFStringRef key, CFStringRef appl
 
 %hook SpringBoard
 
-- (void)applicationDidFinishLaunching:(SpringBoard *)app {
+- (void)userDefaultsDidChange:(id)something { // iOS 5
     %orig;
     EnsureGesturesEnabled();
 }
 
-%end
-
-%hook SBLockdownManager
-
-- (void)_developerDeviceStateChanged {
+- (void)applicationDidFinishLaunching:(SpringBoard *)app {
     %orig;
     EnsureGesturesEnabled();
 }

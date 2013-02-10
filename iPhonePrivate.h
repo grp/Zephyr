@@ -18,6 +18,7 @@ extern NSString *kGSMultitaskingGesturesCapability;
 @interface SpringBoard : UIApplication
 - (SBApplication *)_accessibilityFrontMostApplication;
 - (BOOL)_accessibilityIsSystemGestureActive;
+- (void)_accessibilitySetSystemGesturesDisabledByAccessibility:(BOOL)disabled;
 
 - (void)applicationOpenURL:(NSURL *)url publicURLsOnly:(BOOL)publicOnly;
 
@@ -147,19 +148,25 @@ typedef enum {
 - (void)_updateForTouchBeganOrMovedWithLocation:(CGPoint)location velocity:(CGPoint)velocity;
 - (void)_updateForTouchCanceled;
 - (void)_updateForTouchEndedWithVelocity:(CGPoint)velocity completion:(id)completion;
+
 - (void)handleShowNotificationsGestureBeganWithTouchLocation:(CGPoint)touchLocation;
 - (void)handleShowNotificationsGestureCanceled;
 - (void)handleShowNotificationsGestureChangedWithTouchLocation:(CGPoint)touchLocation velocity:(CGPoint)velocity;
 - (void)handleShowNotificationsGestureEndedWithVelocity:(CGPoint)velocity completion:(id)completion;
+
 - (void)hideListViewAnimated:(BOOL)animated;
 - (void)hideListViewWithInitialVelocity:(CGFloat)initialVelocity completion:(id)completion;
 - (void)hideListViewWithInitialVelocity:(CGFloat)initialVelocity hiddenY:(CGFloat)y extraPull:(BOOL)pull additionalValueApplier:(id)applier completion:(id)completion;
+
 - (void)prepareToHideListViewAnimated:(BOOL)hideListViewAnimated;
 - (void)prepareToShowListViewAnimated:(BOOL)showListViewAnimated aboveBanner:(BOOL)banner;
+
 - (void)positionListViewAtY:(CGFloat)y;
+
 - (void)showListViewAnimated:(BOOL)animated;
 - (void)showListViewWithInitialVelocity:(CGFloat)initialVelocity additionalValueApplier:(id)applier completion:(id)completion;
 - (void)showListViewWithInitialVelocity:(CGFloat)initialVelocity completion:(id)completion;
+
 - (void)_cleanupAfterShowListView;
 - (void)_cleanupAfterHideListView; // iOS 5
 - (void)_cleanupAfterHideListViewKeepingWindow:(BOOL)window; // iOS 6
@@ -209,6 +216,9 @@ typedef enum {
 - (UIView *)viewForApp:(SBApplication *)app gestureType:(SBGestureType)type includeStatusBar:(BOOL)include decodeImage:(BOOL)decode; // iOS 5.1
 @end
 
+@class SBGestureRecognizer;
+@class SBFluidSlideGestureRecognizer;
+
 @interface SBUIController : NSObject
 + (id)sharedInstance;
 - (UIView *)rootView;
@@ -235,7 +245,11 @@ typedef enum {
 - (void)_switchAppGestureCancelled;
 - (void)_switchAppGestureViewAnimationComplete;
 
-- (void)handleHideNotificationsSystemGesture:(id)gesture;
+- (void)handleDismissBannerSystemGesture:(SBGestureRecognizer *)recognizer;
+- (void)handleFluidHorizontalSystemGesture:(SBFluidSlideGestureRecognizer *)recognizer;
+- (void)handleFluidVerticalSystemGesture:(SBFluidSlideGestureRecognizer *)recognizer;
+- (void)handleFluidScaleSystemGesture:(SBFluidSlideGestureRecognizer *)recognizer;
+- (void)handleHideNotificationsSystemGesture:(SBGestureRecognizer *)recognizer;
 
 - (SBShowcaseContext *)_showcaseContextForOffset:(CGFloat)offset;
 - (void)_toggleSwitcher;
@@ -307,6 +321,11 @@ typedef enum {
 @interface SBAwayController : SBAlert
 + (id)sharedAwayController;
 - (BOOL)isLocked;
+@end
+
+@interface SBLockdownManager : NSObject
++ (id)sharedInstance;
+- (void)_developerDeviceStateChanged;
 @end
 
 typedef enum { /* no fucking clue */ } SBTouchType;
