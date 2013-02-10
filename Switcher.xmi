@@ -400,37 +400,37 @@
 %hook SBAppSwitcherBarView
 
 - (id)initWithFrame:(CGRect)frame {
-    self = %orig;
+    if ((self = %orig)) {
+        // this stupidiy is necessary because Apple limits SBLinenView to 320px wide on iPhone
+        SBLinenView *linen = nil;
 
-    // this stupidiy is necessary because Apple limits SBLinenView to 320px wide on iPhone
-    SBLinenView *linen = nil;
+        CGFloat height = 320.0f;
+        CGFloat width = ZephyrWidthForOrientation(UIInterfaceOrientationPortrait);
 
-    CGFloat height = 320.0f;
-    CGFloat width = ZephyrWidthForOrientation(UIInterfaceOrientationPortrait);
+        UIView *backgroundView = MSHookIvar<UIView *>(self, "_backgroundView");
+        ZephyrRotateViewFromOrientationToOrientation(backgroundView, UIInterfaceOrientationPortrait, UIInterfaceOrientationPortraitUpsideDown, YES);
 
-    UIView *backgroundView = MSHookIvar<UIView *>(self, "_backgroundView");
-    ZephyrRotateViewFromOrientationToOrientation(backgroundView, UIInterfaceOrientationPortrait, UIInterfaceOrientationPortraitUpsideDown, YES);
+        linen = [[objc_getClass("SBLinenView") alloc] initWithFrame:CGRectMake(0, [self bounds].size.height - height, width, height)];
+        [linen setAutoresizingMask:UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleTopMargin];
+        ZephyrRotateViewFromOrientationToOrientation(linen, UIInterfaceOrientationPortrait, UIInterfaceOrientationPortraitUpsideDown, YES);
+        [self addSubview:linen];
+        [self sendSubviewToBack:linen];
+        [linen release];
 
-    linen = [[objc_getClass("SBLinenView") alloc] initWithFrame:CGRectMake(0, [self bounds].size.height - height, width, height)];
-    [linen setAutoresizingMask:UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleTopMargin];
-    ZephyrRotateViewFromOrientationToOrientation(linen, UIInterfaceOrientationPortrait, UIInterfaceOrientationPortraitUpsideDown, YES);
-    [self addSubview:linen];
-    [self sendSubviewToBack:linen];
-    [linen release];
+        linen = [[objc_getClass("SBLinenView") alloc] initWithFrame:CGRectMake(ZephyrScreenRounded(([self bounds].size.width - width) / 2.0f), [self bounds].size.height - height, width, height)];
+        [linen setAutoresizingMask:UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleTopMargin];
+        ZephyrRotateViewFromOrientationToOrientation(linen, UIInterfaceOrientationPortrait, UIInterfaceOrientationPortraitUpsideDown, YES);
+        [self addSubview:linen];
+        [self sendSubviewToBack:linen];
+        [linen release];
 
-    linen = [[objc_getClass("SBLinenView") alloc] initWithFrame:CGRectMake(ZephyrScreenRounded(([self bounds].size.width - width) / 2.0f), [self bounds].size.height - height, width, height)];
-    [linen setAutoresizingMask:UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleTopMargin];
-    ZephyrRotateViewFromOrientationToOrientation(linen, UIInterfaceOrientationPortrait, UIInterfaceOrientationPortraitUpsideDown, YES);
-    [self addSubview:linen];
-    [self sendSubviewToBack:linen];
-    [linen release];
-
-    linen = [[objc_getClass("SBLinenView") alloc] initWithFrame:CGRectMake([self bounds].size.width - width, [self bounds].size.height - height, width, height)];
-    [linen setAutoresizingMask:UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleTopMargin];
-    ZephyrRotateViewFromOrientationToOrientation(linen, UIInterfaceOrientationPortrait, UIInterfaceOrientationPortraitUpsideDown, YES);
-    [self addSubview:linen];
-    [self sendSubviewToBack:linen];
-    [linen release];
+        linen = [[objc_getClass("SBLinenView") alloc] initWithFrame:CGRectMake([self bounds].size.width - width, [self bounds].size.height - height, width, height)];
+        [linen setAutoresizingMask:UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleTopMargin];
+        ZephyrRotateViewFromOrientationToOrientation(linen, UIInterfaceOrientationPortrait, UIInterfaceOrientationPortraitUpsideDown, YES);
+        [self addSubview:linen];
+        [self sendSubviewToBack:linen];
+        [linen release];
+    }
 
     return self;
 }
