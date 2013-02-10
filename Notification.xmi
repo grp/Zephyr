@@ -173,7 +173,35 @@ static CGFloat grabLocation = NAN;
 
 %end
 
+// When we pretend to be an iPad in GestureEnabler.xmi, we break the Notification Center
+// close gesture, since it things we are on an iPad and doesn't set one up. Rather than
+// trying to add more hacks into that to get the built in gesture, we can make our own.
+@interface ZephyrNotificationCloseGesture : ZephyrBaseGesture
+@end
+
+@implementation ZephyrNotificationCloseGesture : ZephyrBaseGesture
+
+- (BOOL)shouldActivateAtEdge:(SBOffscreenEdge)edge {
+    return [[objc_getClass("SBBulletinWindowController") sharedInstance] allowsHideNotificationsGesture];
+}
+
+- (BOOL)handle:(SBPanGestureRecognizer *)pan {
+    [[objc_getClass("SBUIController") sharedInstance] handleHideNotificationsSystemGesture:pan];
+    return YES;
+}
+
+@end
+
+static ZephyrNotificationCloseGesture *gesture = nil;
+
 %hook SBUIController
+
+- (void)finishLaunching {
+    %orig;
+
+    gesture = [[ZephyrNotificationCloseGesture alloc] init];
+    [gesture addOffscreenEdge:kSBOffscreenEdgeBottom minimumTouchCount:1 edgeMargin:30.0f];
+}
 
 // we break if the switcher is also showing, so don't let it be
 - (void)handleHideNotificationsSystemGesture:(id)gesture {
