@@ -1,11 +1,10 @@
 
 # Bugs
- - disable iPad gestures during Zephyr gestures 
  - switcher in landscape causes apps to freeze
  - fix bug with auto-canceled swipe gestures
 
 # Improvements
- - reorganize, clean up preferences
+ - reorganize, clean up preferences (add context to all settings)
  - Smoothly fade out icons when showing switcher.
  - swipe down switcher w/ smooth finger tracking
 
@@ -14,4 +13,5 @@
  - Some gesture to go back to last app.
  - rotate gesture to switch to landscape
  - remove slide to unlock, swipe up to close lockscreen
+ - gesture for a sepcific app (on/off home screen)
 
