@@ -21,6 +21,17 @@ static void EnsureGesturesEnabled() {
     disableNextCheck -= 1;
 }
 
+// -[SBLockdownManager _developerDeviceStateChanged] calls CFPreferencesSynchronize, but in my testing, I've seen
+// that crash badly. Since we don't have other options for what to call on iOS 5, just neuter the synchronize call.
+static Boolean (*orig_CFPreferencesSynchronize)(CFStringRef, CFStringRef, CFStringRef);
+static Boolean replaced_CFPreferencesSynchronize(CFStringRef applicationID, CFStringRef userName, CFStringRef hostName) {
+    if (disableNextCheck > 0) {
+        return NO;
+    }
+
+    return orig_CFPreferencesSynchronize(applicationID, userName, hostName);
+}
+
 %group GestureEnabler
 
 %hook UIDevice
@@ -73,8 +84,8 @@ static void EnsureGesturesEnabled() {
 // there is one way to detect SBSystemGesturesChangeGestureAndRecognitionState: if logging is enabled,
 // it will print out a log message that we can detect. Then, we can force the gestures enabled again.
 
-static id (*orig_NSLogv)(NSString *, va_list);
-static void my_NSLogv(NSString *what, va_list args) {
+static void (*orig_NSLogv)(NSString *, va_list);
+static void replaced_NSLogv(NSString *what, va_list args) {
     if ([what hasPrefix:@"SBSystemGesturesChangeGestureAndRecognitionState"]) {
         // Only iOS 6 checks for home screen scrolling (see above). But rather
         // than hardcoding a set of versions to do this on, check dynamically:
@@ -94,8 +105,8 @@ static void my_NSLogv(NSString *what, va_list args) {
     orig_NSLogv(what, args);
 }
 
-Boolean (*orig_CFPreferencesGetAppBooleanValue)(CFStringRef, CFStringRef, Boolean *);
-Boolean my_CFPreferencesGetAppBooleanValue(CFStringRef key, CFStringRef applicationID, Boolean *keyExistsAndHasValidFormat) {
+static Boolean (*orig_CFPreferencesGetAppBooleanValue)(CFStringRef, CFStringRef, Boolean *);
+static Boolean replaced_CFPreferencesGetAppBooleanValue(CFStringRef key, CFStringRef applicationID, Boolean *keyExistsAndHasValidFormat) {
     if ([(NSString *)key isEqual:@"SBSystemGesturesLogging"]) {
         // The above logging message that we depend on to get notified when
         // SBSystemGesturesChangeGestureAndRecognitionState is called is only
@@ -107,8 +118,8 @@ Boolean my_CFPreferencesGetAppBooleanValue(CFStringRef key, CFStringRef applicat
     }
 }
 
-CFPropertyListRef (*orig_CFPreferencesCopyAppValue)(CFStringRef, CFStringRef);
-CFPropertyListRef my_CFPreferencesCopyAppValue(CFStringRef key, CFStringRef applicationID) {
+static CFPropertyListRef (*orig_CFPreferencesCopyAppValue)(CFStringRef, CFStringRef);
+static CFPropertyListRef replaced_CFPreferencesCopyAppValue(CFStringRef key, CFStringRef applicationID) {
     if ([(NSString *)key isEqual:@"SBUseSystemGestures"]) {
         // The iPad has this set by default, but the iPhone doesn't (and has no
         // way to set it in the UI), so we need to enable gestures manually here.
@@ -167,8 +178,9 @@ CFPropertyListRef my_CFPreferencesCopyAppValue(CFStringRef key, CFStringRef appl
     %init(GestureEnabler);
     %init(GestureEnablerFixes);
 
-    MSHookFunction(CFPreferencesGetAppBooleanValue, my_CFPreferencesGetAppBooleanValue, &orig_CFPreferencesGetAppBooleanValue);
-    MSHookFunction(CFPreferencesCopyAppValue, my_CFPreferencesCopyAppValue, &orig_CFPreferencesCopyAppValue);
-    MSHookFunction((void *)NSLogv, (void *)my_NSLogv, (void **)&orig_NSLogv);
+    MSHookFunction(CFPreferencesGetAppBooleanValue, replaced_CFPreferencesGetAppBooleanValue, &orig_CFPreferencesGetAppBooleanValue);
+    MSHookFunction(CFPreferencesCopyAppValue, replaced_CFPreferencesCopyAppValue, &orig_CFPreferencesCopyAppValue);
+    MSHookFunction(CFPreferencesSynchronize, replaced_CFPreferencesSynchronize, &orig_CFPreferencesSynchronize);
+    MSHookFunction((void *)NSLogv, (void *)replaced_NSLogv, (void **)&orig_NSLogv);
 }
 
