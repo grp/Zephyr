@@ -355,6 +355,66 @@
 			<key>cell</key>
 			<string>PSGroupCell</string>
 			<key>label</key>
+			<string>System Gestures</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<true/>
+			<key>key</key>
+			<string>SystemSwitcherEnabled</string>
+			<key>label</key>
+			<string>Four-finger Switcher</string>
+			<key>PostNotification</key>
+			<string>com.chpwn.zephyr.preferences-changed</string>
+			<key>defaults</key>
+			<string>com.chpwn.zephyr</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<true/>
+			<key>key</key>
+			<string>SystemSwitchAppEnabled</string>
+			<key>label</key>
+			<string>Four-finger Switch App</string>
+			<key>PostNotification</key>
+			<string>com.chpwn.zephyr.preferences-changed</string>
+			<key>defaults</key>
+			<string>com.chpwn.zephyr</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<true/>
+			<key>key</key>
+			<string>SystemSuspendEnabled</string>
+			<key>label</key>
+			<string>Pinch to Close</string>
+			<key>PostNotification</key>
+			<string>com.chpwn.zephyr.preferences-changed</string>
+			<key>defaults</key>
+			<string>com.chpwn.zephyr</string>
+		</dict>
+
+        <dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+            <key>requiredCapabilities</key>
+            <array>
+                <string>ipad</string>
+            </array>
+            <key>footerText</key>
+            <string>These settings override the built-in system gesture setting.</string>
+		</dict>
+
+        <dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
 			<string>Notification Center (iPhone)</string>
             <key>footerText</key>
             <string>Zephyr © 2012 Xuzz Productions, LLC.
@@ -373,6 +433,12 @@ Support is available in Cydia.</string>
 			<string>com.chpwn.zephyr.preferences-changed</string>
 			<key>defaults</key>
 			<string>com.chpwn.zephyr</string>
+		</dict>
+
+        <!-- padding -->
+        <dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
 		</dict>
 	</array>
 </dict>

@@ -40,7 +40,7 @@
     return YES;
 }
 
-- (BOOL)handle:(SBGestureRecognizer *)recognizer {
+- (BOOL)handle:(SBOffscreenSwipeGestureRecognizer *)recognizer {
     SBUIController *controller = [objc_getClass("SBUIController") sharedInstance];
     [controller handleFluidHorizontalSystemGesture:recognizer];
     return YES;
@@ -79,6 +79,12 @@ static SBGestureRecognizer *activeHorizontalRecognizer = nil;
 
 // avoid conflict between native gesture and custom gestures
 - (void)handleFluidHorizontalSystemGesture:(SBGestureRecognizer *)recognizer {
+    // This setting only controls the default gesture recognizer, not ours (offscreen swipe recognizers).
+    if (![recognizer isKindOfClass:objc_getClass("SBOffscreenSwipeGestureRecognizer")]) {
+        BOOL enabled = [ZephyrPreferencesGet(@"SystemSwitchAppEnabled", [NSNumber numberWithBool:YES]) boolValue];
+        if (!enabled) return;
+    }
+
     if (recognizer == activeHorizontalRecognizer) {
         if ([recognizer state] == SBGestureRecognizerStateEnded || [recognizer state] == SBGestureRecognizerStateCancelled) {
             activeHorizontalRecognizer = nil;
