@@ -9,9 +9,9 @@ include theos/makefiles/common.mk
 
 TWEAK_NAME = Zephyr ZephyrKeyboardProxy
 
-Zephyr_FILES = Preferences.xmi Switcher.xmi SwitchApp.xmi BaseGesture.xmi OffscreenGesture.xmi Keyboard.xmi NSTimer+Blocks.m ActivateSwitcher.xmi Common.xmi Notification.xmi Grabber.xmi
+Zephyr_FILES = Preferences.xmi Switcher.xmi SwitchApp.xmi BaseGesture.xmi OffscreenGesture.xmi Keyboard.xmi NSTimer+Blocks.m ActivateSwitcher.xmi Common.xmi Notification.xmi Grabber.xmi GestureEnabler.xmi
 Zephyr_FRAMEWORKS = UIKit QuartzCore CoreGraphics CoreTelephony
-Zephyr_PRIVATE_FRAMEWORKS = AppSupport
+Zephyr_PRIVATE_FRAMEWORKS = AppSupport GraphicsServices
 
 ZephyrKeyboardProxy_FILES = KeyboardProxy.xmi
 ZephyrKeyboardProxy_FRAMEWORKS = UIKit

@@ -1,0 +1,159 @@
+
+#import "Common.h"
+
+static NSInteger disableNextCheck = 0;
+static NSInteger fakeNextScrollingCheck = 0;
+
+static void EnsureGesturesEnabled() {
+    disableNextCheck += 1;
+
+    // This function calls through to the gesture setup function. Since we can't get the address of that function,
+    // we have to call through to it though something we do have access to. This is a rarely-used method that works.
+    [SBApp _accessibilitySetSystemGesturesDisabledByAccessibility:NO];
+
+    disableNextCheck -= 1;
+}
+
+%group GestureEnabler
+
+%hook UIDevice
+
+// The gesture recognition for system gestures is only setup when the device
+// is an iPad. When we are faking it (see above), pretend to be on an iPad.
+- (UIUserInterfaceIdiom)userInterfaceIdiom {
+    if (disableNextCheck > 0) {
+        return UIUserInterfaceIdiomPad;
+    }
+
+    return %orig;
+}
+
+%end
+
+%hook SBIconController
+
+// On iOS 6 and later, the home screen being scrolling blocks system gestures.
+// This apparently bugged people (quite a bit of support email), so force it back.
+- (BOOL)isScrolling {
+    if (fakeNextScrollingCheck > 0) {
+        fakeNextScrollingCheck -= 1;
+
+        return NO;
+    }
+
+    return %orig;
+}
+
+%end
+
+%hook SBPlatformController
+
+// The gesture setup will only be called if we have the capability.
+- (BOOL)hasCapability:(NSString *)capability {
+    if ([capability isEqual:kGSMultitaskingGesturesCapability])  {
+        return YES;
+    }
+
+    return %orig;
+}
+
+%end
+
+%end
+
+static id (*orig_NSLogv)(NSString *, va_list);
+static void my_NSLogv(NSString *what, va_list args) {
+    if ([what hasPrefix:@"SBSystemGesturesChangeGestureAndRecognitionState"]) {
+        // See above for the reasoning behind this.
+        fakeNextScrollingCheck++;
+
+        // This is called in the middle of the method, but we need to force it
+        // re-enabled after a later portion. To do that, just async the call.
+        dispatch_async(dispatch_get_main_queue(), ^{ EnsureGesturesEnabled(); });
+    }
+
+    orig_NSLogv(what, args);
+}
+
+Boolean (*orig_CFPreferencesGetAppBooleanValue)(CFStringRef key, CFStringRef applicationID, Boolean *keyExistsAndHasValidFormat);
+Boolean my_CFPreferencesGetAppBooleanValue(CFStringRef key, CFStringRef applicationID, Boolean *keyExistsAndHasValidFormat) {
+    if ([(NSString *)key isEqual:@"SBSystemGesturesLogging"]) {
+        // The above logging message that we depend on to get notified when
+        // SBSystemGesturesChangeGestureAndRecognitionState is called is only
+        // logged when this preferences key is enabled. Let's hope it doesn't
+        // go away, since there doesn't seem to be a clear need for it in SB.
+        return YES;
+    } else {
+        return orig_CFPreferencesGetAppBooleanValue(key, applicationID, keyExistsAndHasValidFormat);
+    }
+}
+
+CFPropertyListRef (*orig_CFPreferencesCopyAppValue)(CFStringRef key, CFStringRef applicationID);
+CFPropertyListRef my_CFPreferencesCopyAppValue(CFStringRef key, CFStringRef applicationID) {
+    if ([(NSString *)key isEqual:@"SBUseSystemGestures"]) {
+        // The iPad has this set by default, but the iPhone doesn't (and has no
+        // way to set it in the UI), so we need to enable gestures manually here.
+        // (But even on the iPad, we need it set for our gestures to work at all.)
+        return [NSNumber numberWithInt:1];
+    } else {
+        return orig_CFPreferencesCopyAppValue(key, applicationID);
+    }
+}
+
+// Besides SBSystemGesturesChangeGestureAndRecognitionState, there are a few other
+// functions and methods that call the gesture setup function. We need to make sure
+// to reset the enabled state after they are called. (We can't just pretend to be
+// an iPad for the entirety of these methods, as that would cause lots of issues.)
+// NOTE: When new iOS versions are released, be sure to check this list in IDA!
+
+%group GestureEnablerFixes
+
+%hook SBUIController
+
+- (void)_reloadDemoAndDebuggingDefaultsAndCapabilities {
+    %orig;
+    EnsureGesturesEnabled();
+}
+
+- (void)noteInterfaceOrientationChanged:(UIInterfaceOrientation)orientation duration:(NSTimeInterval)duration updateMirroredDisplays:(BOOL)mirror force:(BOOL)force {
+    %orig;
+    EnsureGesturesEnabled();
+}
+
+- (id)init {
+    self = %orig;
+    EnsureGesturesEnabled();
+    return self;
+}
+
+%end
+
+%hook SpringBoard
+
+- (void)applicationDidFinishLaunching:(SpringBoard *)app {
+    %orig;
+    EnsureGesturesEnabled();
+}
+
+%end
+
+%hook SBLockdownManager
+
+- (void)_developerDeviceStateChanged {
+    %orig;
+    EnsureGesturesEnabled();
+}
+
+%end
+
+%end
+
+%ctor {
+    %init(GestureEnabler);
+    %init(GestureEnablerFixes);
+
+    MSHookFunction(CFPreferencesGetAppBooleanValue, my_CFPreferencesGetAppBooleanValue, &orig_CFPreferencesGetAppBooleanValue);
+    MSHookFunction(CFPreferencesCopyAppValue, my_CFPreferencesCopyAppValue, &orig_CFPreferencesCopyAppValue);
+    MSHookFunction((void *)NSLogv, (void *)my_NSLogv, (void **)&orig_NSLogv);
+}
+

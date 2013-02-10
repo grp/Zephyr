@@ -36,15 +36,13 @@
 
     // This is needed to prevent re-activation before the animation completes, crashing.
     BOOL currentlyPendingSwitcherActivationsExist = (pendingSwitcherActivations != nil);
-    BOOL switchAppGestureIsAnimating = ZephyrSwitchAppGestureIsAnimatingCompletion();
 
     return YES
         // Our configuration allows this.
         && (action == kSwipeUpActionSwitcher || action == kSwipeUpActionCloseApp)
         && [self currentOrientationIsSupported]
-        // No other gesture is in the way.
+        // No other gesture is in the way (including our switch app).
         && ![SBApp _accessibilityIsSystemGestureActive]
-        && !switchAppGestureIsAnimating
         && !currentlyPendingSwitcherActivationsExist
         // We aren't in some disallowed state.
         && !ZephyrAssistantIsVisible()

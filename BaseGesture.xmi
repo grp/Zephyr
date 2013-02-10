@@ -40,6 +40,10 @@ static NSMutableArray *allGestures = nil;
     isActive = NO;
 }
 
+- (BOOL)handle:(SBGestureRecognizer *)recognizer {
+    return NO;
+}
+
 - (void)addOffscreenEdge:(SBOffscreenEdge)edge minimumTouchCount:(int)touchCount edgeMargin:(CGFloat)sensitivity {
     SBOffscreenSwipeGestureRecognizer *gestureRecognizer = [[objc_getClass("SBOffscreenSwipeGestureRecognizer") alloc] initForOffscreenEdge:edge];
     [gestureRecognizer setAllowableDistanceFromEdgeCenter:CGFLOAT_MAX];
@@ -51,6 +55,8 @@ static NSMutableArray *allGestures = nil;
     [gestureRecognizer setTypes:0x10];
 
     [gestureRecognizer setHandler:^{
+        if ([self handle:gestureRecognizer]) return;
+
         CGFloat distance = [gestureRecognizer cumulativePercentage];
         CGPoint velocity = [gestureRecognizer movementVelocityInPointsPerSecond];
 

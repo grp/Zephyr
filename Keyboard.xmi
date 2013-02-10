@@ -15,7 +15,7 @@ BOOL ZephyrKeyboardIsActive() {
     NSString *displayIdentifier = [[SBApp _accessibilityFrontMostApplication] displayIdentifier];
 
     if (displayIdentifier != nil) {
-        return [applicationsWithActiveKeyboard containsObject:displayIdentifier];
+        return [applicationsWithActiveKeyboard containsObject:displayIdentifier] || springboardKeyboardActive;
     } else {
         return springboardKeyboardActive;
     }

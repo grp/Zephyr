@@ -7,6 +7,8 @@
 
 %config(generator=internal);
 
+extern NSString *kGSMultitaskingGesturesCapability;
+
 @interface UIApplication (Private)
 - (UIWindow *)statusBarWindow;
 - (UIInterfaceOrientation)activeInterfaceOrientation;

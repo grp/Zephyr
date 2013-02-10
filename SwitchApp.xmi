@@ -4,10 +4,6 @@
 #import "Preferences.h"
 #import "Keyboard.h"
 
-// XXX: these are necessary since we don't have access to Apple's gesture recognizer state methods.
-static BOOL isAnimatingCompletion = NO;
-static BOOL isAwaitingScheduledLaunch = NO;
-
 @implementation ZephyrSwitchAppGesture
 
 - (BOOL)shouldActivateAtEdge:(SBOffscreenEdge)edge {
@@ -44,473 +40,24 @@ static BOOL isAwaitingScheduledLaunch = NO;
     return YES;
 }
 
-- (void)handleGestureCanceled {
-    SBUIController *uic = [objc_getClass("SBUIController") sharedInstance];
-    [uic _switchAppGestureCancelled];
+- (BOOL)handle:(SBGestureRecognizer *)recognizer {
+    SBUIController *controller = [objc_getClass("SBUIController") sharedInstance];
+    [controller handleFluidHorizontalSystemGesture:recognizer];
+    return YES;
 }
 
-- (void)handleGestureBeganWithLocation:(CGFloat)location {
-    SBUIController *uic = [objc_getClass("SBUIController") sharedInstance];
-
-    if ([uic respondsToSelector:@selector(_switchAppGestureBegan)])
-        [uic _switchAppGestureBegan];
-    else if ([uic respondsToSelector:@selector(_switchAppGestureBegan:)])
-        [uic _switchAppGestureBegan:location];
-}
-
-- (void)handleGestureChangedWithLocation:(CGFloat)location velocity:(CGPoint)velocity {
-    SBUIController *uic = [objc_getClass("SBUIController") sharedInstance];
-    [uic _switchAppGestureChanged:location];
-}
-
-- (void)handleGestureEndedWithLocation:(CGFloat)location velocity:(CGPoint)velocity completionType:(int)type {
-    SBUIController *uic = [objc_getClass("SBUIController") sharedInstance];
-    [uic _switchAppGestureEndedWithCompletionType:type cumulativePercentage:location];
-}
-
-@end
-
-@interface SBUIController (Zephyr)
-- (void)_switchAppGestureBeganInternal:(CGFloat)location;
-- (void)internalPrefetchAdjacentAppsAndEvictRemotes:(SBApplication *)currentApplication;
 @end
 
 %group SwitchApp
 
 %hook SBUIController
 
-- (void)prefetchAdjacentAppsAndEvictRemotes:(SBApplication *)currentApplication {
-    [self internalPrefetchAdjacentAppsAndEvictRemotes:currentApplication];
-}
-
-- (void)_prefetchAdjacentAppsAndEvictRemotes:(SBApplication *)currentApplication {
-    [self internalPrefetchAdjacentAppsAndEvictRemotes:currentApplication];
-}
-
-%new(v@:@)
-- (void)internalPrefetchAdjacentAppsAndEvictRemotes:(SBApplication *)currentApplication {
-    if ([SBApp _accessibilityIsSystemGestureActive] || ZephyrSwitchAppGestureIsActive() || ZephyrSwitchAppGestureIsAnimatingCompletion() || isAwaitingScheduledLaunch) return;
-
-    if (MSHookIvar<NSMutableArray *>(self, "_switchAppFullyOrderedList") == nil) {
-        [self _calculateSwitchAppList];
-    }
-
-    SBApplicationController *applicationController = [objc_getClass("SBApplicationController") sharedInstance];
-
-    NSArray *validList = [self _makeSwitchAppValidList:MSHookIvar<NSMutableArray *>(self, "_switchAppFullyOrderedList")];
-
-    NSString *leftwardIdentifier = nil;
-    NSString *rightwardIdentifier = nil;
-    [self _getSwitchAppPrefetchApps:validList initialApp:currentApplication outLeftwardAppIdentifier:&leftwardIdentifier outRightwardAppIdentifier:&rightwardIdentifier];
-
-    [self _clearGestureViewVendorCacheForAppWithDisplayIdenitifier:leftwardIdentifier];
-    [self _clearGestureViewVendorCacheForAppWithDisplayIdenitifier:rightwardIdentifier];
-
-    NSArray *filteredList = [self _makeSwitchAppFilteredList:validList initialApp:currentApplication];
-    if (filteredList != nil) {
-        for (NSString *identifier in filteredList) {
-            SBApplication *application = [applicationController applicationWithDisplayIdentifier:identifier];
-
-            [[objc_getClass("SBGestureViewVendor") sharedInstance] viewForApp:application gestureType:kSBGestureTypeSwitchApp includeStatusBar:NO decodeImage:YES];
-            [application disableContextHostingForRequester:CFSTR("SwitchApp")]; // XXX: Is this necessary? Apple doesn't seem to do this.
-        }
-    }
-}
-
-static UIView *containerView = nil;
-
-// This is dumb as fuck. The "has multitasking gestures" state is stored in
-// a random global variable which we cannot hook, and is set in a C function
-// without an (exposed) name, so we also cannot hook that. This C function is
-// called from dozens of methods, and as such cannot be hooked, especially as
-// many of those functions that call it /break/ if you apply the necessary
-// hooks around them (as well as the C function setting the varaible). Ugh. :(
-
-- (void)_switchAppGestureBegan {
-    [self _switchAppGestureBeganInternal:0.0];
-}
-
-- (void)_switchAppGestureBegan:(CGFloat)location {
-    [self _switchAppGestureBeganInternal:location];
-}
-
-%new(v@:f)
-- (void)_switchAppGestureBeganInternal:(CGFloat)location {
-    // Attempt to emulate the C function call here.
-    if ([SBApp _accessibilityIsSystemGestureActive]) return;
-
-    SBApplication *topApplication = [SBApp _accessibilityFrontMostApplication];
-
-    if (topApplication != nil) {
-        if ([topApplication displayFlag:0x3]) return;
-        if (![topApplication displayFlag:0x1]) return;
-    }
-
-    // (there is some condition here in a C function, dunno what it does)
-    if (![self _dismissSheetsAndDetermineAlertStateForMenuClickOrSystemGesture]) return;
-
-    // If there is no top app, try the currently launching app from this gesture.
-    // This allows you to quickly swipe through apps, even as they load or resume.
-    if (topApplication == nil) {
-        topApplication = MSHookIvar<SBApplication *>(self, "_pendingAppActivatedByGesture");
-        if (topApplication == nil) return;
-    }
-
-    NSMutableArray *unfilteredList = MSHookIvar<NSMutableArray *>(self, "_switchAppFullyOrderedList");
-    if (unfilteredList == nil) {
-        [self _calculateSwitchAppList];
-        unfilteredList = MSHookIvar<NSMutableArray *>(self, "_switchAppFullyOrderedList");
-    }
-
-    NSArray *filteredList = [self _makeSwitchAppFilteredList:unfilteredList initialApp:topApplication];
-    NSInteger topApplicationIndex = [filteredList indexOfObject:[topApplication displayIdentifier]];
-
-    if ([filteredList count] == 0 || topApplicationIndex == NSNotFound) return;
-
-    if ([self respondsToSelector:@selector(_getSwitchAppPrefetchApps:initialApp:outLeftwardAppIdentifier:outRightwardAppIdentifier:)]) {
-        NSString *leftwardIdentifier = nil;
-        NSString *rightwardIdentifier = nil;
-        [self _getSwitchAppPrefetchApps:filteredList initialApp:topApplication outLeftwardAppIdentifier:&leftwardIdentifier outRightwardAppIdentifier:&rightwardIdentifier];
-
-        SBApplicationController *applicationController = [objc_getClass("SBApplicationController") sharedInstance];
-
-        SBApplication *application = nil;
-        if (location > 0) {
-            application = [applicationController applicationWithDisplayIdentifier:rightwardIdentifier];
-        } else {
-            application = [applicationController applicationWithDisplayIdentifier:leftwardIdentifier];
-        }
-
-        [[objc_getClass("SBGestureViewVendor") sharedInstance] viewForApp:application gestureType:kSBGestureTypeSwitchApp includeStatusBar:NO decodeImage:YES];
-    }
-
-    SBBulletinListController *bulletinListController = [objc_getClass("SBBulletinListController") sharedInstanceIfExists];
-    if ([bulletinListController listViewIsActive]) {
-        [bulletinListController hideListViewAnimated:YES];
-    }
-
-    MSHookIvar<BOOL>(self, "_switcherVisibleWhenSwitchAppGestureStarted") = [self isSwitcherShowing];
-
-    [self clearPendingAppActivatedByGesture];
-    [self _lockOrientationForSystemGesture];
-    [self cleanupSwitchAppGestureViews];
-
-    if (topApplication != nil) {
-        if (![topApplication displayFlag:0x22]) {
-            if ([topApplication respondsToSelector:@selector(suspensionType)] && [topApplication respondsToSelector:@selector(process)]) {
-                if (![topApplication displayFlag:0x1]) {
-                    if ([topApplication suspensionType] == 0) {
-                        // call some C functions, that sorta do this (i'm too lazy to reverse these:)
-                        [topApplication setDeactivationSetting:0xC flag:YES];
-                        [[topApplication process] killWithSignal:9];
-                    }
-                }
-            }
-        } else {
-            [self notifyAppResignActive:topApplication];
-        }
-    }
-
-    UIInterfaceOrientation currentOrientation = ZephyrCurrentInterfaceOrientation();
-    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
-        // some c function... and another one.. sorta the second one below
-        [[UIDevice currentDevice] setOrientation:currentOrientation animated:NO];
-        [SBApp noteInterfaceOrientationChanged:currentOrientation];
-    }
-
-    [self showSystemGestureBackdrop];
-
-    SBApplicationController *applicationController = [objc_getClass("SBApplicationController") sharedInstance];
-    SBApplication *leftApplication = [applicationController applicationWithDisplayIdentifier:[filteredList objectAtIndex:0]];
-    SBApplication *rightApplication = [applicationController applicationWithDisplayIdentifier:[filteredList lastObject]];
-
-    if (leftApplication == topApplication) leftApplication = nil;
-    if (rightApplication == topApplication) rightApplication = nil;
-
-    [containerView removeFromSuperview];
-    [containerView release];
-
-    [MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView") removeFromSuperview];
-    [MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView") release];
-
-    MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView") = [[objc_getClass("SBSwitchAppGestureView") alloc] initWithInterfaceOrientation:currentOrientation startingApp:topApplication leftwardApp:leftApplication rightwardApp:rightApplication];
-    [MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView") setContentScaleFactor:[[UIScreen mainScreen] scale]];
-
-    containerView = [[UIView alloc] initWithFrame:[MSHookIvar<UIView *>(self, "_contentView") bounds]];
-    [containerView addSubview:MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView")];
-    [MSHookIvar<UIView *>(self, "_contentView") addSubview:containerView];
-    ZephyrRotateViewFromOrientationToOrientation(containerView, ZephyrHomeInterfaceOrientation(), ZephyrCurrentInterfaceOrientation(), YES);
-
-    [MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView") beginPaging];
-
-    [self prepareSwitchAppGestureStatusBar];
-    if ([self respondsToSelector:@selector(setRootViewHiddenForScatter:duration:startTime:)]) {
-        [self setRootViewHiddenForScatter:0 duration:0.0 startTime:0.0];
-    } else if ([self respondsToSelector:@selector(setRootViewHiddenForScatter:duration:delay:)]) {
-        [self setRootViewHiddenForScatter:0 duration:0.0 delay:0.0];
-    }
-    [self updateSwitchAppGestureStatusBar];
-
-
-    if ([self isSwitcherShowing]) {
-        [self _dismissShowcase:0.0f unhost:NO];
-    }
-}
-
-- (void)_switchAppGestureChanged:(CGFloat)percentage {
-    [MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView") updatePaging:percentage];
-    [self updateSwitchAppGestureStatusBar];
-}
-
-- (void)_switchAppGestureEndedWithCompletionType:(int)type cumulativePercentage:(float)percentage {
-    void (^completion)() = ^{
-        isAnimatingCompletion = NO; // chpwn addition
-
-        [self _switchAppGestureViewAnimationComplete];
-    };
-
-    if (MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView") != nil) {
-        if (type == 1) {
-            isAnimatingCompletion = YES; // chpwn addition
-
-            [MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView") finishForwardToEndWithPercentage:percentage completion:completion];
-        } else if (type == -1) {
-            isAnimatingCompletion = YES; // chpwn addition
-
-            [MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView") finishBackwardToStartWithCompletion:completion];
-        }
-    }
-
-    [self updateSwitchAppGestureStatusBar];
-}
-
-- (void)_switchAppGestureCancelled {
-    [self _switchAppGestureEndedWithCompletionType:-1 cumulativePercentage:0.0f];
-
-    if (MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView") != nil) {
-        [self _switchAppGestureViewAnimationComplete];
-        [self cleanupSwitchAppGestureViews];
-    }
-}
-
-- (void)_switchAppGestureViewAnimationComplete {
-    if (MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView") == nil) return;
-
-    [self hideSystemGestureBackdrop];
-
-    SBApplication *startingApplication = [MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView") startingApp];
-    SBApplication *endingApplication = [MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView") endingApp];
-
-    [containerView removeFromSuperview];
-    [containerView release];
-    containerView = nil;
-
-    [MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView") removeFromSuperview];
-    [MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView") release];
-    MSHookIvar<SBSwitchAppGestureView *>(self, "_switchAppGestureView") = nil;
-
-    BOOL endingAppHasLaunchedFrontmost = [endingApplication displayFlag:1];
-
-    if ([self respondsToSelector:@selector(clearZoomLayer)]) {
-        [self clearZoomLayer];
-    }
-
-    if (startingApplication != endingApplication) {
-        if (objc_getClass("SBDisplayStack") != nil) {
-            //UIInterfaceOrientation statusOrientation = [startingApplication statusBarOrientation];
-            [startingApplication setDeactivationSetting:0x18 flag:YES];
-
-            /* sub_2C330 */ {
-                if ([SBWActiveDisplayStack containsDisplay:startingApplication] || [SBWSuspendedEventOnlyDisplayStack containsDisplay:startingApplication]) {
-                    /* sub_2B9B8 */ {
-                        // this is a crude approximation of sorta kinda what this gigantic
-                        // function does, since I'm waaaaay too lazy to reverse the whole
-                        // thing: even just the graph in IDA is quite scary to look at! :(
-                        [SBWActiveDisplayStack popDisplay:startingApplication];
-                        [SBWSuspendingDisplayStack pushDisplay:startingApplication];
-                    }
-                } else if (![SBWSuspendingDisplayStack containsDisplay:startingApplication]) {
-                    [startingApplication clearDeactivationSettings];
-                }
-            }
-        } else {
-            [startingApplication setDeactivationSetting:0x15 flag:YES];
-            [startingApplication setDeactivationSetting:0x16 flag:YES];
-
-            NSString *label = @"ActivateSpringBoard";
-            SBWorkspaceEvent *event = [objc_getClass("SBWorkspaceEvent") eventWithLabel:label handler:^{
-                BKSWorkspace *workspace = [SBWSharedWorkspace bksWorkspace];
-                SBAppToAppWorkspaceTransaction *transaction = [[objc_getClass("SBAppToAppWorkspaceTransaction") alloc] initWithWorkspace:workspace alertManager:nil from:startingApplication to:nil];
-                [SBWSharedWorkspace setCurrentTransaction:transaction];
-                [transaction release];
-            }];
-
-            SBWorkspaceEventQueue *queue = [objc_getClass("SBWorkspaceEventQueue") sharedInstance];
-            SBWorkspaceTransaction *currentTransaction = [SBWSharedWorkspace currentTransaction];
-            if (currentTransaction != nil && [currentTransaction canBeInterrupted]) {
-                [queue executeOrPrependEvent:event];
-                [currentTransaction interrupt];
-            } else {
-                [queue executeOrAppendEvent:event];
-            }
-        }
-    }
-
-    SBApplicationController *applicationController = [objc_getClass("SBApplicationController") sharedInstance];
-    for (NSString *displayIdentifier in MSHookIvar<NSArray *>(self, "_switchAppFilteredList")) {
-        SBApplication *application = [applicationController applicationWithDisplayIdentifier:displayIdentifier];
-
-        if (application != endingApplication) {
-            [application disableContextHostingForRequester:CFSTR("SwitchApp")];
-        }
-    }
-
-    [self cleanupSwitchAppGestureViews];
-
-    BOOL shouldShowSwitcherAgain = NO;
-
-    if (!endingAppHasLaunchedFrontmost) {
-        // ending app hasn't launched; launch it now
-        [self showSystemGestureBackdrop];
-        [self scheduleApplicationForLaunchByGesture:endingApplication];
-        [self _installSwitchAppGesturePlaceholderViewForEndingApp:endingApplication];
-        isAwaitingScheduledLaunch = YES;
-
-        if (startingApplication == endingApplication) {
-            shouldShowSwitcherAgain = YES;
-        }
-    } else {
-        [endingApplication disableContextHostingForRequester:CFSTR("SwitchApp")];
-        [endingApplication disableContextHostingForRequester:CFSTR("LaunchSuspend")];
-
-        if (startingApplication == endingApplication) {
-            // ending app is same as starting app, resume it
-            [self notifyAppResumeActive:endingApplication];
-
-            shouldShowSwitcherAgain = YES;
-        } else {
-            // ending app needs to be re-launched, do it
-            [self showSystemGestureBackdrop];
-            [self scheduleApplicationForLaunchByGesture:endingApplication];
-            [self _installSwitchAppGesturePlaceholderViewForEndingApp:endingApplication];
-            isAwaitingScheduledLaunch = YES;
-        }
-    }
-
-    if (shouldShowSwitcherAgain && MSHookIvar<BOOL>(self, "_switcherVisibleWhenSwitchAppGestureStarted")) {
-        // show switcher again if it was hidden for the gesture to start
-
-        if ([self respondsToSelector:@selector(_activateSwitcherFrom:to:duration:)]) {
-            SBAppSwitcherController *appSwitcherController = [objc_getClass("SBAppSwitcherController") sharedInstance];
-
-            SBShowcaseContext *zeroContext = [self _showcaseContextForOffset:0];
-            SBShowcaseContext *barContext = [self _showcaseContextForOffset:[appSwitcherController bottomBarHeight]];
-
-            UIInterfaceOrientation currentOrientation = [SBApp activeInterfaceOrientation]; // also someting about "CAMediaTime", huh
-            [zeroContext setShowcaseOrientation:currentOrientation];
-            [barContext setShowcaseOrientation:currentOrientation];
-
-            [self _activateSwitcherFrom:zeroContext to:barContext duration:0];
-        } else if ([self respondsToSelector:@selector(_activateSwitcher:fromSystemGesture:)]) {
-            [self _activateSwitcher:0.0 fromSystemGesture:YES];
-        }
-    }
-
-    MSHookIvar<BOOL>(self, "_switcherVisibleWhenSwitchAppGestureStarted") = NO;
-    MSHookIvar<BOOL>(self, "_switchAppGestureStatusBarMaintained") = NO;
-
-    // two more C functions; unknown purpose
-
-    [self _resumeEventsIfNecessary];
-
-    if (endingAppHasLaunchedFrontmost) {
-        [self _releaseSystemGestureOrientationLock];
-    }
-}
-
-- (void)cleanupRunningGestureIfNeeded {
-    if (ZephyrSwitchAppGestureIsActive() || ZephyrSwitchAppGestureIsAnimatingCompletion()) {
-        [self _switchAppGestureViewAnimationComplete];
-    }
-
-    %orig;
-}
-
-- (void)cleanupSwitchAppGestureViews {
-    [containerView removeFromSuperview];
-    [containerView release];
-    containerView = nil;
-
-    %orig;
-}
-
-- (void)_noteAppDidActivate:(SBApplication *)app {
-    if (app == nil) return;
-
-    BOOL toggledSwitcher = NO;
-    SBApplication *toggleSwitcherAfterLaunchApp = MSHookIvar<SBApplication *>(self, "_toggleSwitcherAfterLaunchApp");
-    if (app == toggleSwitcherAfterLaunchApp) {
-        if ([self _ignoringEvents]) {
-            BOOL toggleAfter = MSHookIvar<BOOL>(self, "_toggleSwitcherAfterLaunchAppUsesSystemGestureOrientation");
-            [self _setToggleSwitcherAfterLaunchApp:nil];
-            MSHookIvar<BOOL>(self, "_toggleSwitcherAfterLaunchAppUsesSystemGestureOrientation") = toggleAfter;
-
-            [self _toggleSwitcher];
-            toggledSwitcher = YES;
-
-            if (toggleSwitcherAfterLaunchApp == nil) {
-                MSHookIvar<BOOL>(self, "_toggleSwitcherAfterLaunchAppUsesSystemGestureOrientation") = NO;
-            }
-        }
-    } else {
-        [self _setToggleSwitcherAfterLaunchApp:nil];
-    }
-
-    BOOL viaGesture = [app displayFlag:0xE]; // launchedViaSystemGesture
-
-    if (app == [SBApp _accessibilityFrontMostApplication]) {
-        if ([SBApp _accessibilityIsSystemGestureActive] || ZephyrSwitchAppGestureIsActive() || ZephyrSwitchAppGestureIsAnimatingCompletion() || isAwaitingScheduledLaunch) {
-            [self _clearAllInstalledSystemGestureViews];
-            isAwaitingScheduledLaunch = NO;
-
-            if (viaGesture) {
-                [self clearFakeSpringBoardStatusBarAndCorners];
-                [self _releaseSystemGestureOrientationLock];
-                [app didAnimateActivation];
-                [app setDisplaySetting:0x2 flag:NO]; // animate
-            }
-
-            [app disableContextHostingForRequester:CFSTR("SwitchApp")];
-        }
-    }
-
-    [app setDisplaySetting:0xE flag:NO]; // animate
-    [[objc_getClass("SBGestureViewVendor") sharedInstance] clearCacheForApp:app reason:@"DisplayDidLaunch"];
-
-    if (app == [SBApp _accessibilityFrontMostApplication]) {
-        if (!toggledSwitcher && !viaGesture) {
-            [self _clearSwitchAppList];
-        }
-    }
-
-    [MSHookIvar<SBApplication *>(self, "_appCurrentlyActivatingByGesture") release];
-    MSHookIvar<SBApplication *>(self, "_appCurrentlyActivatingByGesture") = nil;
-}
-
 static ZephyrSwitchAppGesture *gesture = nil;
-
-BOOL ZephyrSwitchAppGestureIsAnimatingCompletion() {
-    return isAnimatingCompletion;
-}
-
-BOOL ZephyrSwitchAppGestureIsActive() {
-    return [gesture isActive];
-}
 
 - (void)finishLaunching {
     %orig;
 
-    int touches = [(NSNumber *) ZephyrPreferencesGet(@"SideMinimumTouchCount", ZephyrPreferencesGet(@"MinimumTouchCount", [NSNumber numberWithInt:1])) intValue];
+    NSInteger touches = [(NSNumber *) ZephyrPreferencesGet(@"SideMinimumTouchCount", ZephyrPreferencesGet(@"MinimumTouchCount", [NSNumber numberWithInt:1])) intValue];
     CGFloat edgeMargin = [(NSNumber *) ZephyrPreferencesGet(@"SideSensitivityDistance", [NSNumber numberWithFloat:30.0f]) floatValue];
 
     gesture = [[ZephyrSwitchAppGesture alloc] init];
@@ -518,7 +65,7 @@ BOOL ZephyrSwitchAppGestureIsActive() {
     [gesture addOffscreenEdge:kSBOffscreenEdgeLeft minimumTouchCount:touches edgeMargin:edgeMargin];
 
     ZephyrPreferencesApplyActionRegister(^{
-        int touches = [(NSNumber *) ZephyrPreferencesGet(@"SideMinimumTouchCount", ZephyrPreferencesGet(@"MinimumTouchCount", [NSNumber numberWithInt:1])) intValue];
+        NSInteger touches = [(NSNumber *) ZephyrPreferencesGet(@"SideMinimumTouchCount", ZephyrPreferencesGet(@"MinimumTouchCount", [NSNumber numberWithInt:1])) intValue];
         CGFloat edgeMargin = [(NSNumber *) ZephyrPreferencesGet(@"SideSensitivityDistance", [NSNumber numberWithFloat:30.0f]) floatValue];
 
         for (SBOffscreenSwipeGestureRecognizer *recognizer in [gesture gestureRecognizers]) {
@@ -528,25 +75,101 @@ BOOL ZephyrSwitchAppGestureIsActive() {
     });
 }
 
-// avoid conflict between native gesture and custom gesture on the iPad
+static SBGestureRecognizer *activeHorizontalRecognizer = nil;
+
+// avoid conflict between native gesture and custom gestures
 - (void)handleFluidHorizontalSystemGesture:(SBGestureRecognizer *)recognizer {
-    if ([gesture isActive] || ZephyrSwitchAppGestureIsAnimatingCompletion()) return;
+    if (recognizer == activeHorizontalRecognizer) {
+        if ([recognizer state] == SBGestureRecognizerStateEnded || [recognizer state] == SBGestureRecognizerStateCancelled) {
+            activeHorizontalRecognizer = nil;
+        }
+
+        %orig;
+    } else if (activeHorizontalRecognizer == nil && [recognizer state] == SBGestureRecognizerStateBegan) {
+        activeHorizontalRecognizer = recognizer;
+        %orig;
+    }
+}
+
+%end
+
+// The gesture, when starting, tries to rotate the screen (since they are only designed
+// for the iPad). Since the iPhone's home screen can't rotate, disable that part here.
+
+static NSInteger switchAppGestureBeganDisableRotation = 0;
+
+%hook SpringBoard
+
+- (void)noteInterfaceOrientationChanged:(UIInterfaceOrientation)orientation {
+    if (switchAppGestureBeganDisableRotation) return;
 
     %orig;
 }
 
 %end
 
-%hook SpringBoard
+%hook UIDevice
 
-- (void)_handleMenuButtonEvent {
-    if (objc_getClass("SBWorkspace") != nil && ZephyrSwitchAppGestureIsAnimatingCompletion()) {
-        // Disable home button during animation completion on iOS 6.
-        [self clearMenuButtonTimer];
-        return;
-    }
+- (void)setOrientation:(UIDeviceOrientation)orientation animated:(BOOL)animated {
+    if (switchAppGestureBeganDisableRotation) return;
 
     %orig;
+}
+
+%end
+
+%hook SBUIController
+
+- (void)_switchAppGestureBegan {
+    if ([[UIDevice currentDevice] userInterfaceIdiom] != UIUserInterfaceIdiomPad) switchAppGestureBeganDisableRotation += 1;
+    %orig;
+    if ([[UIDevice currentDevice] userInterfaceIdiom] != UIUserInterfaceIdiomPad) switchAppGestureBeganDisableRotation -= 1;
+}
+
+- (void)_switchAppGestureBegan:(CGFloat)location {
+    if ([[UIDevice currentDevice] userInterfaceIdiom] != UIUserInterfaceIdiomPad) switchAppGestureBeganDisableRotation += 1;
+    %orig;
+    if ([[UIDevice currentDevice] userInterfaceIdiom] != UIUserInterfaceIdiomPad) switchAppGestureBeganDisableRotation -= 1;
+}
+
+%end
+
+%hook SBSwitchAppGestureView
+
+- (id)initWithInterfaceOrientation:(UIInterfaceOrientation)orientation startingApp:(SBApplication *)startingApp leftwardApp:(SBApplication *)leftApp rightwardApp:(SBApplication *)rightApp {
+    if ((self = %orig) != nil) {
+        // iOS 5.0 doesn't set this by default, so make sure to ourselves.
+        [self setContentScaleFactor:[[UIScreen mainScreen] scale]];
+
+        return self;
+    }
+
+    return self;
+}
+
+// Rotation support. By default, we can't rotate the SBSwitchAppGestureView, and
+// since we no longer replace the _switchAppGestureBegan method, we can't add a
+// different container view there. Instead, just hack that support in here instead.
+
+- (void)willMoveToSuperview:(UIView *)newSuperview {
+    if (newSuperview == nil) {
+        UIView *superview = [self superview];
+        [superview removeFromSuperview];
+    }
+}
+
+- (void)didMoveToSuperview {
+    UIView *superview = [self superview];
+    UIView *contentView = MSHookIvar<UIView *>([objc_getClass("SBUIController") sharedInstance], "_contentView");
+
+    if (superview == contentView) {
+        UIView *containerView = [[UIView alloc] initWithFrame:[contentView bounds]];
+        ZephyrRotateViewFromOrientationToOrientation(containerView, ZephyrHomeInterfaceOrientation(), ZephyrCurrentInterfaceOrientation(), YES);
+
+        [containerView addSubview:self];
+        [superview addSubview:containerView];
+        [containerView release];
+    }
 }
 
 %end
