@@ -408,7 +408,7 @@
                 <string>ipad</string>
             </array>
             <key>footerText</key>
-            <string>These settings override the built-in system gesture setting.</string>
+            <string>These override the built-in system gesture setting.</string>
 		</dict>
 
         <dict>
