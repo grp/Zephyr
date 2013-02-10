@@ -1,6 +1,13 @@
 
 #import "Common.h"
 
+// The purpose of this file is to re-enable the iPad system gestures on the iPhone,
+// as well as the methods that implement them, so other parts of Zephyr can use that
+// code. To do so, it needs to hook a C function that determines if gesture recognition
+// is allowed. Unfortunately, there is no way to get a reference to that function.
+// Instead, we hook the places that function is called, and then call it again in
+// a context we control in order to force the gestures enabled, if just disabled.
+
 static NSInteger disableNextCheck = 0;
 static NSInteger fakeNextScrollingCheck = 0;
 
@@ -61,6 +68,11 @@ static void EnsureGesturesEnabled() {
 
 %end
 
+// One of the common call sites for "the function" is SBSystemGesturesChangeGestureAndRecognitionState,
+// another C function, called from too many C functions and methods for us to hook them all. However,
+// there is one way to detect SBSystemGesturesChangeGestureAndRecognitionState: if logging is enabled,
+// it will print out a log message that we can detect. Then, we can force the gestures enabled again.
+
 static id (*orig_NSLogv)(NSString *, va_list);
 static void my_NSLogv(NSString *what, va_list args) {
     if ([what hasPrefix:@"SBSystemGesturesChangeGestureAndRecognitionState"]) {
@@ -70,12 +82,14 @@ static void my_NSLogv(NSString *what, va_list args) {
         // This is called in the middle of the method, but we need to force it
         // re-enabled after a later portion. To do that, just async the call.
         dispatch_async(dispatch_get_main_queue(), ^{ EnsureGesturesEnabled(); });
+
+        return;
     }
 
     orig_NSLogv(what, args);
 }
 
-Boolean (*orig_CFPreferencesGetAppBooleanValue)(CFStringRef key, CFStringRef applicationID, Boolean *keyExistsAndHasValidFormat);
+Boolean (*orig_CFPreferencesGetAppBooleanValue)(CFStringRef, CFStringRef, Boolean);
 Boolean my_CFPreferencesGetAppBooleanValue(CFStringRef key, CFStringRef applicationID, Boolean *keyExistsAndHasValidFormat) {
     if ([(NSString *)key isEqual:@"SBSystemGesturesLogging"]) {
         // The above logging message that we depend on to get notified when
@@ -88,7 +102,7 @@ Boolean my_CFPreferencesGetAppBooleanValue(CFStringRef key, CFStringRef applicat
     }
 }
 
-CFPropertyListRef (*orig_CFPreferencesCopyAppValue)(CFStringRef key, CFStringRef applicationID);
+CFPropertyListRef (*orig_CFPreferencesCopyAppValue)(CFStringRef, CFStringRef);
 CFPropertyListRef my_CFPreferencesCopyAppValue(CFStringRef key, CFStringRef applicationID) {
     if ([(NSString *)key isEqual:@"SBUseSystemGestures"]) {
         // The iPad has this set by default, but the iPhone doesn't (and has no
