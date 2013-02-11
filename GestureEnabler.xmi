@@ -124,7 +124,7 @@ static CFPropertyListRef replaced_CFPreferencesCopyAppValue(CFStringRef key, CFS
         // The iPad has this set by default, but the iPhone doesn't (and has no
         // way to set it in the UI), so we need to enable gestures manually here.
         // (But even on the iPad, we need it set for our gestures to work at all.)
-        return [NSNumber numberWithInt:1];
+        return [[NSNumber numberWithInt:1] copy];
     } else {
         return orig_CFPreferencesCopyAppValue(key, applicationID);
     }
