@@ -40,10 +40,24 @@
     return YES;
 }
 
-- (BOOL)handle:(SBOffscreenSwipeGestureRecognizer *)recognizer {
+- (void)handleGestureBegan:(SBGestureRecognizer *)recognizer withLocation:(CGFloat)location {
     SBUIController *controller = [objc_getClass("SBUIController") sharedInstance];
     [controller handleFluidHorizontalSystemGesture:recognizer];
-    return YES;
+}
+
+- (void)handleGestureChanged:(SBGestureRecognizer *)recognizer withLocation:(CGFloat)location velocity:(CGPoint)velocity {
+    SBUIController *controller = [objc_getClass("SBUIController") sharedInstance];
+    [controller handleFluidHorizontalSystemGesture:recognizer];
+}
+
+- (void)handleGestureEnded:(SBGestureRecognizer *)recognizer withLocation:(CGFloat)location velocity:(CGPoint)velocity completionType:(int)type {
+    SBUIController *controller = [objc_getClass("SBUIController") sharedInstance];
+    [controller handleFluidHorizontalSystemGesture:recognizer];
+}
+
+- (void)handleGestureCanceled:(SBGestureRecognizer *)recognizer {
+    SBUIController *controller = [objc_getClass("SBUIController") sharedInstance];
+    [controller handleFluidHorizontalSystemGesture:recognizer];
 }
 
 @end
@@ -84,6 +98,7 @@ static SBGestureRecognizer *activeHorizontalRecognizer = nil;
         BOOL enabled = [ZephyrPreferencesGet(@"SystemSwitchAppEnabled", [NSNumber numberWithBool:YES]) boolValue];
         if (!enabled) return;
     }
+
 
     if (recognizer == activeHorizontalRecognizer) {
         if ([recognizer state] == SBGestureRecognizerStateEnded || [recognizer state] == SBGestureRecognizerStateCancelled) {

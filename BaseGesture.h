@@ -15,10 +15,10 @@
 - (BOOL)shouldActivateAtEdge:(SBOffscreenEdge)edge;
 - (BOOL)shouldUseGrabberAtEdge:(SBOffscreenEdge)edge;
 
-- (void)handleGestureBeganWithLocation:(CGFloat)location;
-- (void)handleGestureChangedWithLocation:(CGFloat)location velocity:(CGPoint)velocity;
-- (void)handleGestureEndedWithLocation:(CGFloat)location velocity:(CGPoint)velocity completionType:(int)type;
-- (void)handleGestureCanceled;
+- (void)handleGestureBegan:(SBGestureRecognizer *)recognizer withLocation:(CGFloat)location;
+- (void)handleGestureChanged:(SBGestureRecognizer *)recognizer withLocation:(CGFloat)location velocity:(CGPoint)velocity;
+- (void)handleGestureEnded:(SBGestureRecognizer *)recognizer withLocation:(CGFloat)location velocity:(CGPoint)velocity completionType:(int)type;
+- (void)handleGestureCanceled:(SBGestureRecognizer *)recognizer;
 - (void)cancelGesture;
 
 @end

@@ -217,7 +217,6 @@ typedef enum {
 @end
 
 @class SBGestureRecognizer;
-@class SBFluidSlideGestureRecognizer;
 
 @interface SBUIController : NSObject
 + (id)sharedInstance;
@@ -246,9 +245,9 @@ typedef enum {
 - (void)_switchAppGestureViewAnimationComplete;
 
 - (void)handleDismissBannerSystemGesture:(SBGestureRecognizer *)recognizer;
-- (void)handleFluidHorizontalSystemGesture:(SBFluidSlideGestureRecognizer *)recognizer;
-- (void)handleFluidVerticalSystemGesture:(SBFluidSlideGestureRecognizer *)recognizer;
-- (void)handleFluidScaleSystemGesture:(SBFluidSlideGestureRecognizer *)recognizer;
+- (void)handleFluidHorizontalSystemGesture:(SBGestureRecognizer *)recognizer;
+- (void)handleFluidVerticalSystemGesture:(SBGestureRecognizer *)recognizer;
+- (void)handleFluidScaleSystemGesture:(SBGestureRecognizer *)recognizer;
 - (void)handleHideNotificationsSystemGesture:(SBGestureRecognizer *)recognizer;
 
 - (SBShowcaseContext *)_showcaseContextForOffset:(CGFloat)offset;
@@ -320,6 +319,9 @@ typedef enum {
 
 @interface SBAwayController : SBAlert
 + (id)sharedAwayController;
++ (id)sharedAwayControllerIfExists;
+- (BOOL)allowDismissCameraSystemGesture; // iOS 5.1+
+- (void)handleDismissCameraSystemGesture:(SBGestureRecognizer *)gesture; // iOS 5.1+
 - (BOOL)isLocked;
 @end
 

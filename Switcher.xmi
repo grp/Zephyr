@@ -113,7 +113,7 @@
     if ([SBApp _accessibilityFrontMostApplication] != nil) [[[objc_getClass("SBUIController") sharedInstance] rootView] setAlpha:0.0f];
 }
 
-- (void)handleGestureCanceled {
+- (void)handleGestureCanceled:(SBGestureRecognizer *)recognizer {
     // XXX: implement this correctly
 }
 
@@ -126,7 +126,7 @@
     [shadowView setFrame:shadowFrame];
 }
 
-- (void)handleGestureBeganWithLocation:(CGFloat)location {
+- (void)handleGestureBegan:(SBGestureRecognizer *)recognizer withLocation:(CGFloat)location {
     pendingSwitcherActivations = [[NSMutableSet alloc] init];
     [[objc_getClass("SBOrientationLockManager") sharedInstance] setLockOverrideEnabled:YES forReason:@"ZephyrSwitcher"];
     if ([SBApp _accessibilityFrontMostApplication] != nil) [[[objc_getClass("SBUIController") sharedInstance] rootView] setAlpha:1.0f];
@@ -204,7 +204,7 @@
     }];
 }
 
-- (void)handleGestureChangedWithLocation:(CGFloat)location velocity:(CGPoint)velocity {
+- (void)handleGestureChanged:(SBGestureRecognizer *)recognizer withLocation:(CGFloat)location velocity:(CGPoint)velocity {
     location = [self screenLocationFromLocation:location];
 
     [self positionAtLocation:location];
@@ -224,7 +224,7 @@
     }
 }
 
-- (void)handleGestureEndedWithLocation:(CGFloat)location velocity:(CGPoint)velocity completionType:(int)type {
+- (void)handleGestureEnded:(SBGestureRecognizer *)recognizer withLocation:(CGFloat)location velocity:(CGPoint)velocity completionType:(int)type {
     location = [self screenLocationFromLocation:location];
 
     SBApplication *app = [SBApp _accessibilityFrontMostApplication];
@@ -473,6 +473,17 @@ static ZephyrSwitcherGesture *gesture = nil;
 - (void)handleFluidScaleSystemGesture:(SBFluidSlideGestureRecognizer *)recognizer {
     BOOL enabled = [ZephyrPreferencesGet(@"SystemSuspendEnabled", [NSNumber numberWithBool:YES]) boolValue];
     if (!enabled) return;
+
+    %orig;
+}
+
+- (void)_suspendGestureCleanUpState {
+    // The spotlight keyboard will otherwise come up in landscape if we exit the app there.
+    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone) {
+        UIInterfaceOrientation currentOrientation = ZephyrHomeInterfaceOrientation();
+        [[UIDevice currentDevice] setOrientation:currentOrientation animated:NO];
+        [SBApp noteInterfaceOrientationChanged:currentOrientation];
+    }
 
     %orig;
 }

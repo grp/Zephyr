@@ -40,10 +40,6 @@ static NSMutableArray *allGestures = nil;
     isActive = NO;
 }
 
-- (BOOL)handle:(SBGestureRecognizer *)recognizer {
-    return NO;
-}
-
 - (void)addOffscreenEdge:(SBOffscreenEdge)edge minimumTouchCount:(int)touchCount edgeMargin:(CGFloat)sensitivity {
     SBOffscreenSwipeGestureRecognizer *gestureRecognizer = [[objc_getClass("SBOffscreenSwipeGestureRecognizer") alloc] initForOffscreenEdge:edge];
     [gestureRecognizer setAllowableDistanceFromEdgeCenter:CGFLOAT_MAX];
@@ -55,8 +51,6 @@ static NSMutableArray *allGestures = nil;
     [gestureRecognizer setTypes:0x10];
 
     [gestureRecognizer setHandler:^{
-        if ([self handle:gestureRecognizer]) return;
-
         CGFloat distance = [gestureRecognizer cumulativePercentage];
         CGPoint velocity = [gestureRecognizer movementVelocityInPointsPerSecond];
 
@@ -68,7 +62,7 @@ static NSMutableArray *allGestures = nil;
                     if (![self shouldUseGrabberAtEdge:edge] || [[ZephyrGrabberController sharedInstance] visibleAtEdge:edge]) {
                         [[ZephyrGrabberController sharedInstance] hideAtEdge:edge animated:YES];
 
-                        [self handleGestureBeganWithLocation:distance];
+                        [self handleGestureBegan:gestureRecognizer withLocation:distance];
                         isActive = YES;
                     } else {
                         [[ZephyrGrabberController sharedInstance] showAtEdge:edge animated:YES];
@@ -77,12 +71,12 @@ static NSMutableArray *allGestures = nil;
                 break;
             case 2:
                 if ([self isActive]) {
-                    [self handleGestureChangedWithLocation:distance velocity:velocity];
+                    [self handleGestureChanged:gestureRecognizer withLocation:distance velocity:velocity];
                 }
                 break;
             case 3:
                 if ([self isActive]) {
-                    [self handleGestureEndedWithLocation:distance velocity:velocity completionType:[gestureRecognizer completionTypeProjectingMomentumForInterval:5.0f]];
+                    [self handleGestureEnded:gestureRecognizer withLocation:distance velocity:velocity completionType:[gestureRecognizer completionTypeProjectingMomentumForInterval:5.0f]];
                     isActive = NO;
                 }
                 break;
@@ -92,7 +86,7 @@ static NSMutableArray *allGestures = nil;
                 // gives us spurious cancelations that break any gesture with two possible recognizers. :(
                 // XXX: the above text is not true. if both gestures are enabled then the active gesture is somehow
                 // automatically canceled. I do not know why this is, but it requires us to sadly ignore cancels now.
-                // [self handleGestureCanceled];
+                // [self handleGestureCanceled:gestureRecognizer];
                 // isActive = NO;
                 break;
             default:
@@ -140,19 +134,19 @@ static NSMutableArray *allGestures = nil;
     return NO;
 }
 
-- (void)handleGestureBeganWithLocation:(CGFloat)location {
+- (void)handleGestureBegan:(SBGestureRecognizer *)recognizer withLocation:(CGFloat)location {
 
 }
 
-- (void)handleGestureChangedWithLocation:(CGFloat)location velocity:(CGPoint)velocity {
+- (void)handleGestureChanged:(SBGestureRecognizer *)recognizer withLocation:(CGFloat)location velocity:(CGPoint)velocity {
 
 }
 
-- (void)handleGestureEndedWithLocation:(CGFloat)location velocity:(CGPoint)velocity completionType:(int)type {
+- (void)handleGestureEnded:(SBGestureRecognizer *)recognizer withLocation:(CGFloat)location velocity:(CGPoint)velocity completionType:(int)type {
 
 }
 
-- (void)handleGestureCanceled {
+- (void)handleGestureCanceled:(SBGestureRecognizer *)recognizer {
 
 }
 

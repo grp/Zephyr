@@ -2,6 +2,8 @@
 # Bugs
  - switcher in landscape causes apps to freeze
  - fix bug with auto-canceled swipe gestures
+ - grabber requires two swipes for each app
+ - guided access is not respected at all
 
 # Improvements
  - reorganize, clean up preferences (add context to all settings)
