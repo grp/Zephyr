@@ -2,7 +2,6 @@
 # Bugs
  - keyboard detection can't recognize remote view controllers
  - gestures recognized when one finger is already on the screen
- - grabber requires two swipes for each app
  - guided access is not respected at all
  - fix bug with auto-canceled swipe gestures
 

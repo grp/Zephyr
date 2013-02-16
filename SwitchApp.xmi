@@ -33,7 +33,21 @@
 }
 
 - (BOOL)shouldUseGrabberAtEdge:(SBOffscreenEdge)edge {
-    return [(NSNumber *) ZephyrPreferencesGet(@"SideGrabberEnabled", [NSNumber numberWithBool:NO]) boolValue];
+    BOOL enabled = [(NSNumber *) ZephyrPreferencesGet(@"SideGrabberEnabled", [NSNumber numberWithBool:NO]) boolValue];
+
+    if (enabled) {
+        SBApplication *topApplication = [SBApp _accessibilityFrontMostApplication];
+        SBApplication *pendingApplication = MSHookIvar<SBApplication *>([objc_getClass("SBUIController") sharedInstance], "_pendingAppActivatedByGesture");
+
+        // When quickly paging between apps, don't require the grabber again until an app launches.
+        if (topApplication == nil && pendingApplication != nil) {
+            return NO;
+        } else {
+            return YES;
+        }
+    } else {
+        return NO;
+    }
 }
 
 - (BOOL)currentOrientationIsSupported {
