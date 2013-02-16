@@ -1,7 +1,7 @@
 
 # Bugs
  * keyboard detection can't recognize remote view controllers
- * crash when hanging up a received call on the lock screen?
+ * various conflict/crashes when used at the same time as LockInfo
  - gestures recognized when one finger is already on the screen
  - guided access is not respected at all
  - fix bug with auto-canceled swipe gestures
