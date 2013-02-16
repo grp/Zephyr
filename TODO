@@ -1,17 +1,19 @@
 
 # Bugs
- - keyboard detection can't recognize remote view controllers
+ * keyboard detection can't recognize remote view controllers
+ * crash when hanging up a received call on the lock screen?
  - gestures recognized when one finger is already on the screen
  - guided access is not respected at all
  - fix bug with auto-canceled swipe gestures
 
 # Improvements
+ - remove Keyboard Disables: use grabber for swipe up and only above for horizontal
  - reorganize, clean up preferences (add context to all settings)
  - Smoothly fade out icons when showing switcher.
  - swipe down switcher w/ smooth finger tracking
 
 # Features
- - Only recognize swipes at the bottom half of the screen.
+ * Only recognize swipes at the bottom half of the screen.
  - Swipe down to close expanded Siri.
  - rotate gesture to switch to landscape
  - remove slide to unlock, swipe up to close lockscreen
