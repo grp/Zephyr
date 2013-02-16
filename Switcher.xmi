@@ -218,32 +218,35 @@
         [pendingSwitcherActivations addObject:[NSArray arrayWithObjects:[NSNumber numberWithFloat:location], [NSTimer zephyrScheduledTimerWithTimeInterval:delay block:^(NSTimer *timer) {
             if (![self isActive]) return; // prevent double activations
 
-            [self showSwitcherFromCurrentPosition];
+            [self animateSwitcherFromDismissGesture];
             [self cancelGesture];
         } repeats:NO], nil]];
     }
 }
 
+- (void)resetAfterCancelDismissGesture {
+    SBApplication *app = [SBApp _accessibilityFrontMostApplication];
+    SBUIController *controller = [objc_getClass("SBUIController") sharedInstance];
+    [controller notifyAppResumeActive:app];
+    [controller stopRestoringIconList];
+    [controller tearDownIconListAndBar];
+}
+
 - (void)handleGestureEnded:(SBGestureRecognizer *)recognizer withLocation:(CGFloat)location velocity:(CGPoint)velocity completionType:(int)type {
     location = [self screenLocationFromLocation:location];
 
-    SBApplication *app = [SBApp _accessibilityFrontMostApplication];
-
     if ([self effectiveSwipeUpAction] == kSwipeUpActionSwitcher) {
         if (velocity.y < 0) {
-            [self showSwitcherFromLocation:location];
+            [self animateSwitcherFromSwitcherGestureLocation:location];
         } else {
             [self animateResetWithCompletion:NULL];
         }
     } else {
         if (type == 1) {
-            [self animateDismissFrontmostAppFromLocation:location];
+            [self animateDismissFromDismissGestureLocation:location];
         } else {
             [self animateResetWithCompletion:^{
-                SBUIController *controller = [objc_getClass("SBUIController") sharedInstance];
-                [controller notifyAppResumeActive:app];
-                [controller stopRestoringIconList];
-                [controller tearDownIconListAndBar];
+                [self resetAfterCancelDismissGesture];
             }];
         }
     }
@@ -297,7 +300,7 @@
     }];
 }
 
-- (void)animateDismissFrontmostAppFromLocation:(CGFloat)location {
+- (void)animateDismissFromDismissGestureLocation:(CGFloat)location {
     [SBApp showSpringBoardStatusBar];
 
     UIViewAnimationOptions options = (UIViewAnimationOptionCurveEaseOut | UIViewAnimationOptionBeginFromCurrentState);
@@ -314,7 +317,7 @@
     }];
 }
 
-- (void)showSwitcherFromLocation:(CGFloat)location {
+- (void)animateSwitcherFromSwitcherGestureLocation:(CGFloat)location {
     CGFloat bottomBarHeight = ZephyrAppSwitcherHeight();
 
     CGFloat from = -location;
@@ -338,7 +341,7 @@
     }
 }
 
-- (void)showSwitcherFromCurrentPosition {
+- (void)animateSwitcherFromDismissGesture {
     CGFloat bottomBarHeight = ZephyrAppSwitcherHeight();
 
     UIView *homeView = ZephyrViewWithScreenshotOfHomeScreen();
@@ -385,6 +388,8 @@
         [homeView setFrame:homeFrame];
     } completion:^(BOOL finished) {
         [self cleanupViews];
+
+        [self resetAfterCancelDismissGesture];
 
         [homeView removeFromSuperview];
         [switcherShadowView removeFromSuperview];

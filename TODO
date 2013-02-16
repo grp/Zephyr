@@ -1,6 +1,5 @@
 
 # Bugs
- - switcher in causes OpenGL apps to freeze
  - keyboard detection can't recognize remote view controllers
  - gestures recognized when one finger is already on the screen
  - grabber requires two swipes for each app
