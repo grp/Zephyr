@@ -35,7 +35,6 @@ static CGFloat grabLocation = NAN;
     SBApplication *app = [SBApp _accessibilityFrontMostApplication];
 
     if (app != nil) {
-        NSLog(@"disabling context hosting");
         [app disableContextHostingForRequester:CFSTR("SwitchApp")];
     }
 
