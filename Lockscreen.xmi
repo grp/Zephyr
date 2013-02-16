@@ -1,0 +1,58 @@
+
+#import "Common.h"
+#import "BaseGesture.h"
+
+// When we pretend to be an iPad in GestureEnabler.xmi, we break the Lock Screen camera
+// close gesture, since it things we are on an iPad and doesn't set one up. Rather than
+// trying to add more hacks into that to get the built in gesture, we can make our own.
+@interface ZephyrCameraCloseGesture : ZephyrBaseGesture
+@end
+
+@implementation ZephyrCameraCloseGesture : ZephyrBaseGesture
+
+- (BOOL)shouldActivateAtEdge:(SBOffscreenEdge)edge {
+    return [[objc_getClass("SBAwayController") sharedAwayControllerIfExists] allowDismissCameraSystemGesture];
+}
+
+- (void)handleGestureBegan:(SBGestureRecognizer *)recognizer withLocation:(CGFloat)location {
+    [[objc_getClass("SBAwayController") sharedAwayControllerIfExists] handleDismissCameraSystemGesture:recognizer];
+}
+
+- (void)handleGestureChanged:(SBGestureRecognizer *)recognizer withLocation:(CGFloat)location velocity:(CGPoint)velocity {
+    [[objc_getClass("SBAwayController") sharedAwayControllerIfExists] handleDismissCameraSystemGesture:recognizer];
+}
+
+- (void)handleGestureEnded:(SBGestureRecognizer *)recognizer withLocation:(CGFloat)location velocity:(CGPoint)velocity completionType:(int)type {
+    [[objc_getClass("SBAwayController") sharedAwayControllerIfExists] handleDismissCameraSystemGesture:recognizer];
+}
+
+- (void)handleGestureCanceled:(SBGestureRecognizer *)recognizer {
+    [[objc_getClass("SBAwayController") sharedAwayControllerIfExists] handleDismissCameraSystemGesture:recognizer];
+}
+
+@end
+
+static ZephyrCameraCloseGesture *gesture = nil;
+
+%group Camera
+
+%hook SBUIController
+
+- (void)finishLaunching {
+    %orig;
+
+    // This was added in iOS 5.1.
+    if ([objc_getClass("SBAwayController") instancesRespondToSelector:@selector(allowDismissCameraSystemGesture)]) {
+        gesture = [[ZephyrCameraCloseGesture alloc] init];
+        [gesture addOffscreenEdge:kSBOffscreenEdgeTop minimumTouchCount:1 edgeMargin:30.0f];
+    }
+}
+
+%end
+
+%end
+
+%ctor {
+    %init(Camera);
+}
+
