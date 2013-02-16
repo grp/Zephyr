@@ -13,7 +13,6 @@
  - swipe down switcher w/ smooth finger tracking
 
 # Features
- * Only recognize swipes at the bottom half of the screen.
  - Swipe down to close expanded Siri.
  - rotate gesture to switch to landscape
  - remove slide to unlock, swipe up to close lockscreen

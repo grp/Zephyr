@@ -32,6 +32,19 @@
         && [(NSNumber *) ZephyrPreferencesGet(@"SwipeSideEnabled", [NSNumber numberWithBool:YES]) boolValue];
 }
 
+- (BOOL)shouldActivateAtEdge:(SBOffscreenEdge)edge atPoint:(CGPoint)point {
+    if ([ZephyrPreferencesGet(@"SideBottomOnly", [NSNumber numberWithBool:NO]) boolValue]) {
+        UIInterfaceOrientation orientation = ZephyrCurrentInterfaceOrientation();
+        CGFloat height = ZephyrHeightForOrientation(orientation);
+
+        if (point.y < (height / 3.0) * 2.0) {
+            return NO;
+        }
+    }
+
+    return YES;
+}
+
 - (BOOL)shouldUseGrabberAtEdge:(SBOffscreenEdge)edge {
     BOOL enabled = [(NSNumber *) ZephyrPreferencesGet(@"SideGrabberEnabled", [NSNumber numberWithBool:NO]) boolValue];
 

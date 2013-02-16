@@ -134,6 +134,10 @@ static NSMutableArray *allGestures = nil;
     return NO;
 }
 
+- (BOOL)shouldActivateAtEdge:(SBOffscreenEdge)edge atPoint:(CGPoint)point {
+    return [self shouldActivateAtEdge:edge];
+}
+
 - (void)handleGestureBegan:(SBGestureRecognizer *)recognizer withLocation:(CGFloat)location {
 
 }
@@ -151,6 +155,44 @@ static NSMutableArray *allGestures = nil;
 }
 
 @end
+
+static ZephyrBaseGesture *GestureForRecognizer(SBGestureRecognizer *recognizer) {
+    for (ZephyrBaseGesture *gesture in allGestures) {
+        if ([[gesture gestureRecognizers] containsObject:recognizer]) {
+            return gesture;
+        }
+    }
+
+    return nil;
+}
+
+%group SwipeDetectionRegion
+%hook SBOffscreenSwipeGestureRecognizer
+
+- (BOOL)firstTouchInRange:(CGPoint)point {
+    BOOL range = %orig;
+    if (range) {
+        ZephyrBaseGesture *gesture = GestureForRecognizer(self);
+        SBOffscreenEdge edge = MSHookIvar<SBOffscreenEdge>(self, "m_offscreenEdge");
+        return [gesture shouldActivateAtEdge:edge atPoint:point];
+    } else {
+        return NO;
+    }
+}
+
+- (BOOL)secondTouchInRange:(CGPoint)point {
+    BOOL range = %orig;
+    if (range) {
+        ZephyrBaseGesture *gesture = GestureForRecognizer(self);
+        SBOffscreenEdge edge = MSHookIvar<SBOffscreenEdge>(self, "m_offscreenEdge");
+        return [gesture shouldActivateAtEdge:edge atPoint:point];
+    } else {
+        return NO;
+    }
+}
+
+%end
+%end
 
 %group DisableHardwareButtons
 %hook SpringBoard
@@ -189,6 +231,7 @@ static NSMutableArray *allGestures = nil;
 %end
 
 %ctor {
+    %init(SwipeDetectionRegion);
     %init(DisableHardwareButtons);
 }
 
