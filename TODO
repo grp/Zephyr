@@ -1,9 +1,11 @@
 
 # Bugs
- - switcher in landscape causes apps to freeze
- - fix bug with auto-canceled swipe gestures
+ - switcher in causes OpenGL apps to freeze
+ - keyboard detection can't recognize remote view controllers
+ - gestures recognized when one finger is already on the screen
  - grabber requires two swipes for each app
  - guided access is not respected at all
+ - fix bug with auto-canceled swipe gestures
 
 # Improvements
  - reorganize, clean up preferences (add context to all settings)
@@ -11,9 +13,10 @@
  - swipe down switcher w/ smooth finger tracking
 
 # Features
+ - Only recognize swipes at the bottom half of the screen.
  - Swipe down to close expanded Siri.
- - Some gesture to go back to last app.
  - rotate gesture to switch to landscape
  - remove slide to unlock, swipe up to close lockscreen
+ - gesture to lock device or just go to lock screen
  - gesture for a sepcific app (on/off home screen)
 
