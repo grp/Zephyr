@@ -185,7 +185,7 @@
 			<array>
 				<string>Disabled</string>
 				<string>Close App (and Switcher)</string>
-				<string>Switcher (only)</string>
+				<string>Switcher Only</string>
 			</array>
 			<key>validValues</key>
 			<array>
