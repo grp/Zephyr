@@ -7,7 +7,6 @@
  - fix bug with auto-canceled swipe gestures
 
 # Improvements
- - choose how many fingers the pinch to close gesture uses
  - remove Keyboard Disables: use grabber for swipe up and only above for horizontal
  - reorganize, clean up preferences (add context to all settings)
  - Smoothly fade out icons when showing switcher.
