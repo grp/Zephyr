@@ -13,6 +13,7 @@
 - (BOOL)currentOrientationIsSupported;
 
 - (BOOL)shouldActivateAtEdge:(SBOffscreenEdge)edge;
+- (BOOL)shouldActivateAtEdge:(SBOffscreenEdge)edge atPoint:(CGPoint)point; // only if shouldActivateAtEdge: too.
 - (BOOL)shouldUseGrabberAtEdge:(SBOffscreenEdge)edge;
 
 - (void)handleGestureBegan:(SBGestureRecognizer *)recognizer withLocation:(CGFloat)location;

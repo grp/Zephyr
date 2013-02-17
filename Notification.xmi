@@ -25,6 +25,7 @@ static BOOL ZephyrNotificationShouldActivate() {
 
 %hook SBBulletinListController
 
+// XXX: these should be associated objects, not statics
 static UIView *appView = nil;
 static SBBulletinListView *centerView = nil;
 static UIImageView *shadowView = nil;
