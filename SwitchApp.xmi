@@ -7,11 +7,6 @@
 @implementation ZephyrSwitchAppGesture
 
 - (BOOL)shouldActivateAtEdge:(SBOffscreenEdge)edge {
-    BOOL disableKeyboard = [(NSNumber *) ZephyrPreferencesGet(@"SideDisableKeyboard", ZephyrPreferencesGet(@"DisableKeyboard", [NSNumber numberWithBool:YES])) boolValue];
-    if (disableKeyboard) {
-        if (ZephyrKeyboardIsActive()) return NO;
-    }
-
     SBApplication *topApplication = [SBApp _accessibilityFrontMostApplication];
 
     if (topApplication != nil) {
@@ -33,11 +28,19 @@
 }
 
 - (BOOL)shouldActivateAtEdge:(SBOffscreenEdge)edge atPoint:(CGPoint)point {
-    if ([ZephyrPreferencesGet(@"SideBottomOnly", [NSNumber numberWithBool:NO]) boolValue]) {
-        UIInterfaceOrientation orientation = ZephyrCurrentInterfaceOrientation();
-        CGFloat height = ZephyrHeightForOrientation(orientation);
+    CGFloat area = [ZephyrPreferencesGet(@"SideScreenArea", [NSNumber numberWithFloat:1.0f]) floatValue];
 
-        if (point.y < (height / 3.0) * 2.0) {
+    UIInterfaceOrientation orientation = ZephyrCurrentInterfaceOrientation();
+    CGFloat height = ZephyrHeightForOrientation(orientation);
+
+    if (point.y > height * area) {
+        return NO;
+    }
+
+    if (ZephyrKeyboardIsActive()) {
+        CGSize size = [UIKeyboard defaultSizeForInterfaceOrientation:orientation];
+
+        if (point.y > height - size.height) {
             return NO;
         }
     }

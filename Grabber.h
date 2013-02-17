@@ -13,5 +13,7 @@
 - (void)showAtEdge:(SBOffscreenEdge)edge animated:(BOOL)animated;
 - (void)hideAtEdge:(SBOffscreenEdge)edge animated:(BOOL)animated;
 
+- (BOOL)pointInside:(CGPoint)point atEdge:(SBOffscreenEdge)edge;
+
 @end
 

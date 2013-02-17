@@ -109,6 +109,10 @@ static void (*BKSHIDServicesSystemGestureIsStealingEvents)(BOOL) = NULL;
 
 %hook SBGestureRecognizer
 
+- (void)sendTouchesCancelledToApplicationIfNeeded {
+    NSLog(@"touches! cancelled");
+}
+
 - (void)setState:(SBGestureRecognizerState)state {
     if (![allGestureRecognizers containsObject:self]) {
         %orig;
@@ -119,7 +123,8 @@ static void (*BKSHIDServicesSystemGestureIsStealingEvents)(BOOL) = NULL;
     // or it will believe the touch never ends while the gesture is running (causing all sorts
     // of issues). This may really belong above, but for simplicity, it's inserted here.
 
-    if (state == SBGestureRecognizerStateBegan) {
+    // Transitioning from Began to Changed/Ended: mark us as stealing touches.
+    if ([self state] == SBGestureRecognizerStateBegan && state != SBGestureRecognizerStateCancelled) {
         if (BKSHIDServicesSystemGestureIsStealingEvents != NULL) {
             BKSHIDServicesSystemGestureIsStealingEvents(YES);
         }
@@ -127,6 +132,7 @@ static void (*BKSHIDServicesSystemGestureIsStealingEvents)(BOOL) = NULL;
 
     %orig;
 
+    // Transitioning to Ended/Cancelled: mark us as not stealing touches any more.
     if (state == SBGestureRecognizerStateEnded || state == SBGestureRecognizerStateCancelled) {
         if (BKSHIDServicesSystemGestureIsStealingEvents != NULL) {
             BKSHIDServicesSystemGestureIsStealingEvents(NO);

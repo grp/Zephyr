@@ -14,6 +14,11 @@ extern NSString *kGSMultitaskingGesturesCapability;
 - (UIInterfaceOrientation)activeInterfaceOrientation;
 @end
 
+@interface UIKeyboard : UIView
++ (CGSize)defaultSize;
++ (CGSize)defaultSizeForInterfaceOrientation:(UIInterfaceOrientation)orientation;
+@end
+
 @class SBApplication;
 @interface SpringBoard : UIApplication
 - (SBApplication *)_accessibilityFrontMostApplication;
@@ -383,18 +388,19 @@ typedef enum {
 @end
 
 @interface SBGestureRecognizer : NSObject
-@property (nonatomic, copy) void (^handler)();
 @property (nonatomic, copy) BOOL (^canBeginCondition)();
-@property (nonatomic, assign) int types;
-@property (nonatomic, assign) SBGestureRecognizerState state;
-@property (assign, nonatomic) BOOL sendsTouchesCancelledToApplication;
-- (void)reset;
 - (BOOL)shouldReceiveTouches;
-- (int)templateMatch;
+
+@property (assign, nonatomic) BOOL sendsTouchesCancelledToApplication;
+- (void)sendTouchesCancelledToApplicationIfNeeded;
+
+@property (nonatomic, copy) void (^handler)();
+@property (nonatomic, assign) SBGestureRecognizerState state;
 - (void)touchesBegan:(SBGestureContext *)began;
 - (void)touchesCancelled:(SBGestureContext *)cancelled;
 - (void)touchesEnded:(SBGestureContext *)ended;
 - (void)touchesMoved:(SBGestureContext *)moved;
+- (void)reset;
 @end
 
 @interface SBFluidSlideGestureRecognizer : SBGestureRecognizer

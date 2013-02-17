@@ -43,7 +43,7 @@ static NSMutableArray *allGestures = nil;
 - (void)addOffscreenEdge:(SBOffscreenEdge)edge minimumTouchCount:(int)touchCount edgeMargin:(CGFloat)sensitivity {
     SBOffscreenSwipeGestureRecognizer *gestureRecognizer = [[objc_getClass("SBOffscreenSwipeGestureRecognizer") alloc] initForOffscreenEdge:edge];
     [gestureRecognizer setAllowableDistanceFromEdgeCenter:CGFLOAT_MAX];
-    [gestureRecognizer setSendsTouchesCancelledToApplication:YES];
+    [gestureRecognizer setSendsTouchesCancelledToApplication:NO];
     [gestureRecognizer setRequiresSecondTouchInRange:NO];
     [gestureRecognizer setMinTouches:touchCount];
     [gestureRecognizer setEdgeMargin:sensitivity];
@@ -62,10 +62,15 @@ static NSMutableArray *allGestures = nil;
                     if (![self shouldUseGrabberAtEdge:edge] || [[ZephyrGrabberController sharedInstance] visibleAtEdge:edge]) {
                         [[ZephyrGrabberController sharedInstance] hideAtEdge:edge animated:YES];
 
+                        [gestureRecognizer setSendsTouchesCancelledToApplication:YES];
+                        [gestureRecognizer sendTouchesCancelledToApplicationIfNeeded];
+                        [gestureRecognizer setSendsTouchesCancelledToApplication:NO];
+
                         [self handleGestureBegan:gestureRecognizer withLocation:distance];
                         isActive = YES;
                     } else {
                         [[ZephyrGrabberController sharedInstance] showAtEdge:edge animated:YES];
+                        [gestureRecognizer setState:SBGestureRecognizerStateCancelled];
                     }
                 }
                 break;
@@ -138,6 +143,31 @@ static NSMutableArray *allGestures = nil;
     return [self shouldActivateAtEdge:edge];
 }
 
+- (BOOL)gestureRecognizer:(SBGestureRecognizer *)recognizer shouldActivateAtEdge:(SBOffscreenEdge)edge atPoint:(CGPoint)point {
+    NSUInteger minTouches = 1;
+
+    if ([recognizer isKindOfClass:objc_getClass("SBFluidSlideGestureRecognizer")]) {
+        // only SBFluidSlideGestureRecognizer subclasses have a minTouches method
+        minTouches = [(SBFluidSlideGestureRecognizer *) recognizer minTouches];
+    }
+
+    // If we have only one touch required and a grabber, force you to be inside the grabber to grab it.
+    // (We only do this with one touch as more fingers can't all fit inside the grabber at once...)
+    if (minTouches == 1 && [[ZephyrGrabberController sharedInstance] visibleAtEdge:edge]) {
+        BOOL grabber = [[ZephyrGrabberController sharedInstance] pointInside:point atEdge:edge];
+
+        if (!grabber) {
+            // If we don't grab the grabber, hide it.
+            [[ZephyrGrabberController sharedInstance] hideAtEdge:edge animated:YES];
+        }
+
+        // Don't let other point detection logic (e.g. top third, or keyboard) block the grabber.
+        return grabber;
+    }
+
+    return [self shouldActivateAtEdge:edge atPoint:point];
+}
+
 - (void)handleGestureBegan:(SBGestureRecognizer *)recognizer withLocation:(CGFloat)location {
 
 }
@@ -176,23 +206,7 @@ static ZephyrBaseGesture *GestureForRecognizer(SBGestureRecognizer *recognizer) 
 
         if (gesture != nil) {
             SBOffscreenEdge edge = MSHookIvar<SBOffscreenEdge>(self, "m_offscreenEdge");
-            return [gesture shouldActivateAtEdge:edge atPoint:point];
-        } else {
-            return YES;
-        }
-    } else {
-        return NO;
-    }
-}
-
-- (BOOL)secondTouchInRange:(CGPoint)point {
-    BOOL range = %orig;
-    if (range) {
-        ZephyrBaseGesture *gesture = GestureForRecognizer(self);
-
-        if (gesture != nil) {
-            SBOffscreenEdge edge = MSHookIvar<SBOffscreenEdge>(self, "m_offscreenEdge");
-            return [gesture shouldActivateAtEdge:edge atPoint:point];
+            return [gesture gestureRecognizer:self shouldActivateAtEdge:edge atPoint:point];
         } else {
             return YES;
         }

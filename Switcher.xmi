@@ -23,11 +23,6 @@
         if (![topApplication displayFlag:0x1]) displayFlagsAllowed = NO;
     }
 
-    BOOL disableKeyboard = [(NSNumber *) ZephyrPreferencesGet(@"BottomDisableKeyboard", ZephyrPreferencesGet(@"DisableKeyboard", [NSNumber numberWithBool:YES])) boolValue];
-    if (disableKeyboard) {
-        if (ZephyrKeyboardIsActive()) return NO;
-    }
-
     NSString *topIdentifier = [topApplication displayIdentifier];
     BOOL disableIdentifier = [(NSNumber *) ZephyrPreferencesGet([NSString stringWithFormat:@"BottomDisable-%@", topIdentifier], (id)kCFBooleanFalse) boolValue];
     if (disableIdentifier) return NO;
@@ -55,6 +50,8 @@
 }
 
 - (BOOL)shouldUseGrabberAtEdge:(SBOffscreenEdge)edge {
+    if (ZephyrKeyboardIsActive()) return YES;
+
     return [(NSNumber *) ZephyrPreferencesGet(@"BottomGrabberEnabled", [NSNumber numberWithBool:NO]) boolValue];
 }
 

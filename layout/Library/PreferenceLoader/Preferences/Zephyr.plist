@@ -51,34 +51,6 @@
 		</dict>
 		<dict>
 			<key>cell</key>
-			<string>PSSwitchCell</string>
-			<key>default</key>
-			<false/>
-			<key>key</key>
-			<string>SideBottomOnly</string>
-			<key>label</key>
-			<string>Only at Bottom</string>
-			<key>PostNotification</key>
-			<string>com.chpwn.zephyr.preferences-changed</string>
-			<key>defaults</key>
-			<string>com.chpwn.zephyr</string>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSSwitchCell</string>
-			<key>default</key>
-			<true/>
-			<key>key</key>
-			<string>SideDisableKeyboard</string>
-			<key>label</key>
-			<string>Keyboard Disables</string>
-			<key>PostNotification</key>
-			<string>com.chpwn.zephyr.preferences-changed</string>
-			<key>defaults</key>
-			<string>com.chpwn.zephyr</string>
-		</dict>
-		<dict>
-			<key>cell</key>
 			<string>PSLinkListCell</string>
 			<key>default</key>
 			<integer>1</integer>
@@ -161,6 +133,36 @@
 			<key>ALChangeNotification</key>
 			<string>com.chpwn.zephyr.preferences-changed</string>
 		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSLinkListCell</string>
+			<key>default</key>
+			<real>1.0</real>
+			<key>detail</key>
+			<string>PSListItemsController</string>
+			<key>key</key>
+			<string>SideScreenArea</string>
+			<key>label</key>
+			<string>Screen Area</string>
+			<key>validTitles</key>
+			<array>
+				<string>Whole Screen</string>
+				<string>Top Half</string>
+				<string>Top Third</string>
+				<string>Top Quarter</string>
+			</array>
+			<key>validValues</key>
+			<array>
+				<real>1.00</real>
+				<real>0.50</real>
+				<real>0.33</real>
+				<real>0.25</real>
+			</array>
+			<key>PostNotification</key>
+			<string>com.chpwn.zephyr.preferences-changed</string>
+			<key>defaults</key>
+			<string>com.chpwn.zephyr</string>
+		</dict>
 
         <dict>
 			<key>cell</key>
@@ -207,20 +209,6 @@
 			<string>BottomGrabberEnabled</string>
 			<key>label</key>
 			<string>Use Grabber</string>
-			<key>PostNotification</key>
-			<string>com.chpwn.zephyr.preferences-changed</string>
-			<key>defaults</key>
-			<string>com.chpwn.zephyr</string>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSSwitchCell</string>
-			<key>default</key>
-			<true/>
-			<key>key</key>
-			<string>BottomDisableKeyboard</string>
-			<key>label</key>
-			<string>Keyboard Disables</string>
 			<key>PostNotification</key>
 			<string>com.chpwn.zephyr.preferences-changed</string>
 			<key>defaults</key>

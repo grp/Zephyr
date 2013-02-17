@@ -140,6 +140,24 @@ static NSNumber *SBOffscreenEdgeKey(SBOffscreenEdge edge) {
     [_grabberWindows removeObjectForKey:SBOffscreenEdgeKey(edge)];
 }
 
+- (BOOL)pointInside:(CGPoint)point atEdge:(SBOffscreenEdge)edge {
+    SBBulletinListTabView *grabberView = [_grabberViews objectForKey:SBOffscreenEdgeKey(edge)];
+
+    if (grabberView == nil) {
+        return NO;
+    }
+
+    CGRect grabberFrame = [grabberView frame];
+
+    if (edge == kSBOffscreenEdgeLeft || edge == kSBOffscreenEdgeRight) {
+        return point.y > CGRectGetMinY(grabberFrame) && point.y < CGRectGetMaxY(grabberFrame);
+    } else if (edge == kSBOffscreenEdgeTop || edge == kSBOffscreenEdgeBottom) {
+        return point.x > CGRectGetMinX(grabberFrame) && point.x < CGRectGetMaxX(grabberFrame);
+    } else {
+        return NO;
+    }
+}
+
 @end
 
 
