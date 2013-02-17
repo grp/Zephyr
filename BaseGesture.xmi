@@ -173,8 +173,13 @@ static ZephyrBaseGesture *GestureForRecognizer(SBGestureRecognizer *recognizer) 
     BOOL range = %orig;
     if (range) {
         ZephyrBaseGesture *gesture = GestureForRecognizer(self);
-        SBOffscreenEdge edge = MSHookIvar<SBOffscreenEdge>(self, "m_offscreenEdge");
-        return [gesture shouldActivateAtEdge:edge atPoint:point];
+
+        if (gesture != nil) {
+            SBOffscreenEdge edge = MSHookIvar<SBOffscreenEdge>(self, "m_offscreenEdge");
+            return [gesture shouldActivateAtEdge:edge atPoint:point];
+        } else {
+            return YES;
+        }
     } else {
         return NO;
     }
@@ -184,8 +189,13 @@ static ZephyrBaseGesture *GestureForRecognizer(SBGestureRecognizer *recognizer) 
     BOOL range = %orig;
     if (range) {
         ZephyrBaseGesture *gesture = GestureForRecognizer(self);
-        SBOffscreenEdge edge = MSHookIvar<SBOffscreenEdge>(self, "m_offscreenEdge");
-        return [gesture shouldActivateAtEdge:edge atPoint:point];
+
+        if (gesture != nil) {
+            SBOffscreenEdge edge = MSHookIvar<SBOffscreenEdge>(self, "m_offscreenEdge");
+            return [gesture shouldActivateAtEdge:edge atPoint:point];
+        } else {
+            return YES;
+        }
     } else {
         return NO;
     }
