@@ -413,6 +413,20 @@
 			<key>defaults</key>
 			<string>com.chpwn.zephyr</string>
 		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<false/>
+			<key>key</key>
+			<string>SystemSuspendThreeFingers</string>
+			<key>label</key>
+			<string>Three-Finger Pinch</string>
+			<key>PostNotification</key>
+			<string>com.chpwn.zephyr.preferences-changed</string>
+			<key>defaults</key>
+			<string>com.chpwn.zephyr</string>
+		</dict>
 
         <dict>
 			<key>cell</key>

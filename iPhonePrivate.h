@@ -375,6 +375,13 @@ typedef enum {
     kSBOffscreenEdgeBottom = 8
 } SBOffscreenEdge;
 
+@interface SBTouchTemplate : NSObject
+@property (assign, nonatomic) CGFloat acceptFactor;
+@property (readonly, assign, nonatomic) NSUInteger pointCount;
+- (id)initWithPoints:(CGPoint *)points count:(NSUInteger)count;
+- (BOOL)acceptPoints:(CGPoint *)points count:(NSUInteger)count;
+@end
+
 @interface SBGestureRecognizer : NSObject
 @property (nonatomic, copy) void (^handler)();
 @property (nonatomic, copy) BOOL (^canBeginCondition)();

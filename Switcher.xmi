@@ -495,6 +495,23 @@ static ZephyrSwitcherGesture *gesture = nil;
 
 %end
 
+%hook SBTouchTemplate
+
+- (id)initWithPoints:(CGPoint *)points count:(NSUInteger)count {
+    if (count == 5 && [ZephyrPreferencesGet(@"SystemSuspendThreeFingers", [NSNumber numberWithBool:NO]) boolValue]) {
+        count = 3;
+
+        // rearrange points
+        points[0] = points[0];
+        points[1] = points[2];
+        points[2] = points[4];
+    }
+
+    return %orig;
+}
+
+%end
+
 %end
 
 %ctor {
