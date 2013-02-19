@@ -109,10 +109,6 @@ static void (*BKSHIDServicesSystemGestureIsStealingEvents)(BOOL) = NULL;
 
 %hook SBGestureRecognizer
 
-- (void)sendTouchesCancelledToApplicationIfNeeded {
-    NSLog(@"touches! cancelled");
-}
-
 - (void)setState:(SBGestureRecognizerState)state {
     if (![allGestureRecognizers containsObject:self]) {
         %orig;

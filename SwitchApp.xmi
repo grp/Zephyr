@@ -33,7 +33,9 @@
     UIInterfaceOrientation orientation = ZephyrCurrentInterfaceOrientation();
     CGFloat height = ZephyrHeightForOrientation(orientation);
 
-    if (point.y > height * area) {
+    if (area > 0 && point.y > height * area) {
+        return NO;
+    } else if (area < 0 && point.y < height + height * area) {
         return NO;
     }
 

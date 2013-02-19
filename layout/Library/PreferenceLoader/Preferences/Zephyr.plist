@@ -147,16 +147,30 @@
 			<key>validTitles</key>
 			<array>
 				<string>Whole Screen</string>
+                <string>Top Three Quarters</string>
+                <string>Top Two Thirds</string>
 				<string>Top Half</string>
 				<string>Top Third</string>
 				<string>Top Quarter</string>
+                <string>Bottom Three Quarters</string>
+                <string>Bottom Two Thirds</string>
+				<string>Bottom Half</string>
+				<string>Bottom Third</string>
+				<string>Bottom Quarter</string>
 			</array>
 			<key>validValues</key>
 			<array>
 				<real>1.00</real>
+                <real>0.75</real>
+                <real>0.66</real>
 				<real>0.50</real>
 				<real>0.33</real>
 				<real>0.25</real>
+                <real>-0.75</real>
+                <real>-0.66</real>
+				<real>-0.50</real>
+				<real>-0.33</real>
+				<real>-0.25</real>
 			</array>
 			<key>PostNotification</key>
 			<string>com.chpwn.zephyr.preferences-changed</string>
@@ -351,6 +365,34 @@
 			<string>com.chpwn.zephyr</string>
 			<key>PostNotification</key>
 			<string>com.chpwn.zephyr.preferences-changed</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSLinkListCell</string>
+			<key>default</key>
+			<integer>1</integer>
+			<key>detail</key>
+			<string>PSListItemsController</string>
+			<key>key</key>
+			<string>BottomDisableKeyboard</string>
+			<key>label</key>
+			<string>Keyboard</string>
+			<key>validTitles</key>
+			<array>
+                <string>Enabled</string>
+                <string>Disabled</string>
+                <string>Grabber</string>
+			</array>
+			<key>validValues</key>
+			<array>
+				<integer>0</integer>
+				<integer>1</integer>
+				<integer>2</integer>
+			</array>
+			<key>PostNotification</key>
+			<string>com.chpwn.zephyr.preferences-changed</string>
+			<key>defaults</key>
+			<string>com.chpwn.zephyr</string>
 		</dict>
 
         <dict>

@@ -9,11 +9,18 @@
 
 #include <dlfcn.h>
 
+static SwipeUpKeyboardAction KeyboardAction() {
+    SwipeUpKeyboardAction keyboardAction = (SwipeUpKeyboardAction) [(NSNumber *) ZephyrPreferencesGet(@"BottomDisableKeyboard", [NSNumber numberWithInt:kSwipeUpKeyboardActionDisabled]) intValue];
+    return keyboardAction;
+}
+
 @implementation ZephyrSwitcherGesture
 
 - (BOOL)shouldActivateAtEdge:(SBOffscreenEdge)edge {
     SBApplication *topApplication = [SBApp _accessibilityFrontMostApplication];
     if (topApplication == nil) topApplication = MSHookIvar<SBApplication *>([objc_getClass("SBUIController") sharedInstance], "_pendingAppActivatedByGesture");
+
+    if (KeyboardAction() == kSwipeUpKeyboardActionDisabled && ZephyrKeyboardIsActive()) return NO;
 
     BOOL displayFlagsAllowed = YES;
 
@@ -50,9 +57,10 @@
 }
 
 - (BOOL)shouldUseGrabberAtEdge:(SBOffscreenEdge)edge {
-    if (ZephyrKeyboardIsActive()) return YES;
+    BOOL grabberAlways = [(NSNumber *) ZephyrPreferencesGet(@"BottomGrabberEnabled", [NSNumber numberWithBool:NO]) boolValue];
+    BOOL grabberKeyboard = (KeyboardAction() == kSwipeUpKeyboardActionGrabber && ZephyrKeyboardIsActive());
 
-    return [(NSNumber *) ZephyrPreferencesGet(@"BottomGrabberEnabled", [NSNumber numberWithBool:NO]) boolValue];
+    return grabberAlways || grabberKeyboard;
 }
 
 - (BOOL)currentOrientationIsSupported {
