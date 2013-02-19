@@ -14,6 +14,10 @@ static SwipeUpKeyboardAction KeyboardAction() {
     return keyboardAction;
 }
 
+static BOOL UseGrabber() {
+    return [(NSNumber *) ZephyrPreferencesGet(@"BottomGrabberEnabled", [NSNumber numberWithBool:NO]) boolValue];
+}
+
 @implementation ZephyrSwitcherGesture
 
 - (BOOL)shouldActivateAtEdge:(SBOffscreenEdge)edge {
@@ -57,7 +61,7 @@ static SwipeUpKeyboardAction KeyboardAction() {
 }
 
 - (BOOL)shouldUseGrabberAtEdge:(SBOffscreenEdge)edge {
-    BOOL grabberAlways = [(NSNumber *) ZephyrPreferencesGet(@"BottomGrabberEnabled", [NSNumber numberWithBool:NO]) boolValue];
+    BOOL grabberAlways = (UseGrabber() && [SBApp _accessibilityFrontMostApplication] != nil);
     BOOL grabberKeyboard = (KeyboardAction() == kSwipeUpKeyboardActionGrabber && ZephyrKeyboardIsActive());
 
     return grabberAlways || grabberKeyboard;
