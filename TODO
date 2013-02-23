@@ -1,6 +1,5 @@
 
 # Bugs
- * keyboard detection can't recognize remote view controllers
  * various conflict/crashes when used at the same time as LockInfo
  - guided access is not respected at all
  - fix bug with auto-canceled swipe gestures
