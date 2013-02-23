@@ -119,8 +119,8 @@ static void (*BKSHIDServicesSystemGestureIsStealingEvents)(BOOL) = NULL;
     // or it will believe the touch never ends while the gesture is running (causing all sorts
     // of issues). This may really belong above, but for simplicity, it's inserted here.
 
-    // Transitioning from Began to Changed/Ended: mark us as stealing touches.
-    if ([self state] == SBGestureRecognizerStateBegan && state != SBGestureRecognizerStateCancelled) {
+    // Transitioning to Began: mark us as stealing touches.
+    if (state == SBGestureRecognizerStateBegan) {
         if (BKSHIDServicesSystemGestureIsStealingEvents != NULL) {
             BKSHIDServicesSystemGestureIsStealingEvents(YES);
         }

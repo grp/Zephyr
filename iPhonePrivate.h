@@ -402,6 +402,8 @@ typedef enum {
 @property (assign, nonatomic) BOOL sendsTouchesCancelledToApplication;
 - (void)sendTouchesCancelledToApplicationIfNeeded;
 
+@property (nonatomic, assign) int types;
+
 @property (nonatomic, copy) void (^handler)();
 @property (nonatomic, assign) SBGestureRecognizerState state;
 - (void)touchesBegan:(SBGestureContext *)began;

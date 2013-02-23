@@ -42,7 +42,7 @@ static NSMutableArray *allGestures = nil;
 - (void)addOffscreenEdge:(SBOffscreenEdge)edge minimumTouchCount:(int)touchCount edgeMargin:(CGFloat)sensitivity {
     SBOffscreenSwipeGestureRecognizer *gestureRecognizer = [[objc_getClass("SBOffscreenSwipeGestureRecognizer") alloc] initForOffscreenEdge:edge];
     [gestureRecognizer setAllowableDistanceFromEdgeCenter:CGFLOAT_MAX];
-    [gestureRecognizer setSendsTouchesCancelledToApplication:NO];
+    [gestureRecognizer setSendsTouchesCancelledToApplication:YES];
     [gestureRecognizer setRequiresSecondTouchInRange:NO];
     [gestureRecognizer setMinTouches:touchCount];
     [gestureRecognizer setEdgeMargin:sensitivity];
@@ -61,15 +61,10 @@ static NSMutableArray *allGestures = nil;
                     if (![self shouldUseGrabberAtEdge:edge] || [[ZephyrGrabberController sharedInstance] visibleAtEdge:edge]) {
                         [[ZephyrGrabberController sharedInstance] hideAtEdge:edge animated:YES];
 
-                        [gestureRecognizer setSendsTouchesCancelledToApplication:YES];
-                        [gestureRecognizer sendTouchesCancelledToApplicationIfNeeded];
-                        [gestureRecognizer setSendsTouchesCancelledToApplication:NO];
-
                         [self handleGestureBegan:gestureRecognizer withLocation:distance];
                         isActive = YES;
                     } else {
                         [[ZephyrGrabberController sharedInstance] showAtEdge:edge animated:YES];
-                        [gestureRecognizer setState:SBGestureRecognizerStateCancelled];
                     }
                 }
                 break;

@@ -2,7 +2,7 @@
 #import "Common.h"
 #import "Grabber.h"
 
-static CGFloat kGrabberControllerHideTemporalOffset = 1.0f;
+static CGFloat kGrabberControllerHideTemporalOffset = 2.0f;
 static CGFloat kGrabberControllerAnimationDuration = 0.3f;
 
 static NSNumber *SBOffscreenEdgeKey(SBOffscreenEdge edge) {
@@ -148,6 +148,7 @@ static NSNumber *SBOffscreenEdgeKey(SBOffscreenEdge edge) {
     }
 
     CGRect grabberFrame = [grabberView frame];
+    grabberFrame = CGRectInset(grabberFrame, -10.0, -10.0);
 
     if (edge == kSBOffscreenEdgeLeft || edge == kSBOffscreenEdgeRight) {
         return point.y > CGRectGetMinY(grabberFrame) && point.y < CGRectGetMaxY(grabberFrame);
