@@ -14,6 +14,10 @@ static NSMutableArray *allGestures = nil;
 @implementation ZephyrBaseGesture
 @synthesize isActive, gestureRecognizers;
 
++ (NSArray *)allGestures {
+    return allGestures;
+}
+
 + (BOOL)isAnyGestureActive {
     BOOL isActive = NO;
 
