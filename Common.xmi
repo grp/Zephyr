@@ -256,13 +256,21 @@ UIInterfaceOrientation ZephyrDeviceInterfaceOrientation() {
 }
 
 UIInterfaceOrientation ZephyrHomeInterfaceOrientation() {
-    return [SBApp interfaceOrientation];
+    UIInterfaceOrientation orientation = ZephyrCurrentInterfaceOrientation();
+
+    // Often, the Current interface orientation is different than the home screen's.
+    // In that case, we prefer what the user is seeing: the Current one. However,
+    // if that isn't a valid home orientation, then return what we know is valid.
+    if (!ZephyrHomeShouldRotateToInterfaceOrientation(orientation)) {
+        orientation = [SBApp interfaceOrientation];
+    }
+
+    return orientation;
 }
 
 BOOL ZephyrHomeShouldRotateToInterfaceOrientation(UIInterfaceOrientation orientation) {
     SBUIController *controller = [objc_getClass("SBUIController") sharedInstance];
-    UIWindow *window = [controller window];
-    return [controller window:window shouldAutorotateToInterfaceOrientation:orientation];
+    return [controller window:[controller window] shouldAutorotateToInterfaceOrientation:orientation];
 }
 
 BOOL ZephyrAssistantIsVisible() {
