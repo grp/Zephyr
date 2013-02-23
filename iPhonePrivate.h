@@ -232,6 +232,7 @@ typedef enum {
 @interface SBUIController : NSObject
 + (id)sharedInstance;
 - (UIView *)rootView;
+- (UIWindow *)window;
 
 - (BOOL)_ignoringEvents;
 

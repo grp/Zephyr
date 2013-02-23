@@ -261,8 +261,8 @@ UIInterfaceOrientation ZephyrHomeInterfaceOrientation() {
 
 BOOL ZephyrHomeShouldRotateToInterfaceOrientation(UIInterfaceOrientation orientation) {
     SBUIController *controller = [objc_getClass("SBUIController") sharedInstance];
-    UIWindow *appWindow = MSHookIvar<UIWindow *>(SBApp, "_springBoardContextHostWindow");
-    return [controller window:appWindow shouldAutorotateToInterfaceOrientation:orientation];
+    UIWindow *window = [controller window];
+    return [controller window:window shouldAutorotateToInterfaceOrientation:orientation];
 }
 
 BOOL ZephyrAssistantIsVisible() {
