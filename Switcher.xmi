@@ -484,8 +484,12 @@ static ZephyrSwitcherGesture *gesture = nil;
 }
 
 - (void)handleFluidScaleSystemGesture:(SBFluidSlideGestureRecognizer *)recognizer {
+    if ([gesture isActive]) return;
+
     BOOL enabled = [ZephyrPreferencesGet(@"SystemSuspendEnabled", [NSNumber numberWithBool:YES]) boolValue];
     if (!enabled) return;
+
+    MSHookIvar<BOOL>(self, "_switcherVisibleWhenSuspendGestureStarted") = NO;
 
     %orig;
 }
