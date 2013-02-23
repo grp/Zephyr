@@ -11,12 +11,18 @@ extern NSString *kGSMultitaskingGesturesCapability;
 
 @interface UIApplication (Private)
 - (UIWindow *)statusBarWindow;
+- (UIInterfaceOrientation)interfaceOrientation;
 - (UIInterfaceOrientation)activeInterfaceOrientation;
+@end
+
+@interface UIWindow (Private)
+- (BOOL)_shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation;
 @end
 
 @interface UIKeyboard : UIView
 + (CGSize)defaultSize;
 + (CGSize)defaultSizeForInterfaceOrientation:(UIInterfaceOrientation)orientation;
++ (BOOL)isOnScreen;
 @end
 
 @class SBApplication;
@@ -276,6 +282,8 @@ typedef enum {
 
 - (void)_clearAllInstalledSystemGestureViews;
 - (void)_installSwitchAppGesturePlaceholderViewForEndingApp:(SBApplication *)endingApp;
+
+- (BOOL)window:(UIWindow *)window shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)orientation;
 
 - (void)createFakeSpringBoardStatusBar;
 - (void)setFakeSpringBoardStatusBarVisible:(BOOL)visible;

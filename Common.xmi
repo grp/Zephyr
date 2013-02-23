@@ -256,7 +256,13 @@ UIInterfaceOrientation ZephyrDeviceInterfaceOrientation() {
 }
 
 UIInterfaceOrientation ZephyrHomeInterfaceOrientation() {
-    return [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? ZephyrCurrentInterfaceOrientation() : UIInterfaceOrientationPortrait;
+    return [SBApp interfaceOrientation];
+}
+
+BOOL ZephyrHomeShouldRotateToInterfaceOrientation(UIInterfaceOrientation orientation) {
+    SBUIController *controller = [objc_getClass("SBUIController") sharedInstance];
+    UIWindow *appWindow = MSHookIvar<UIWindow *>(SBApp, "_springBoardContextHostWindow");
+    return [controller window:appWindow shouldAutorotateToInterfaceOrientation:orientation];
 }
 
 BOOL ZephyrAssistantIsVisible() {
@@ -312,7 +318,7 @@ void ZephyrDeactivateFrontmostApplication() {
     } else {
         // Force iPhone devices to portrait for the home screen.
         // Should be generalized; the iPhone might be hacked for more orientations.
-        if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone) {
+        if (!ZephyrHomeShouldRotateToInterfaceOrientation(ZephyrCurrentInterfaceOrientation())) {
             UIInterfaceOrientation currentOrientation = ZephyrHomeInterfaceOrientation();
             [[UIDevice currentDevice] setOrientation:currentOrientation animated:NO];
             [SBApp noteInterfaceOrientationChanged:currentOrientation];

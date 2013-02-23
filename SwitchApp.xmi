@@ -2,7 +2,6 @@
 #import "SwitchApp.h"
 #import "Common.h"
 #import "Preferences.h"
-#import "Keyboard.h"
 
 @implementation ZephyrSwitchAppGesture
 
@@ -39,7 +38,7 @@
         return NO;
     }
 
-    if (ZephyrKeyboardIsActive()) {
+    if ([UIKeyboard isOnScreen]) {
         CGSize size = [UIKeyboard defaultSizeForInterfaceOrientation:orientation];
 
         if (point.y > height - size.height) {
@@ -174,15 +173,27 @@ static NSInteger switchAppGestureBeganDisableRotation = 0;
 %hook SBUIController
 
 - (void)_switchAppGestureBegan {
-    if ([[UIDevice currentDevice] userInterfaceIdiom] != UIUserInterfaceIdiomPad) switchAppGestureBeganDisableRotation += 1;
+    if (!ZephyrHomeShouldRotateToInterfaceOrientation(ZephyrCurrentInterfaceOrientation())) {
+        switchAppGestureBeganDisableRotation += 1;
+    }
+
     %orig;
-    if ([[UIDevice currentDevice] userInterfaceIdiom] != UIUserInterfaceIdiomPad) switchAppGestureBeganDisableRotation -= 1;
+
+    if (!ZephyrHomeShouldRotateToInterfaceOrientation(ZephyrCurrentInterfaceOrientation())) {
+        switchAppGestureBeganDisableRotation -= 1;
+    }
 }
 
 - (void)_switchAppGestureBegan:(CGFloat)location {
-    if ([[UIDevice currentDevice] userInterfaceIdiom] != UIUserInterfaceIdiomPad) switchAppGestureBeganDisableRotation += 1;
+    if (!ZephyrHomeShouldRotateToInterfaceOrientation(ZephyrCurrentInterfaceOrientation())) {
+        switchAppGestureBeganDisableRotation += 1;
+    }
+
     %orig;
-    if ([[UIDevice currentDevice] userInterfaceIdiom] != UIUserInterfaceIdiomPad) switchAppGestureBeganDisableRotation -= 1;
+
+    if (!ZephyrHomeShouldRotateToInterfaceOrientation(ZephyrCurrentInterfaceOrientation())) {
+        switchAppGestureBeganDisableRotation -= 1;
+    }
 }
 
 %end

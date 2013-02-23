@@ -17,6 +17,7 @@ UIInterfaceOrientation ZephyrOrientationFlip(UIInterfaceOrientation orientation)
 NSString *ZephyrDescriptionForOrientation(UIInterfaceOrientation orientation);
 
 UIInterfaceOrientation ZephyrHomeInterfaceOrientation();
+BOOL ZephyrHomeShouldRotateToInterfaceOrientation(UIInterfaceOrientation orientation);
 UIInterfaceOrientation ZephyrDeviceInterfaceOrientation();
 UIInterfaceOrientation ZephyrCurrentInterfaceOrientation();
 

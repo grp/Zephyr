@@ -2,7 +2,6 @@
 #import "Switcher.h"
 #import "ActivateSwitcher.h"
 #import "Preferences.h"
-#import "Keyboard.h"
 #import "NSTimer+Blocks.h"
 
 #import "SwitchApp.h"
@@ -24,7 +23,7 @@ static BOOL UseGrabber() {
     SBApplication *topApplication = [SBApp _accessibilityFrontMostApplication];
     if (topApplication == nil) topApplication = MSHookIvar<SBApplication *>([objc_getClass("SBUIController") sharedInstance], "_pendingAppActivatedByGesture");
 
-    if (KeyboardAction() == kSwipeUpKeyboardActionDisabled && ZephyrKeyboardIsActive()) return NO;
+    if (KeyboardAction() == kSwipeUpKeyboardActionDisabled && [UIKeyboard isOnScreen]) return NO;
 
     BOOL displayFlagsAllowed = YES;
 
@@ -62,7 +61,7 @@ static BOOL UseGrabber() {
 
 - (BOOL)shouldUseGrabberAtEdge:(SBOffscreenEdge)edge {
     BOOL grabberAlways = (UseGrabber() && [SBApp _accessibilityFrontMostApplication] != nil);
-    BOOL grabberKeyboard = (KeyboardAction() == kSwipeUpKeyboardActionGrabber && ZephyrKeyboardIsActive());
+    BOOL grabberKeyboard = (KeyboardAction() == kSwipeUpKeyboardActionGrabber && [UIKeyboard isOnScreen]);
 
     return grabberAlways || grabberKeyboard;
 }
@@ -140,7 +139,7 @@ static BOOL UseGrabber() {
     [[objc_getClass("SBOrientationLockManager") sharedInstance] setLockOverrideEnabled:YES forReason:@"ZephyrSwitcher"];
     if ([SBApp _accessibilityFrontMostApplication] != nil) [[[objc_getClass("SBUIController") sharedInstance] rootView] setAlpha:1.0f];
 
-    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
+    if (ZephyrHomeShouldRotateToInterfaceOrientation(ZephyrDeviceInterfaceOrientation())) {
         UIInterfaceOrientation currentOrientation = ZephyrDeviceInterfaceOrientation();
         [[UIDevice currentDevice] setOrientation:currentOrientation animated:NO];
         [SBApp noteInterfaceOrientationChanged:currentOrientation];
@@ -356,7 +355,7 @@ static BOOL UseGrabber() {
     UIView *homeView = ZephyrViewWithScreenshotOfHomeScreen();
     [homeView setFrame:[wrapperView bounds]];
 
-    if ([[UIDevice currentDevice] userInterfaceIdiom] != UIUserInterfaceIdiomPad) {
+    if (!ZephyrHomeShouldRotateToInterfaceOrientation(ZephyrCurrentInterfaceOrientation())) {
         // Disable rotation on the iPad as the view behind is already rotated, so rotating it again is unnecessary.
         if (UIInterfaceOrientationIsLandscape(ZephyrCurrentInterfaceOrientation())) {
             ZephyrRotateViewFromOrientationToOrientation(homeView, UIInterfaceOrientationPortrait, ZephyrOrientationFlip(ZephyrCurrentInterfaceOrientation()), YES);
@@ -492,11 +491,13 @@ static ZephyrSwitcherGesture *gesture = nil;
 }
 
 - (void)_suspendGestureCleanUpState {
-    // The spotlight keyboard will otherwise come up in landscape if we exit the app there.
-    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone) {
-        UIInterfaceOrientation currentOrientation = ZephyrHomeInterfaceOrientation();
-        [[UIDevice currentDevice] setOrientation:currentOrientation animated:NO];
-        [SBApp noteInterfaceOrientationChanged:currentOrientation];
+    if ([SBApp _accessibilityFrontMostApplication] == nil) {
+        // The spotlight keyboard will otherwise come up in landscape if we exit the app there.
+        if (!ZephyrHomeShouldRotateToInterfaceOrientation(ZephyrCurrentInterfaceOrientation())) {
+            UIInterfaceOrientation currentOrientation = ZephyrHomeInterfaceOrientation();
+            [[UIDevice currentDevice] setOrientation:currentOrientation animated:NO];
+            [SBApp noteInterfaceOrientationChanged:currentOrientation];
+        }
     }
 
     %orig;

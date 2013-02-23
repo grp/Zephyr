@@ -1,7 +1,6 @@
 #import "Common.h"
 #import "Notification.h"
 #import "Preferences.h"
-#import "Keyboard.h"
 #import "NSTimer+Blocks.h"
 
 #import "SwitchApp.h"

@@ -2,7 +2,6 @@
 #import "BaseGesture.h"
 #import "OffscreenGesture.h"
 #import "Preferences.h"
-#import "Keyboard.h"
 #import "Grabber.h"
 
 static NSMutableArray *allGestures = nil;
@@ -126,8 +125,6 @@ static NSMutableArray *allGestures = nil;
 }
 
 - (BOOL)currentOrientationIsSupported {
-    // Use -activeInterfaceOrientation to get around the faked orientation as reported by CurrentInterfaceOrientation() on the iPhone.
-    //return [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad || [SBApp activeInterfaceOrientation] == UIInterfaceOrientationPortrait;
     return YES;
 }
 
