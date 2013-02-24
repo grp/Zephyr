@@ -139,8 +139,8 @@ static BOOL UseGrabber() {
     [[objc_getClass("SBOrientationLockManager") sharedInstance] setLockOverrideEnabled:YES forReason:@"ZephyrSwitcher"];
     if ([SBApp _accessibilityFrontMostApplication] != nil) [[[objc_getClass("SBUIController") sharedInstance] rootView] setAlpha:1.0f];
 
-    if (ZephyrHomeShouldRotateToInterfaceOrientation(ZephyrDeviceInterfaceOrientation())) {
-        UIInterfaceOrientation currentOrientation = ZephyrDeviceInterfaceOrientation();
+    if (ZephyrHomeShouldRotateToInterfaceOrientation(ZephyrCurrentInterfaceOrientation())) {
+        UIInterfaceOrientation currentOrientation = ZephyrCurrentInterfaceOrientation();
         [[UIDevice currentDevice] setOrientation:currentOrientation animated:NO];
         [SBApp noteInterfaceOrientationChanged:currentOrientation];
     }

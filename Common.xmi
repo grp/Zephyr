@@ -248,7 +248,8 @@ CGFloat ZephyrHeightFromScreenPercentage(CGFloat percentage, UIInterfaceOrientat
 }
 
 UIInterfaceOrientation ZephyrCurrentInterfaceOrientation() {
-    return [SBApp _frontMostAppOrientation];
+    UIInterfaceOrientation orientation = [SBApp _frontMostAppOrientation];
+    return orientation;
 }
 
 UIInterfaceOrientation ZephyrDeviceInterfaceOrientation() {
