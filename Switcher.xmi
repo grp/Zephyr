@@ -494,8 +494,8 @@ static ZephyrSwitcherGesture *gesture = nil;
     %orig;
 }
 
-- (void)_suspendGestureCleanUpState {
-    if ([SBApp _accessibilityFrontMostApplication] == nil) {
+- (void)_suspendGestureEndedWithCompletionType:(int)completionType {
+    if (completionType == 1) {
         // The spotlight keyboard will otherwise come up in landscape if we exit the app there.
         if (!ZephyrHomeShouldRotateToInterfaceOrientation(ZephyrCurrentInterfaceOrientation())) {
             UIInterfaceOrientation currentOrientation = ZephyrHomeInterfaceOrientation();

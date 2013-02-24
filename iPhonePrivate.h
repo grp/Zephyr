@@ -256,6 +256,9 @@ typedef enum {
 - (void)_switchAppGestureCancelled;
 - (void)_switchAppGestureViewAnimationComplete;
 
+- (BOOL)_suspendGestureShouldFinish;
+- (void)_suspendGestureEndedWithCompletionType:(int)type;
+
 - (void)handleDismissBannerSystemGesture:(SBGestureRecognizer *)recognizer;
 - (void)handleFluidHorizontalSystemGesture:(SBGestureRecognizer *)recognizer;
 - (void)handleFluidVerticalSystemGesture:(SBGestureRecognizer *)recognizer;
